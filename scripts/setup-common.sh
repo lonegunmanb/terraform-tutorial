@@ -63,6 +63,20 @@ WRAPPER
 
 start_localstack() {
   cd /root/workspace
+
+  # Ensure Docker Compose v2 plugin is available
+  if ! docker compose version > /dev/null 2>&1; then
+    apt-get update -qq && apt-get install -y -qq docker-compose-plugin > /dev/null 2>&1 \
+      || {
+        # Fallback: install plugin binary directly
+        mkdir -p /usr/local/lib/docker/cli-plugins
+        curl --connect-timeout 10 --max-time 120 -fsSL \
+          "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
+          -o /usr/local/lib/docker/cli-plugins/docker-compose
+        chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+      }
+  fi
+
   docker compose up -d
 
   echo "Waiting for LocalStack to be ready..."
