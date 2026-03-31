@@ -1,0 +1,64 @@
+#!/bin/bash
+# ─────────────────────────────────────────────────────────
+# setup-common.sh — shared setup functions for Killercoda scenarios
+#
+# This file is the SINGLE SOURCE OF TRUTH for common setup logic.
+# It is copied into each scenario's assets/ directory by:
+#   npm run sync-setup  (or automatically via prebuild)
+#
+# Usage in background.sh:
+#   source /root/setup-common.sh
+#   install_terraform
+#   install_tflint        # optional — only in scenarios that need it
+#   start_localstack
+#   install_theia_plugin
+#   finish_setup
+# ─────────────────────────────────────────────────────────
+
+TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.14.8}"
+TFLINT_VERSION="${TFLINT_VERSION:-v0.61.0}"
+
+install_terraform() {
+  apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
+
+  curl --connect-timeout 10 --max-time 120 -fsSL \
+    "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
+    -o /tmp/terraform.zip \
+    && unzip -o -q /tmp/terraform.zip -d /usr/local/bin/ \
+    && chmod +x /usr/local/bin/terraform \
+    && rm -f /tmp/terraform.zip
+
+  terraform version || echo "WARNING: terraform install failed"
+}
+
+install_tflint() {
+  curl --connect-timeout 10 --max-time 120 -fsSL \
+    "https://github.com/terraform-linters/tflint/releases/download/${TFLINT_VERSION}/tflint_linux_amd64.zip" \
+    -o /tmp/tflint.zip \
+    && unzip -o -q /tmp/tflint.zip -d /usr/local/bin/ \
+    && chmod +x /usr/local/bin/tflint \
+    && rm -f /tmp/tflint.zip
+
+  tflint --version || echo "WARNING: tflint install failed"
+}
+
+start_localstack() {
+  cd /root/workspace
+  docker compose up -d
+
+  for i in $(seq 1 30); do
+    curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1 && break
+    sleep 2
+  done
+}
+
+install_theia_plugin() {
+  local plugin_url="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/HashiCorp/vsextensions/terraform/2.37.6/vspackage?targetPlatform=linux-x64"
+  wget -qO /tmp/terraform.vsix "$plugin_url" 2>/dev/null \
+    && mv /tmp/terraform.vsix /opt/theia/plugins/ 2>/dev/null \
+    || true
+}
+
+finish_setup() {
+  touch /tmp/.setup-done
+}

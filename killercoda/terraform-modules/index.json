@@ -26,6 +26,7 @@
     },
     "assets": {
       "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
         {"file": "main.tf", "target": "/root/workspace"},
         {"file": "docker-compose.yml", "target": "/root/workspace"},
         {"file": "modules/s3-bucket/main.tf", "target": "/root/workspace/modules/s3-bucket"},

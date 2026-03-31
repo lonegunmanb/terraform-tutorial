@@ -2,10 +2,13 @@
 exec > /tmp/background.log 2>&1
 set -x
 
-# ── 1. Create workspace and seed files FIRST (no network needed) ──
+source /root/setup-common.sh
+
+# ── 1. Seed workspace files (fallback if assets copy fails) ──
 mkdir -p /root/workspace
 cd /root/workspace
 
+if [ ! -f docker-compose.yml ]; then
 cat > docker-compose.yml <<'EOF'
 services:
   localstack:
@@ -21,7 +24,9 @@ services:
         limits:
           memory: 1536M
 EOF
+fi
 
+if [ ! -f main.tf ]; then
 cat > main.tf <<'EOTF'
 terraform {
   required_version = ">= 1.0"
@@ -74,7 +79,9 @@ output "bucket_domain" {
   description = "The domain name of the bucket (deprecated attribute)"
 }
 EOTF
+fi
 
+if [ ! -f .tflint.hcl ]; then
 cat > .tflint.hcl <<'EOHCL'
 plugin "terraform" {
   enabled = true
@@ -90,44 +97,11 @@ rule "terraform_unused_declarations" {
   enabled = true
 }
 EOHCL
+fi
 
-# ── 2. Install Terraform ──
-apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
-
-TERRAFORM_VERSION="1.14.8"
-curl --connect-timeout 10 --max-time 120 -fsSL \
-  "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
-  -o /tmp/terraform.zip \
-  && unzip -o -q /tmp/terraform.zip -d /usr/local/bin/ \
-  && chmod +x /usr/local/bin/terraform \
-  && rm -f /tmp/terraform.zip
-
-terraform version || echo "WARNING: terraform install failed"
-
-# ── 3. Install TFLint ──
-TFLINT_VERSION="v0.61.0"
-curl --connect-timeout 10 --max-time 120 -fsSL \
-  "https://github.com/terraform-linters/tflint/releases/download/${TFLINT_VERSION}/tflint_linux_amd64.zip" \
-  -o /tmp/tflint.zip \
-  && unzip -o -q /tmp/tflint.zip -d /usr/local/bin/ \
-  && chmod +x /usr/local/bin/tflint \
-  && rm -f /tmp/tflint.zip
-
-tflint --version || echo "WARNING: tflint install failed"
-
-# ── 4. Start LocalStack ──
-cd /root/workspace
-docker compose up -d
-
-for i in $(seq 1 30); do
-  curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1 && break
-  sleep 2
-done
-
-# ── 5. Install Terraform VS Code extension ──
-PLUGIN_URL="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/HashiCorp/vsextensions/terraform/2.37.6/vspackage?targetPlatform=linux-x64"
-wget -qO /tmp/terraform.vsix $PLUGIN_URL
-mv /tmp/terraform.vsix /opt/theia/plugins/
-
-# ── 6. Signal done ──
-touch /tmp/.setup-done
+# ── 2. Install tools & start services ──
+install_terraform
+install_tflint
+start_localstack
+install_theia_plugin
+finish_setup

@@ -29,7 +29,7 @@ killercoda/                        # Killercoda scenario definitions
   terraform-basics/                # One directory per scenario
     index.json                     # Scenario metadata, step list, asset mapping, init scripts
     init/
-      background.sh               # Silent setup (install tools, start LocalStack)
+      background.sh               # Silent setup (sources setup-common.sh, seeds files)
       foreground.sh               # User-facing progress messages
       init.md                     # Intro page shown before Step 1
     step1/text.md                 # Each step is a directory with text.md
@@ -37,10 +37,13 @@ killercoda/                        # Killercoda scenario definitions
     step3/text.md
     finish/finish.md              # Completion page
     assets/                       # Files copied into the student's environment
+      setup-common.sh             # AUTO-GENERATED — do not edit (copied by sync-setup)
       main.tf
       docker-compose.yml
 
 scripts/
+  setup-common.sh                  # Shared setup functions (SOURCE OF TRUTH)
+  sync-setup-common.mjs            # Copies setup-common.sh into every scenario's assets/
   sync-sidebar.mjs                 # Auto-generates sidebar from docs/*.md frontmatter
 
 .github/workflows/deploy.yml      # GitHub Pages deployment pipeline
@@ -86,6 +89,7 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
      ...
      finish/finish.md
      assets/
+       setup-common.sh            # AUTO-GENERATED — do not edit
        main.tf
        docker-compose.yml
    ```
@@ -104,6 +108,7 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
        "finish": { "text": "finish/finish.md" },
        "assets": {
          "host01": [
+           { "file": "setup-common.sh", "target": "/root", "chmod": "+x" },
            { "file": "main.tf", "target": "/root/workspace" }
          ]
        }
@@ -115,16 +120,26 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
    - Steps use `stepN/text.md` paths (directory-based, NOT flat `stepN.md`)
    - Assets use filenames relative to the `assets/` directory (NOT `workspace/main.tf`)
    - The `background` and `foreground` keys under `intro` are what make the scripts execute
+   - `setup-common.sh` MUST be the first asset, targeted to `/root` with `chmod: "+x"`
 5. The `init/background.sh` script should:
    - Log to `/tmp/background.log` with `exec > /tmp/background.log 2>&1` and `set -x` for debugging
-   - Create `/root/workspace` and seed files **before** any network operations
-   - Install Terraform via direct binary download from `releases.hashicorp.com` (with `--connect-timeout` and `--max-time`)
-   - Optionally install TFLint from GitHub releases
-   - Use `docker compose` (v2 plugin), NOT `docker-compose` (v1 standalone)
-   - End with `touch /tmp/.setup-done`
+   - `source /root/setup-common.sh` to load shared functions
+   - Create `/root/workspace` and seed files as fallback (wrapped in `if [ ! -f ... ]`)
+   - Call shared functions: `install_terraform`, `start_localstack`, `install_theia_plugin`, `finish_setup`
+   - Optionally call `install_tflint` (only in scenarios that need it)
+   - For scenarios needing pre-applied state, call `terraform init` / `terraform apply` before `finish_setup`
 6. The `init/foreground.sh` polls `while [ ! -f /tmp/.setup-done ]` and prints progress messages.
-7. The `assets/main.tf` must configure the AWS provider to use LocalStack endpoints (`http://localhost:4566`) with fake credentials (`access_key = "test"`, `secret_key = "test"`) and skip credential validation.
+7. The `assets/main.tf` must configure the AWS provider to use LocalStack endpoints (`http://localhost:4566`) with fake credentials (`access_key = "test"`, `secret_key = "test"`), skip credential validation, and set `s3_use_path_style = true`.
 8. The `assets/docker-compose.yml` must use `localstack/localstack:3` image, expose port 4566, set `SERVICES` to only the needed AWS services, and limit memory to 1536M.
+
+### Shared Setup Script (`setup-common.sh`)
+
+- **Source of truth**: `scripts/setup-common.sh` — edit ONLY this file for shared logic.
+- **Auto-copied**: `scripts/sync-setup-common.mjs` copies it into every `killercoda/*/assets/` directory.
+- Run `npm run sync-setup` after editing, or it runs automatically via `prebuild`.
+- Do NOT edit `killercoda/*/assets/setup-common.sh` directly — changes will be overwritten.
+- Available functions: `install_terraform`, `install_tflint`, `start_localstack`, `install_theia_plugin`, `finish_setup`.
+- Versions can be overridden via env vars: `TERRAFORM_VERSION`, `TFLINT_VERSION`.
 
 ### Sidebar Auto-Sync
 
@@ -145,9 +160,10 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 | Command | Purpose |
 |---------|---------|
 | `npm run dev` | Start VitePress dev server with hot reload. Does NOT run sidebar sync — run `npm run sync-sidebar` manually after adding/removing `.md` files. |
-| `npm run build` | Production build. Automatically runs `prebuild` (sidebar sync) first. Output: `docs/.vitepress/dist/` |
+| `npm run build` | Production build. Automatically runs `prebuild` (sidebar sync + setup sync) first. Output: `docs/.vitepress/dist/` |
 | `npm run preview` | Preview the production build locally. |
 | `npm run sync-sidebar` | Manually sync sidebar config from `docs/*.md` frontmatter. |
+| `npm run sync-setup` | Manually copy `scripts/setup-common.sh` into every scenario's `assets/`. |
 
 ## Content Guidelines
 
@@ -167,3 +183,4 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 - Do NOT use `docker-compose` (v1) — use `docker compose` (v2 plugin) instead.
 - Do NOT place `background.sh`/`foreground.sh` at the scenario root — they must be in `init/` and referenced in `index.json`'s `intro` block, otherwise they will not execute.
 - Do NOT use flat step files (`step1.md`) — must be `step1/text.md` directory format.
+- Do NOT edit `killercoda/*/assets/setup-common.sh` directly — it is auto-generated from `scripts/setup-common.sh` and will be overwritten by `npm run sync-setup`.

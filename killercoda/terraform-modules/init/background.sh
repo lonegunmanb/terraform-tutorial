@@ -2,10 +2,13 @@
 exec > /tmp/background.log 2>&1
 set -x
 
-# ── 1. Create workspace and seed files FIRST (no network needed) ──
+source /root/setup-common.sh
+
+# ── 1. Seed workspace files (fallback if assets copy fails) ──
 mkdir -p /root/workspace/modules/s3-bucket
 cd /root/workspace
 
+if [ ! -f docker-compose.yml ]; then
 cat > docker-compose.yml <<'EOF'
 services:
   localstack:
@@ -21,7 +24,9 @@ services:
         limits:
           memory: 1536M
 EOF
+fi
 
+if [ ! -f main.tf ]; then
 cat > main.tf <<'EOTF'
 terraform {
   required_version = ">= 1.0"
@@ -71,7 +76,9 @@ output "data_bucket_id" {
 #   value = module.app_logs.bucket_id
 # }
 EOTF
+fi
 
+if [ ! -f modules/s3-bucket/main.tf ]; then
 cat > modules/s3-bucket/main.tf <<'EOTF'
 resource "aws_s3_bucket" "this" {
   bucket = var.bucket_name
@@ -81,7 +88,6 @@ resource "aws_s3_bucket" "this" {
   )
 }
 EOTF
-
 cat > modules/s3-bucket/variables.tf <<'EOTF'
 variable "bucket_name" {
   type        = string
@@ -102,7 +108,6 @@ variable "tags" {
   description = "Additional tags to apply to the bucket"
 }
 EOTF
-
 cat > modules/s3-bucket/outputs.tf <<'EOTF'
 output "bucket_id" {
   value       = aws_s3_bucket.this.id
@@ -113,32 +118,10 @@ output "bucket_arn" {
   description = "The ARN of the created S3 bucket"
 }
 EOTF
+fi
 
-# ── 2. Install Terraform ──
-apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
-
-TERRAFORM_VERSION="1.14.8"
-curl --connect-timeout 10 --max-time 120 -fsSL \
-  "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
-  -o /tmp/terraform.zip \
-  && unzip -o -q /tmp/terraform.zip -d /usr/local/bin/ \
-  && chmod +x /usr/local/bin/terraform \
-  && rm -f /tmp/terraform.zip
-
-terraform version || echo "WARNING: terraform install failed"
-
-# ── 3. Start LocalStack ──
-cd /root/workspace
-docker compose up -d
-
-for i in $(seq 1 30); do
-  curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1 && break
-  sleep 2
-done
-
-PLUGIN_URL="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/HashiCorp/vsextensions/terraform/2.37.6/vspackage?targetPlatform=linux-x64"
-wget -qO /tmp/terraform.vsix $PLUGIN_URL
-mv /tmp/terraform.vsix /opt/theia/plugins/
-
-# ── 4. Signal done ──
-touch /tmp/.setup-done
+# ── 2. Install tools & start services ──
+install_terraform
+start_localstack
+install_theia_plugin
+finish_setup
