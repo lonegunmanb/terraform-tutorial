@@ -22,15 +22,21 @@ docs/                              # VitePress content (Markdown files)
     config.mjs                     # VitePress config (sidebar auto-managed)
     theme/index.js                 # Custom theme — registers global Vue components
     components/
-      KillercodaEmbed.vue          # <KillercodaEmbed> component for iframe embeds
+      KillercodaEmbed.vue          # <KillercodaEmbed> component (link button, NOT iframe)
 
 killercoda/                        # Killercoda scenario definitions
+  structure.json                   # Lists all scenarios for Killercoda discovery
   terraform-basics/                # One directory per scenario
-    index.json                     # Scenario metadata and step list
-    background.sh                  # Silent setup (install tools, start LocalStack)
-    foreground.sh                  # User-facing progress messages
-    intro.md / step*.md / finish.md
-    workspace/                     # Files copied into the student's working directory
+    index.json                     # Scenario metadata, step list, asset mapping, init scripts
+    init/
+      background.sh               # Silent setup (install tools, start LocalStack)
+      foreground.sh               # User-facing progress messages
+      init.md                     # Intro page shown before Step 1
+    step1/text.md                 # Each step is a directory with text.md
+    step2/text.md
+    step3/text.md
+    finish/finish.md              # Completion page
+    assets/                       # Files copied into the student's environment
       main.tf
       docker-compose.yml
 
@@ -51,23 +57,74 @@ scripts/
    title: <display text> # Sidebar label (falls back to first H1 heading)
    ---
    ```
-2. If the chapter has a hands-on lab, embed the sandbox:
+2. If the chapter has a hands-on lab, link to the sandbox:
    ```markdown
-   <KillercodaEmbed src="https://killercoda.com/<USERNAME>/scenario/<SCENARIO_NAME>~embed" />
+   <KillercodaEmbed src="https://killercoda.com/lonegunman/course/killercoda/<SCENARIO_NAME>" />
    ```
+   Note: Killercoda blocks iframe embedding (`X-Frame-Options: DENY`), so the component renders a link button that opens in a new tab.
 3. Run `npm run sync-sidebar` (or it runs automatically during `npm run build` via the `prebuild` hook). This updates the `// @auto-sidebar-start ... // @auto-sidebar-end` block in `config.mjs`.
 
 ### Adding a New Killercoda Scenario
 
+Follow the structure in `https://github.com/killercoda/scenarios-istio`.
+
 1. Create a new directory under `killercoda/<scenario-name>/`.
-2. Every scenario MUST contain:
-   - `index.json` — title, description, step definitions, `"backend": {"imageid": "ubuntu"}`, `"interface": {"layout": "editor-terminal"}`
-   - `background.sh` — installs Terraform CLI, optionally TFLint, starts LocalStack via `docker-compose up -d`, waits for health check, then `touch /tmp/.setup-done`
-   - `foreground.sh` — polls `while [ ! -f /tmp/.setup-done ]` and prints a friendly progress message, then shows a welcome banner
-   - `intro.md`, `step1.md` through `stepN.md`, `finish.md`
-   - `workspace/` directory with pre-seeded files (`main.tf`, `docker-compose.yml`, etc.)
-3. The `workspace/main.tf` must configure the AWS provider to use LocalStack endpoints (`http://localhost:4566`) with fake credentials (`access_key = "test"`, `secret_key = "test"`) and skip credential validation.
-4. The `workspace/docker-compose.yml` must use `localstack/localstack:3` image, expose port 4566, set `SERVICES` to only the needed AWS services, and limit memory to 1536M.
+2. Add the scenario to `killercoda/structure.json`:
+   ```json
+   { "path": "<scenario-name>" }
+   ```
+3. Every scenario MUST use this directory layout:
+   ```
+   <scenario-name>/
+     index.json
+     init/
+       background.sh
+       foreground.sh
+       init.md
+     step1/text.md
+     step2/text.md
+     ...
+     finish/finish.md
+     assets/
+       main.tf
+       docker-compose.yml
+   ```
+4. The `index.json` MUST reference init scripts in the `intro` block:
+   ```json
+   {
+     "details": {
+       "intro": {
+         "text": "init/init.md",
+         "background": "init/background.sh",
+         "foreground": "init/foreground.sh"
+       },
+       "steps": [
+         { "title": "...", "text": "step1/text.md" }
+       ],
+       "finish": { "text": "finish/finish.md" },
+       "assets": {
+         "host01": [
+           { "file": "main.tf", "target": "/root/workspace" }
+         ]
+       }
+     },
+     "backend": { "imageid": "ubuntu" },
+     "interface": { "layout": "editor-terminal" }
+   }
+   ```
+   - Steps use `stepN/text.md` paths (directory-based, NOT flat `stepN.md`)
+   - Assets use filenames relative to the `assets/` directory (NOT `workspace/main.tf`)
+   - The `background` and `foreground` keys under `intro` are what make the scripts execute
+5. The `init/background.sh` script should:
+   - Log to `/tmp/background.log` with `exec > /tmp/background.log 2>&1` and `set -x` for debugging
+   - Create `/root/workspace` and seed files **before** any network operations
+   - Install Terraform via direct binary download from `releases.hashicorp.com` (with `--connect-timeout` and `--max-time`)
+   - Optionally install TFLint from GitHub releases
+   - Use `docker compose` (v2 plugin), NOT `docker-compose` (v1 standalone)
+   - End with `touch /tmp/.setup-done`
+6. The `init/foreground.sh` polls `while [ ! -f /tmp/.setup-done ]` and prints progress messages.
+7. The `assets/main.tf` must configure the AWS provider to use LocalStack endpoints (`http://localhost:4566`) with fake credentials (`access_key = "test"`, `secret_key = "test"`) and skip credential validation.
+8. The `assets/docker-compose.yml` must use `localstack/localstack:3` image, expose port 4566, set `SERVICES` to only the needed AWS services, and limit memory to 1536M.
 
 ### Sidebar Auto-Sync
 
@@ -79,8 +136,9 @@ scripts/
 ### KillercodaEmbed Component
 
 - Registered globally in `docs/.vitepress/theme/index.js`.
+- Renders as a styled **link button** (opens Killercoda in a new tab) because Killercoda blocks iframe embedding via `X-Frame-Options: DENY`.
 - Props: `src` (required, must be `https://...killercoda.com...`), `title` (optional), `height` (optional, default `"70vh"`).
-- The component validates URLs — only `https://*.killercoda.com` origins are allowed; anything else renders `about:blank`.
+- The component validates URLs — only `https://*.killercoda.com` origins are allowed.
 
 ## Build & Development Commands
 
@@ -97,7 +155,7 @@ scripts/
 - Code comments in Terraform files may be in English or Chinese.
 - Use VitePress Markdown extensions: `::: tip`, `::: warning`, `::: info` for callout blocks.
 - Each Killercoda step should be completable in **3–5 minutes**.
-- Keep `background.sh` scripts idempotent and silent (redirect verbose output to `/dev/null`).
+- `background.sh` logs to `/tmp/background.log` — check this file in Killercoda terminal for debugging.
 
 ## Things to Avoid
 
@@ -106,3 +164,6 @@ scripts/
 - Do NOT put real AWS credentials anywhere — all scenarios use LocalStack with `test`/`test` fake credentials.
 - Do NOT add services to LocalStack's `SERVICES` env var unless the chapter actually uses them (memory is limited to 1.5GB).
 - Do NOT skip the `touch /tmp/.setup-done` signal at the end of `background.sh` — `foreground.sh` depends on it.
+- Do NOT use `docker-compose` (v1) — use `docker compose` (v2 plugin) instead.
+- Do NOT place `background.sh`/`foreground.sh` at the scenario root — they must be in `init/` and referenced in `index.json`'s `intro` block, otherwise they will not execute.
+- Do NOT use flat step files (`step1.md`) — must be `step1/text.md` directory format.
