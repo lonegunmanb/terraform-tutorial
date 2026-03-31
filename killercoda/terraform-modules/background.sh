@@ -1,23 +1,11 @@
 #!/bin/bash
+exec > /tmp/background.log 2>&1
+set -x
 
-# --- Install tenv (Terraform version manager) ---
-TENV_VERSION="v4.9.3"
-curl -fsSL "https://github.com/tofuutils/tenv/releases/download/${TENV_VERSION}/tenv_${TENV_VERSION#v}_amd64.deb" -o /tmp/tenv.deb
-dpkg -i /tmp/tenv.deb > /dev/null 2>&1
-rm /tmp/tenv.deb
-
-# --- Install Terraform via tenv ---
-tenv terraform install latest > /dev/null 2>&1
-tenv terraform use latest > /dev/null 2>&1
-
-# --- Ensure workspace directory exists ---
+# ── 1. Create workspace and seed files FIRST (no network needed) ──
 mkdir -p /root/workspace/modules/s3-bucket
-
-# --- Start LocalStack via Docker Compose ---
 cd /root/workspace
 
-# Create docker-compose.yml if not provided by assets
-if [ ! -f docker-compose.yml ]; then
 cat > docker-compose.yml <<'EOF'
 services:
   localstack:
@@ -33,10 +21,7 @@ services:
         limits:
           memory: 1536M
 EOF
-fi
 
-# Create main.tf if not provided by assets
-if [ ! -f main.tf ]; then
 cat > main.tf <<'EOTF'
 terraform {
   required_version = ">= 1.0"
@@ -85,10 +70,7 @@ output "data_bucket_id" {
 #   value = module.app_logs.bucket_id
 # }
 EOTF
-fi
 
-# Create module files if not provided by assets
-if [ ! -f modules/s3-bucket/main.tf ]; then
 cat > modules/s3-bucket/main.tf <<'EOTF'
 resource "aws_s3_bucket" "this" {
   bucket = var.bucket_name
@@ -98,6 +80,7 @@ resource "aws_s3_bucket" "this" {
   )
 }
 EOTF
+
 cat > modules/s3-bucket/variables.tf <<'EOTF'
 variable "bucket_name" {
   type        = string
@@ -118,6 +101,7 @@ variable "tags" {
   description = "Additional tags to apply to the bucket"
 }
 EOTF
+
 cat > modules/s3-bucket/outputs.tf <<'EOTF'
 output "bucket_id" {
   value       = aws_s3_bucket.this.id
@@ -128,18 +112,28 @@ output "bucket_arn" {
   description = "The ARN of the created S3 bucket"
 }
 EOTF
-fi
 
-docker-compose up -d 2>&1
+# ── 2. Install Terraform ──
+apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
 
-echo "Waiting for LocalStack to be ready..."
+TERRAFORM_VERSION="1.14.8"
+curl --connect-timeout 10 --max-time 120 -fsSL \
+  "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
+  -o /tmp/terraform.zip \
+  && unzip -o -q /tmp/terraform.zip -d /usr/local/bin/ \
+  && chmod +x /usr/local/bin/terraform \
+  && rm -f /tmp/terraform.zip
+
+terraform version || echo "WARNING: terraform install failed"
+
+# ── 3. Start LocalStack ──
+cd /root/workspace
+docker compose up -d
+
 for i in $(seq 1 30); do
-  if curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1; then
-    echo "LocalStack is ready."
-    break
-  fi
+  curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1 && break
   sleep 2
 done
 
-# --- Signal completion ---
+# ── 4. Signal done ──
 touch /tmp/.setup-done
