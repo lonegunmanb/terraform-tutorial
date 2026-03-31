@@ -75,9 +75,7 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 
 ```bash
 # 等价于 aws --endpoint-url=http://localhost:4566 ec2 describe-instances
-awslocal ec2 describe-instances \
-  --query "Reservations[*].Instances[*].[InstanceId,InstanceType,State.Name]" \
-  --output table
+awslocal ec2 describe-instances --output json
 ```
 
 在本教程中，每一步操作后我们都会使用 `awslocal` 来独立验证 Terraform 的变更是否真正生效。

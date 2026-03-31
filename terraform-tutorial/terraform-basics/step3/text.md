@@ -43,11 +43,9 @@ Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
 ## 用 awslocal 确认变更
 
 ```bash
-awslocal ec2 describe-instances \
-  --query "Reservations[*].Instances[*].[InstanceId,InstanceType,State.Name]" \
-  --output table
+awslocal ec2 describe-instances --output json
 ```
 
-实例类型已经从 `t2.micro` 变为 `t2.small`。
+在 JSON 输出中确认 `InstanceType` 已经从 `t2.micro` 变为 `t2.small`。
 
 > 💡 Terraform 会智能判断变更类型：有些变更可以就地更新，有些则需要先销毁再重建（例如更换 AMI）。使用 `plan` 可以提前了解变更的影响。

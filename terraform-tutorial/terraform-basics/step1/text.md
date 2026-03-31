@@ -36,11 +36,12 @@ instance_type = "t2.micro"
 用它查询刚创建的 EC2 实例：
 
 ```bash
-awslocal ec2 describe-instances \
-  --query "Reservations[*].Instances[*].[InstanceId,InstanceType,State.Name,Tags]" \
-  --output table
+awslocal ec2 describe-instances --output json
 ```
 
-你应该能看到一台状态为 `running`、类型为 `t2.micro` 的实例，Tags 中包含 `Name: TerraformTutorial`。
+在返回的 JSON 中找到 `Instances` 数组，你应该能看到一台实例：
+- `InstanceType` 为 `t2.micro`
+- `State.Name` 为 `running`
+- `Tags` 中包含 `Name: TerraformTutorial`
 
 > 💡 `awslocal` 等价于 `aws --endpoint-url=http://localhost:4566`，在 LocalStack 环境下使用它更加方便。

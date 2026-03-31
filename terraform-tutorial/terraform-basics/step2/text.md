@@ -21,9 +21,7 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 ## 用 awslocal 再次确认
 
 ```bash
-awslocal ec2 describe-instances \
-  --query "Reservations[*].Instances[*].[InstanceId,InstanceType,State.Name]" \
-  --output table
+awslocal ec2 describe-instances --output json
 ```
 
 实例依然存在，类型仍然是 `t2.micro`，状态仍然是 `running`——没有任何变化。
