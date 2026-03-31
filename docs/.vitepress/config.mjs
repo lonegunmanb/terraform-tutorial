@@ -22,7 +22,7 @@ export default defineConfig({
         text: '教程章节',
         items: [
           { text: '课程介绍', link: '/intro' },
-          { text: '基础：管理 EC2 实例', link: '/basics' },
+          { text: '基础：Terraform 基本生命周期', link: '/basics' },
           { text: '状态管理', link: '/state' },
           { text: 'TFLint 代码检查', link: '/tflint' },
           { text: '模块化实践', link: '/modules' }

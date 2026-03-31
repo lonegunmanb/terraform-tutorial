@@ -78,9 +78,15 @@ fi
 # ── 2. Install tools & start services ──
 install_terraform
 
-# Install AWS CLI and awslocal
-apt-get install -y -qq python3-pip > /dev/null 2>&1
-pip3 install awscli awscli-local > /dev/null 2>&1
+# Install AWS CLI (via apt — lightweight, no pip overhead)
+apt-get install -y -qq awscli > /dev/null 2>&1
+
+# Create awslocal wrapper (equivalent to awscli-local package)
+cat > /usr/local/bin/awslocal <<'WRAPPER'
+#!/bin/bash
+exec aws --endpoint-url=http://localhost:4566 "$@"
+WRAPPER
+chmod +x /usr/local/bin/awslocal
 
 start_localstack
 finish_setup
