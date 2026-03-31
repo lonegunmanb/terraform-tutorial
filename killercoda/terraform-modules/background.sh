@@ -1,12 +1,14 @@
 #!/bin/bash
 
-# --- Install Terraform CLI (direct binary) ---
-TF_VERSION="1.7.5"
-curl -fsSL "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip
-apt-get update -qq && apt-get install -y -qq unzip curl > /dev/null 2>&1
-unzip -o /tmp/terraform.zip -d /usr/local/bin/ > /dev/null 2>&1
-rm /tmp/terraform.zip
-chmod +x /usr/local/bin/terraform
+# --- Install tenv (Terraform version manager) ---
+TENV_VERSION="v4.9.3"
+curl -fsSL "https://github.com/tofuutils/tenv/releases/download/${TENV_VERSION}/tenv_${TENV_VERSION#v}_amd64.deb" -o /tmp/tenv.deb
+dpkg -i /tmp/tenv.deb > /dev/null 2>&1
+rm /tmp/tenv.deb
+
+# --- Install Terraform via tenv ---
+tenv terraform install latest > /dev/null 2>&1
+tenv terraform use latest > /dev/null 2>&1
 
 # --- Ensure workspace directory exists ---
 mkdir -p /root/workspace/modules/s3-bucket

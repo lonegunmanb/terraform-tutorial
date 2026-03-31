@@ -1,19 +1,16 @@
 #!/bin/bash
 
-# --- Install Terraform CLI (direct binary) ---
-TF_VERSION="1.7.5"
-curl -fsSL "https://releases.hashicorp.com/terraform/${TF_VERSION}/terraform_${TF_VERSION}_linux_amd64.zip" -o /tmp/terraform.zip
-apt-get update -qq && apt-get install -y -qq unzip curl > /dev/null 2>&1
-unzip -o /tmp/terraform.zip -d /usr/local/bin/ > /dev/null 2>&1
-rm /tmp/terraform.zip
-chmod +x /usr/local/bin/terraform
+# --- Install tenv (Terraform version manager) ---
+TENV_VERSION="v4.9.3"
+curl -fsSL "https://github.com/tofuutils/tenv/releases/download/${TENV_VERSION}/tenv_${TENV_VERSION#v}_amd64.deb" -o /tmp/tenv.deb
+dpkg -i /tmp/tenv.deb > /dev/null 2>&1
+rm /tmp/tenv.deb
 
-# --- Install TFLint (direct binary) ---
-TFLINT_VERSION="v0.50.3"
-curl -fsSL "https://github.com/terraform-linters/tflint/releases/download/${TFLINT_VERSION}/tflint_linux_amd64.zip" -o /tmp/tflint.zip
-unzip -o /tmp/tflint.zip -d /usr/local/bin/ > /dev/null 2>&1
-rm /tmp/tflint.zip
-chmod +x /usr/local/bin/tflint
+# --- Install Terraform + TFLint via tenv ---
+tenv terraform install latest > /dev/null 2>&1
+tenv terraform use latest > /dev/null 2>&1
+tenv tflint install latest > /dev/null 2>&1
+tenv tflint use latest > /dev/null 2>&1
 
 # --- Ensure workspace directory exists ---
 mkdir -p /root/workspace
