@@ -65,10 +65,16 @@ start_localstack() {
   cd /root/workspace
   docker compose up -d
 
-  for i in $(seq 1 30); do
-    curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1 && break
+  echo "Waiting for LocalStack to be ready..."
+  for i in $(seq 1 60); do
+    if curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1; then
+      echo "LocalStack is ready."
+      return 0
+    fi
     sleep 2
   done
+  echo "WARNING: LocalStack did not become healthy within 120 seconds"
+  docker compose logs
 }
 
 finish_setup() {
