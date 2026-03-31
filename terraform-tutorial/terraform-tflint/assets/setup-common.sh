@@ -64,8 +64,13 @@ install_awscli() {
   aws --version || echo "WARNING: awscli install failed"
 
   # Disable AWS CLI pager globally so output prints directly
-  export AWS_PAGER=""
-  echo 'export AWS_PAGER=""' >> /root/.bashrc
+  mkdir -p /root/.aws
+  cat > /root/.aws/config <<'AWSCFG'
+[default]
+region = us-east-1
+output = json
+cli_pager =
+AWSCFG
 
   # Install awscli-local (provides the 'awslocal' command)
   pip3 install --break-system-packages awscli-local > /dev/null 2>&1 \
