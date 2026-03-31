@@ -3,29 +3,31 @@
   "description": "理解 Terraform 状态文件的作用，学习状态查看、移动和导入操作",
   "details": {
     "intro": {
-      "text": "intro.md"
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
     },
     "steps": [
       {
         "title": "查看状态",
-        "text": "step1.md"
+        "text": "step1/text.md"
       },
       {
         "title": "状态操作 (mv / rm)",
-        "text": "step2.md"
+        "text": "step2/text.md"
       },
       {
         "title": "理解状态文件结构",
-        "text": "step3.md"
+        "text": "step3/text.md"
       }
     ],
     "finish": {
-      "text": "finish.md"
+      "text": "finish/finish.md"
     },
     "assets": {
       "host01": [
-        {"file": "workspace/main.tf", "target": "/root/workspace"},
-        {"file": "workspace/docker-compose.yml", "target": "/root/workspace"}
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
       ]
     }
   },

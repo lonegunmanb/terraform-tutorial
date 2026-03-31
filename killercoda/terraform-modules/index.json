@@ -3,32 +3,34 @@
   "description": "学习编写和使用可复用的 Terraform 模块",
   "details": {
     "intro": {
-      "text": "intro.md"
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
     },
     "steps": [
       {
         "title": "理解模块结构",
-        "text": "step1.md"
+        "text": "step1/text.md"
       },
       {
         "title": "使用模块创建资源",
-        "text": "step2.md"
+        "text": "step2/text.md"
       },
       {
         "title": "复用模块",
-        "text": "step3.md"
+        "text": "step3/text.md"
       }
     ],
     "finish": {
-      "text": "finish.md"
+      "text": "finish/finish.md"
     },
     "assets": {
       "host01": [
-        {"file": "workspace/main.tf", "target": "/root/workspace"},
-        {"file": "workspace/docker-compose.yml", "target": "/root/workspace"},
-        {"file": "workspace/modules/s3-bucket/main.tf", "target": "/root/workspace/modules/s3-bucket"},
-        {"file": "workspace/modules/s3-bucket/variables.tf", "target": "/root/workspace/modules/s3-bucket"},
-        {"file": "workspace/modules/s3-bucket/outputs.tf", "target": "/root/workspace/modules/s3-bucket"}
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"},
+        {"file": "modules/s3-bucket/main.tf", "target": "/root/workspace/modules/s3-bucket"},
+        {"file": "modules/s3-bucket/variables.tf", "target": "/root/workspace/modules/s3-bucket"},
+        {"file": "modules/s3-bucket/outputs.tf", "target": "/root/workspace/modules/s3-bucket"}
       ]
     }
   },
