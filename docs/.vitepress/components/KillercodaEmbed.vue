@@ -1,13 +1,8 @@
 <script setup>
-import { ref } from 'vue'
-
 const props = defineProps({
   src: { type: String, required: true },
   title: { type: String, default: '实验环境' },
-  height: { type: String, default: '70vh' },
 })
-
-const loading = ref(true)
 
 function isValidUrl(url) {
   try {
@@ -18,70 +13,70 @@ function isValidUrl(url) {
   }
 }
 
-const safeSrc = isValidUrl(props.src) ? props.src : 'about:blank'
+// Strip ~embed suffix for the direct link
+const directUrl = isValidUrl(props.src) ? props.src.replace(/~embed$/, '') : null
 </script>
 
 <template>
-  <div class="killercoda-embed" :style="{ height }">
-    <div v-if="loading" class="loading-overlay">
-      <div class="loading-content">
-        <p>⚙️ 正在为你准备真实的云端实验室...</p>
-        <p class="hint">首次加载可能需要 15-30 秒</p>
-      </div>
+  <div v-if="directUrl" class="killercoda-link">
+    <div class="link-icon">🧪</div>
+    <div class="link-body">
+      <p class="link-title">{{ title }}</p>
+      <p class="link-desc">点击下方按钮在新标签页中打开 Killercoda 实验环境，预装了 Terraform + LocalStack。</p>
+      <a :href="directUrl" target="_blank" rel="noopener noreferrer" class="link-button">
+        打开实验环境 ↗
+      </a>
     </div>
-    <iframe
-      :src="safeSrc"
-      :title="title"
-      width="100%"
-      height="100%"
-      loading="lazy"
-      @load="loading = false"
-    />
   </div>
 </template>
 
 <style scoped>
-.killercoda-embed {
-  position: relative;
-  border: 1px solid var(--vp-c-border);
-  border-radius: 8px;
-  overflow: hidden;
-  margin: 16px 0;
-}
-
-.killercoda-embed iframe {
-  border: none;
-  display: block;
-}
-
-.loading-overlay {
-  position: absolute;
-  inset: 0;
+.killercoda-link {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  gap: 16px;
+  align-items: flex-start;
+  border: 1px solid var(--vp-c-brand-1);
+  border-radius: 8px;
+  padding: 20px;
+  margin: 16px 0;
   background: var(--vp-c-bg-soft);
-  z-index: 10;
 }
 
-.loading-content {
-  text-align: center;
-  animation: pulse 2s ease-in-out infinite;
+.link-icon {
+  font-size: 2rem;
+  flex-shrink: 0;
 }
 
-.loading-content p {
-  margin: 0;
+.link-body {
+  flex: 1;
+}
+
+.link-title {
+  margin: 0 0 4px;
   font-size: 1.1rem;
+  font-weight: 600;
+  color: var(--vp-c-text-1);
 }
 
-.loading-content .hint {
-  font-size: 0.85rem;
-  color: var(--vp-c-text-3);
-  margin-top: 4px;
+.link-desc {
+  margin: 0 0 12px;
+  font-size: 0.9rem;
+  color: var(--vp-c-text-2);
 }
 
-@keyframes pulse {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
+.link-button {
+  display: inline-block;
+  padding: 8px 20px;
+  border-radius: 6px;
+  background: var(--vp-c-brand-1);
+  color: #fff !important;
+  font-weight: 500;
+  font-size: 0.95rem;
+  text-decoration: none !important;
+  transition: background 0.2s;
+}
+
+.link-button:hover {
+  background: var(--vp-c-brand-2);
 }
 </style>
