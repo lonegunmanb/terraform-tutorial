@@ -76,22 +76,7 @@ EOTF
 fi
 
 # ── 2. Install tools & start services ──
-# Start LocalStack first (docker pull runs in background)
-cd /root/workspace
-docker compose up -d
-
-# Install tools while LocalStack is starting
 install_terraform
 install_awscli
-
-# Now wait for LocalStack to be healthy
-echo "Waiting for LocalStack to be ready..."
-for i in $(seq 1 60); do
-  if curl -sf http://localhost:4566/_localstack/health > /dev/null 2>&1; then
-    echo "LocalStack is ready."
-    break
-  fi
-  sleep 2
-done
-
+start_localstack
 finish_setup

@@ -20,7 +20,16 @@ TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.14.8}"
 TFLINT_VERSION="${TFLINT_VERSION:-v0.61.0}"
 
 install_terraform() {
-  apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
+  apt-get update -qq && apt-get install -y -qq unzip docker-compose-plugin > /dev/null 2>&1
+
+  # Fallback: install compose plugin binary if apt package not available
+  if ! docker compose version > /dev/null 2>&1; then
+    mkdir -p /usr/local/lib/docker/cli-plugins
+    curl --connect-timeout 10 --max-time 120 -fsSL \
+      "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
+      -o /usr/local/lib/docker/cli-plugins/docker-compose
+    chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
+  fi
 
   curl --connect-timeout 10 --max-time 120 -fsSL \
     "https://releases.hashicorp.com/terraform/${TERRAFORM_VERSION}/terraform_${TERRAFORM_VERSION}_linux_amd64.zip" \
@@ -44,6 +53,7 @@ install_tflint() {
 }
 
 install_awscli() {
+  # Install AWS CLI v2 (official binary)
   curl --connect-timeout 10 --max-time 120 -fsSL \
     "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
     -o /tmp/awscliv2.zip \
@@ -51,32 +61,24 @@ install_awscli() {
     && /tmp/aws/install --update > /dev/null 2>&1 \
     && rm -rf /tmp/awscliv2.zip /tmp/aws
 
-  # Create awslocal wrapper (equivalent to awscli-local package)
-  cat > /usr/local/bin/awslocal <<'WRAPPER'
-#!/bin/bash
-exec aws --endpoint-url=http://localhost:4566 "$@"
-WRAPPER
-  chmod +x /usr/local/bin/awslocal
-
   aws --version || echo "WARNING: awscli install failed"
+
+  # Install awscli-local (provides the 'awslocal' command)
+  pip3 install awscli-local > /dev/null 2>&1 \
+    || {
+      # Fallback: create a shell wrapper if pip fails
+      cat > /usr/local/bin/awslocal <<'WRAPPER'
+#!/bin/bash
+exec aws --endpoint-url=http://localhost:4566 --region us-east-1 "$@"
+WRAPPER
+      chmod +x /usr/local/bin/awslocal
+    }
+
+  awslocal --version || echo "WARNING: awslocal install failed"
 }
 
 start_localstack() {
   cd /root/workspace
-
-  # Ensure Docker Compose v2 plugin is available
-  if ! docker compose version > /dev/null 2>&1; then
-    apt-get update -qq && apt-get install -y -qq docker-compose-plugin > /dev/null 2>&1 \
-      || {
-        # Fallback: install plugin binary directly
-        mkdir -p /usr/local/lib/docker/cli-plugins
-        curl --connect-timeout 10 --max-time 120 -fsSL \
-          "https://github.com/docker/compose/releases/latest/download/docker-compose-linux-x86_64" \
-          -o /usr/local/lib/docker/cli-plugins/docker-compose
-        chmod +x /usr/local/lib/docker/cli-plugins/docker-compose
-      }
-  fi
-
   docker compose up -d
 
   echo "Waiting for LocalStack to be ready..."
