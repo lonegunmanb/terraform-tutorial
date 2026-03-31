@@ -121,5 +121,10 @@ cd /root/workspace
 terraform init -input=false
 terraform apply -auto-approve -input=false
 
-# ── 5. Signal done ──
+# ── 5. Install Terraform VS Code extension ──
+PLUGIN_URL="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/HashiCorp/vsextensions/terraform/2.37.6/vspackage?targetPlatform=linux-x64"
+wget -qO /tmp/terraform.vsix $PLUGIN_URL
+mv /tmp/terraform.vsix /opt/theia/plugins/
+
+# ── 6. Signal done ──
 touch /tmp/.setup-done

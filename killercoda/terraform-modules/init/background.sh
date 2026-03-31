@@ -136,5 +136,9 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
+PLUGIN_URL="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/HashiCorp/vsextensions/terraform/2.37.6/vspackage?targetPlatform=linux-x64"
+wget -qO /tmp/terraform.vsix $PLUGIN_URL
+mv /tmp/terraform.vsix /opt/theia/plugins/
+
 # ── 4. Signal done ──
 touch /tmp/.setup-done
