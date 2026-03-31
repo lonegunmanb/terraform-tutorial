@@ -103,5 +103,4 @@ fi
 install_terraform
 install_tflint
 start_localstack
-install_theia_plugin
 finish_setup

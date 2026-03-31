@@ -103,7 +103,6 @@ fi
 # ── 2. Install tools & start services ──
 install_terraform
 start_localstack
-install_theia_plugin
 
 # ── 3. Pre-apply so students have state to explore ──
 cd /root/workspace
