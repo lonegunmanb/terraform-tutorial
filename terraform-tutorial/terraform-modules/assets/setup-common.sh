@@ -9,6 +9,7 @@
 # Usage in background.sh:
 #   source /root/setup-common.sh
 #   install_terraform
+#   install_awscli        # optional — AWS CLI v2 + awslocal wrapper
 #   install_tflint        # optional — only in scenarios that need it
 #   start_localstack
 #   install_theia_plugin
@@ -40,6 +41,24 @@ install_tflint() {
     && rm -f /tmp/tflint.zip
 
   tflint --version || echo "WARNING: tflint install failed"
+}
+
+install_awscli() {
+  curl --connect-timeout 10 --max-time 120 -fsSL \
+    "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" \
+    -o /tmp/awscliv2.zip \
+    && unzip -o -q /tmp/awscliv2.zip -d /tmp/ \
+    && /tmp/aws/install --update > /dev/null 2>&1 \
+    && rm -rf /tmp/awscliv2.zip /tmp/aws
+
+  # Create awslocal wrapper (equivalent to awscli-local package)
+  cat > /usr/local/bin/awslocal <<'WRAPPER'
+#!/bin/bash
+exec aws --endpoint-url=http://localhost:4566 "$@"
+WRAPPER
+  chmod +x /usr/local/bin/awslocal
+
+  aws --version || echo "WARNING: awscli install failed"
 }
 
 start_localstack() {
