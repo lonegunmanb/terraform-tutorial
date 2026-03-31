@@ -21,6 +21,12 @@
     ],
     "finish": {
       "text": "finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "workspace/main.tf", "target": "/root/workspace"},
+        {"file": "workspace/docker-compose.yml", "target": "/root/workspace"}
+      ]
     }
   },
   "backend": {

@@ -21,6 +21,15 @@
     ],
     "finish": {
       "text": "finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "workspace/main.tf", "target": "/root/workspace"},
+        {"file": "workspace/docker-compose.yml", "target": "/root/workspace"},
+        {"file": "workspace/modules/s3-bucket/main.tf", "target": "/root/workspace/modules/s3-bucket"},
+        {"file": "workspace/modules/s3-bucket/variables.tf", "target": "/root/workspace/modules/s3-bucket"},
+        {"file": "workspace/modules/s3-bucket/outputs.tf", "target": "/root/workspace/modules/s3-bucket"}
+      ]
     }
   },
   "backend": {
