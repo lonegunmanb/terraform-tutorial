@@ -21,26 +21,27 @@ provider "aws" {
   s3_use_path_style           = true
 
   endpoints {
-    s3       = "http://localhost:4566"
-    iam      = "http://localhost:4566"
-    dynamodb = "http://localhost:4566"
-    sts      = "http://localhost:4566"
-    ec2      = "http://localhost:4566"
+    ec2 = "http://localhost:4566"
+    sts = "http://localhost:4566"
   }
 }
 
-# Example: Create an S3 bucket
-resource "aws_s3_bucket" "tutorial" {
-  bucket = "my-terraform-tutorial-bucket"
+# Create an EC2 instance
+resource "aws_instance" "tutorial" {
+  ami           = "ami-0c55b159cbfafe1f0"
+  instance_type = "t2.micro"
 
   tags = {
-    Name        = "Tutorial Bucket"
-    Environment = "Lab"
-    ManagedBy   = "Terraform"
+    Name = "TerraformTutorial"
   }
 }
 
-output "bucket_name" {
-  value       = aws_s3_bucket.tutorial.bucket
-  description = "The name of the S3 bucket created by Terraform"
+output "instance_id" {
+  value       = aws_instance.tutorial.id
+  description = "The ID of the EC2 instance"
+}
+
+output "instance_type" {
+  value       = aws_instance.tutorial.instance_type
+  description = "The instance type of the EC2 instance"
 }

@@ -1,21 +1,53 @@
-# 第三步：应用变更 (Apply)
+# 第三步：修改配置
 
-确认 plan 符合预期后，执行 apply 将变更应用到环境：
+现在让我们修改虚拟机的实例类型，看看 Terraform 如何处理配置变更。
+
+## 更改实例类型
+
+用 `sed` 命令将 `main.tf` 中的实例类型从 `t2.micro` 改为 `t2.small`：
+
+```bash
+sed -i 's/instance_type = "t2.micro"/instance_type = "t2.small"/' main.tf
+```
+
+确认修改成功：
+
+```bash
+grep instance_type main.tf
+```
+
+你应该能看到 `instance_type = "t2.small"`。
+
+## 预览变更
+
+先用 `plan` 查看 Terraform 打算做什么：
+
+```bash
+terraform plan
+```
+
+注意输出中的 `~` 符号——它表示资源将被**就地修改**（in-place update）。Terraform 检测到 `instance_type` 从 `t2.micro` 变为 `t2.small`。
+
+## 应用变更
 
 ```bash
 terraform apply -auto-approve
 ```
 
-> `-auto-approve` 跳过了交互式确认，在生产环境中建议去掉此参数。
+输出应该显示：
 
-执行完成后，你应该能看到：
-- **"Apply complete! Resources: 1 added, 0 changed, 0 destroyed."**
-- 输出变量 `bucket_name = "my-terraform-tutorial-bucket"`
-
-验证 S3 存储桶是否真的被创建了：
-
-```bash
-aws --endpoint-url=http://localhost:4566 s3 ls
+```text
+Apply complete! Resources: 0 added, 1 changed, 0 destroyed.
 ```
 
-🎉 恭喜！你已经完成了 Terraform 的核心三步流！
+## 用 awslocal 确认变更
+
+```bash
+awslocal ec2 describe-instances \
+  --query "Reservations[*].Instances[*].[InstanceId,InstanceType,State.Name]" \
+  --output table
+```
+
+实例类型已经从 `t2.micro` 变为 `t2.small`。
+
+> 💡 Terraform 会智能判断变更类型：有些变更可以就地更新，有些则需要先销毁再重建（例如更换 AMI）。使用 `plan` 可以提前了解变更的影响。

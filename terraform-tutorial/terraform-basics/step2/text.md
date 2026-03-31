@@ -1,16 +1,31 @@
-# 第二步：预览变更 (Plan)
+# 第二步：验证幂等性
 
-执行 `plan` 命令，Terraform 会告诉你它打算做什么——但不会真正执行：
+Terraform 的一个重要特性是**幂等性**——如果基础设施已经处于期望状态，重复执行 `apply` 不会产生任何变更。
+
+## 再次执行 apply
 
 ```bash
-terraform plan
+terraform apply -auto-approve
 ```
 
-仔细阅读输出：
-- `+` 表示**将要创建**的资源
-- `-` 表示**将要销毁**的资源
-- `~` 表示**将要修改**的资源
+观察输出，你应该会看到：
 
-你应该能看到 Terraform 计划创建一个 `aws_s3_bucket.tutorial` 资源。
+```text
+No changes. Your infrastructure matches the configuration.
 
-> 💡 `plan` 是 Terraform 的"干跑模式"。在生产环境中，务必先 plan 再 apply！
+Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
+```
+
+这说明 Terraform 检测到当前状态已经与配置文件一致，没有任何变更需要执行。
+
+## 用 awslocal 再次确认
+
+```bash
+awslocal ec2 describe-instances \
+  --query "Reservations[*].Instances[*].[InstanceId,InstanceType,State.Name]" \
+  --output table
+```
+
+实例依然存在，类型仍然是 `t2.micro`，状态仍然是 `running`——没有任何变化。
+
+> 💡 幂等性是基础设施即代码（IaC）的核心优势之一。你可以放心地多次执行 `terraform apply`，Terraform 只会在需要时才进行变更。
