@@ -64,7 +64,7 @@ install_awscli() {
   aws --version || echo "WARNING: awscli install failed"
 
   # Install awscli-local (provides the 'awslocal' command)
-  pip3 install awscli-local > /dev/null 2>&1 \
+  pip3 install --break-system-packages awscli-local > /dev/null 2>&1 \
     || {
       # Fallback: create a shell wrapper if pip fails
       cat > /usr/local/bin/awslocal <<'WRAPPER'
