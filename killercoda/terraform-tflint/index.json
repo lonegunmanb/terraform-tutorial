@@ -1,0 +1,32 @@
+{
+  "title": "TFLint 代码检查",
+  "description": "使用 TFLint 检测 Terraform 代码中的问题并修复",
+  "details": {
+    "intro": {
+      "text": "intro.md"
+    },
+    "steps": [
+      {
+        "title": "初始化并运行 TFLint",
+        "text": "step1.md"
+      },
+      {
+        "title": "理解并修复问题",
+        "text": "step2.md"
+      },
+      {
+        "title": "验证修复结果",
+        "text": "step3.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

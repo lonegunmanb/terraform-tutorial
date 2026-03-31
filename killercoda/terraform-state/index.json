@@ -1,0 +1,32 @@
+{
+  "title": "Terraform 状态管理",
+  "description": "理解 Terraform 状态文件的作用，学习状态查看、移动和导入操作",
+  "details": {
+    "intro": {
+      "text": "intro.md"
+    },
+    "steps": [
+      {
+        "title": "查看状态",
+        "text": "step1.md"
+      },
+      {
+        "title": "状态操作 (mv / rm)",
+        "text": "step2.md"
+      },
+      {
+        "title": "理解状态文件结构",
+        "text": "step3.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

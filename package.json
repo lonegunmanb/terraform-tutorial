@@ -1,0 +1,16 @@
+{
+  "name": "terraform-tutorial",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vitepress dev docs",
+    "build": "vitepress build docs",
+    "preview": "vitepress preview docs",
+    "sync-sidebar": "node scripts/sync-sidebar.mjs",
+    "prebuild": "node scripts/sync-sidebar.mjs"
+  },
+  "devDependencies": {
+    "vitepress": "^1.6.4"
+  }
+}

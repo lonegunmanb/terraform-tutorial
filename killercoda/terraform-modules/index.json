@@ -1,0 +1,32 @@
+{
+  "title": "Terraform 模块化实践",
+  "description": "学习编写和使用可复用的 Terraform 模块",
+  "details": {
+    "intro": {
+      "text": "intro.md"
+    },
+    "steps": [
+      {
+        "title": "理解模块结构",
+        "text": "step1.md"
+      },
+      {
+        "title": "使用模块创建资源",
+        "text": "step2.md"
+      },
+      {
+        "title": "复用模块",
+        "text": "step3.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

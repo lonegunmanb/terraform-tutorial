@@ -1,0 +1,32 @@
+{
+  "title": "Terraform 基础：Init / Plan / Apply",
+  "description": "学习 Terraform 的核心三步工作流，使用 LocalStack 模拟 AWS 环境",
+  "details": {
+    "intro": {
+      "text": "intro.md"
+    },
+    "steps": [
+      {
+        "title": "初始化 Terraform",
+        "text": "step1.md"
+      },
+      {
+        "title": "预览变更 (Plan)",
+        "text": "step2.md"
+      },
+      {
+        "title": "应用变更 (Apply)",
+        "text": "step3.md"
+      }
+    ],
+    "finish": {
+      "text": "finish.md"
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
