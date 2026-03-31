@@ -126,8 +126,10 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
    - `source /root/setup-common.sh` to load shared functions
    - Create `/root/workspace` and seed files as fallback (wrapped in `if [ ! -f ... ]`)
    - Call shared functions: `install_terraform`, `start_localstack`, `install_theia_plugin`, `finish_setup`
+   - Optionally call `install_awscli` (AWS CLI v2 + `awslocal` wrapper) for scenarios that need AWS CLI verification
    - Optionally call `install_tflint` (only in scenarios that need it)
    - For scenarios needing pre-applied state, call `terraform init` / `terraform apply` before `finish_setup`
+   - **Debugging**: All output is captured in `/tmp/background.log`. When a Killercoda scenario fails during environment setup (e.g. `terraform apply` errors like "connection refused", tools not found), ask the user to run `cat /tmp/background.log` in the Killercoda terminal and share the output. This log contains the full trace (`set -x`) of every command executed during setup, which is essential for diagnosing issues like failed downloads, missing packages, or services not starting.
 6. The `init/foreground.sh` polls `while [ ! -f /tmp/.setup-done ]` and prints progress messages.
 7. The `assets/main.tf` must configure the AWS provider to use LocalStack endpoints (`http://localhost:4566`) with fake credentials (`access_key = "test"`, `secret_key = "test"`), skip credential validation, and set `s3_use_path_style = true`.
 8. The `assets/docker-compose.yml` must use `localstack/localstack:3` image, expose port 4566, set `SERVICES` to only the needed AWS services, and limit memory to 1536M.
@@ -138,7 +140,9 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 - **Auto-copied**: `scripts/sync-setup-common.mjs` copies it into every `terraform-tutorial/*/assets/` directory.
 - Run `npm run sync-setup` after editing, or it runs automatically via `prebuild`.
 - Do NOT edit `terraform-tutorial/*/assets/setup-common.sh` directly — changes will be overwritten.
-- Available functions: `install_terraform`, `install_tflint`, `start_localstack`, `install_theia_plugin`, `finish_setup`.
+- Available functions: `install_terraform`, `install_awscli`, `install_tflint`, `start_localstack`, `install_theia_plugin`, `finish_setup`.
+- `install_awscli` installs AWS CLI v2 (official binary) and creates an `awslocal` shell wrapper that sets `--endpoint-url=http://localhost:4566` automatically.
+- `start_localstack` auto-installs Docker Compose v2 plugin if missing before running `docker compose up -d`.
 - Versions can be overridden via env vars: `TERRAFORM_VERSION`, `TFLINT_VERSION`.
 
 ### Sidebar Auto-Sync
