@@ -121,8 +121,5 @@ cd /root/workspace
 terraform init -input=false
 terraform apply -auto-approve -input=false
 
-# ── 5. Install VS Code extension ──
-code-server --install-extension 4ops.terraform 2>/dev/null || true
-
-# ── 6. Signal done ──
+# ── 5. Signal done ──
 touch /tmp/.setup-done

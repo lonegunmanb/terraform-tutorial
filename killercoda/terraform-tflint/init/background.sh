@@ -124,8 +124,5 @@ for i in $(seq 1 30); do
   sleep 2
 done
 
-# ── 5. Install VS Code extension ──
-code-server --install-extension 4ops.terraform 2>/dev/null || true
-
-# ── 6. Signal done ──
+# ── 5. Signal done ──
 touch /tmp/.setup-done
