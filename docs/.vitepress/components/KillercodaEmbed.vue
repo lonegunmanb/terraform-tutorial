@@ -34,7 +34,6 @@ const safeSrc = isValidUrl(props.src) ? props.src : 'about:blank'
       :title="title"
       width="100%"
       height="100%"
-      sandbox="allow-scripts allow-same-origin allow-popups allow-forms"
       loading="lazy"
       @load="loading = false"
     />
