@@ -20,9 +20,9 @@ TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.14.8}"
 TFLINT_VERSION="${TFLINT_VERSION:-v0.61.0}"
 
 install_terraform() {
-  apt-get update -qq && apt-get install -y -qq unzip docker-compose-plugin > /dev/null 2>&1
+  apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
 
-  # Fallback: install compose plugin binary if apt package not available
+  # Install Docker Compose v2 plugin (binary download — apt package not available on Killercoda)
   if ! docker compose version > /dev/null 2>&1; then
     mkdir -p /usr/local/lib/docker/cli-plugins
     curl --connect-timeout 10 --max-time 120 -fsSL \
