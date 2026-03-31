@@ -78,8 +78,11 @@ fi
 # ── 2. Install tools & start services ──
 install_terraform
 
-# Install AWS CLI (via apt — lightweight, no pip overhead)
-apt-get install -y -qq awscli > /dev/null 2>&1
+# Install AWS CLI v2 (official binary — no pip/apt dependency)
+curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
+  && unzip -o -q /tmp/awscliv2.zip -d /tmp/ \
+  && /tmp/aws/install --update > /dev/null 2>&1 \
+  && rm -rf /tmp/awscliv2.zip /tmp/aws
 
 # Create awslocal wrapper (equivalent to awscli-local package)
 cat > /usr/local/bin/awslocal <<'WRAPPER'
