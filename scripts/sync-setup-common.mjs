@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 /**
- * Copies scripts/setup-common.sh into every killercoda scenario's assets/ directory.
+ * Copies scripts/setup-common.sh into every terraform-tutorial scenario's assets/ directory.
  *
  * This ensures each scenario has an identical copy of the shared setup functions.
  * The source of truth is scripts/setup-common.sh — never edit the copies in assets/.
@@ -16,7 +16,7 @@ import { fileURLToPath } from 'node:url'
 const __dirname = fileURLToPath(new URL('.', import.meta.url))
 const root = join(__dirname, '..')
 const srcFile = join(root, 'scripts', 'setup-common.sh')
-const killercodaDir = join(root, 'killercoda')
+const killercodaDir = join(root, 'terraform-tutorial')
 
 const source = readFileSync(srcFile, 'utf-8')
 

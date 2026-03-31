@@ -70,4 +70,4 @@ rule "terraform_documented_variables" {
 3. 根据提示修复代码中的问题
 4. 再次运行 `tflint` 确认所有检查通过
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman/course/killercoda/terraform-tflint~embed" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/terraform-tflint~embed" />

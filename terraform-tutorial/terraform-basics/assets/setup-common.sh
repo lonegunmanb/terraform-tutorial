@@ -52,13 +52,6 @@ start_localstack() {
   done
 }
 
-install_theia_plugin() {
-  local plugin_url="https://marketplace.visualstudio.com/_apis/public/gallery/publishers/HashiCorp/vsextensions/terraform/2.37.6/vspackage?targetPlatform=linux-x64"
-  wget -qO /tmp/terraform.vsix "$plugin_url" 2>/dev/null \
-    && mv /tmp/terraform.vsix /opt/theia/plugins/ 2>/dev/null \
-    || true
-}
-
 finish_setup() {
   touch /tmp/.setup-done
 }

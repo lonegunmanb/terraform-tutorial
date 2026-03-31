@@ -5,7 +5,7 @@
 This is an interactive Terraform tutorial website built with **VitePress** (Markdown-driven static site generator) and **Killercoda** (cloud sandbox provider). The tutorial content is written in Chinese (zh-CN).
 
 - **Frontend**: VitePress site under `docs/`, deployed to GitHub Pages via GitHub Actions.
-- **Sandbox scenarios**: Killercoda scenario definitions under `killercoda/`, each providing a real Linux terminal with Terraform + LocalStack pre-installed.
+- **Sandbox scenarios**: Killercoda scenario definitions under `terraform-tutorial/`, each providing a real Linux terminal with Terraform + LocalStack pre-installed.
 - **CI/CD**: `.github/workflows/deploy.yml` — pushes to `main` trigger `npm run build` → deploy to GitHub Pages.
 
 ## Repository Structure
@@ -24,7 +24,7 @@ docs/                              # VitePress content (Markdown files)
     components/
       KillercodaEmbed.vue          # <KillercodaEmbed> component (link button, NOT iframe)
 
-killercoda/                        # Killercoda scenario definitions
+terraform-tutorial/                # Killercoda scenario definitions
   structure.json                   # Lists all scenarios for Killercoda discovery
   terraform-basics/                # One directory per scenario
     index.json                     # Scenario metadata, step list, asset mapping, init scripts
@@ -62,7 +62,7 @@ scripts/
    ```
 2. If the chapter has a hands-on lab, link to the sandbox:
    ```markdown
-   <KillercodaEmbed src="https://killercoda.com/lonegunman/course/killercoda/<SCENARIO_NAME>" />
+   <KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/<SCENARIO_NAME>" />
    ```
    Note: Killercoda blocks iframe embedding (`X-Frame-Options: DENY`), so the component renders a link button that opens in a new tab.
 3. Run `npm run sync-sidebar` (or it runs automatically during `npm run build` via the `prebuild` hook). This updates the `// @auto-sidebar-start ... // @auto-sidebar-end` block in `config.mjs`.
@@ -71,8 +71,8 @@ scripts/
 
 Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 
-1. Create a new directory under `killercoda/<scenario-name>/`.
-2. Add the scenario to `killercoda/structure.json`:
+1. Create a new directory under `terraform-tutorial/<scenario-name>/`.
+2. Add the scenario to `terraform-tutorial/structure.json`:
    ```json
    { "path": "<scenario-name>" }
    ```
@@ -135,9 +135,9 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 ### Shared Setup Script (`setup-common.sh`)
 
 - **Source of truth**: `scripts/setup-common.sh` — edit ONLY this file for shared logic.
-- **Auto-copied**: `scripts/sync-setup-common.mjs` copies it into every `killercoda/*/assets/` directory.
+- **Auto-copied**: `scripts/sync-setup-common.mjs` copies it into every `terraform-tutorial/*/assets/` directory.
 - Run `npm run sync-setup` after editing, or it runs automatically via `prebuild`.
-- Do NOT edit `killercoda/*/assets/setup-common.sh` directly — changes will be overwritten.
+- Do NOT edit `terraform-tutorial/*/assets/setup-common.sh` directly — changes will be overwritten.
 - Available functions: `install_terraform`, `install_tflint`, `start_localstack`, `install_theia_plugin`, `finish_setup`.
 - Versions can be overridden via env vars: `TERRAFORM_VERSION`, `TFLINT_VERSION`.
 
@@ -183,4 +183,4 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 - Do NOT use `docker-compose` (v1) — use `docker compose` (v2 plugin) instead.
 - Do NOT place `background.sh`/`foreground.sh` at the scenario root — they must be in `init/` and referenced in `index.json`'s `intro` block, otherwise they will not execute.
 - Do NOT use flat step files (`step1.md`) — must be `step1/text.md` directory format.
-- Do NOT edit `killercoda/*/assets/setup-common.sh` directly — it is auto-generated from `scripts/setup-common.sh` and will be overwritten by `npm run sync-setup`.
+- Do NOT edit `terraform-tutorial/*/assets/setup-common.sh` directly — it is auto-generated from `scripts/setup-common.sh` and will be overwritten by `npm run sync-setup`.

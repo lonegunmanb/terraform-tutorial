@@ -55,4 +55,4 @@ terraform {
 3. 查看 `terraform.tfstate` 文件内容
 4. 尝试手动修改资源标签后重新 `plan`，观察状态差异
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman/course/killercoda/terraform-state~embed" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/terraform-state~embed" />

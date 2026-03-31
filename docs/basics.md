@@ -49,7 +49,7 @@ Terraform 的工作流围绕三个核心命令展开：
 3. 运行 `terraform apply -auto-approve` 创建 S3 存储桶
 4. 运行 `aws --endpoint-url=http://localhost:4566 s3 ls` 验证结果
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman/course/killercoda/terraform-basics~embed" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/terraform-basics~embed" />
 
 ::: info 关于实验环境
 沙盒已预装 Terraform CLI、TFLint 和 LocalStack。工作目录中有一份预置的 `main.tf`，配置了 LocalStack 的 Endpoint 和伪 AWS 凭证。

@@ -78,4 +78,4 @@ module "custom" {
 3. 运行 `terraform init` 和 `terraform apply`
 4. 修改模块参数后重新 `plan`，观察变更
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman/course/killercoda/terraform-modules~embed" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/terraform-modules~embed" />

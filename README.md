@@ -29,7 +29,7 @@ npm run build   # 输出到 dist/
 
 ## Killercoda 场景
 
-场景定义位于 `killercoda/` 目录。将此仓库关联到你的 [Killercoda Creator](https://killercoda.com/creator) 账号后，场景会自动同步。
+场景定义位于 `terraform-tutorial/` 目录。将此仓库关联到你的 [Killercoda Creator](https://killercoda.com/creator) 账号后，场景会自动同步。
 
 ### 配置步骤
 
