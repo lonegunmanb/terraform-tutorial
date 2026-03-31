@@ -63,12 +63,17 @@ install_awscli() {
 
   aws --version || echo "WARNING: awscli install failed"
 
+  # Disable AWS CLI pager globally so output prints directly
+  export AWS_PAGER=""
+  echo 'export AWS_PAGER=""' >> /root/.bashrc
+
   # Install awscli-local (provides the 'awslocal' command)
   pip3 install --break-system-packages awscli-local > /dev/null 2>&1 \
     || {
       # Fallback: create a shell wrapper if pip fails
       cat > /usr/local/bin/awslocal <<'WRAPPER'
 #!/bin/bash
+export AWS_PAGER=""
 exec aws --endpoint-url=http://localhost:4566 --region us-east-1 "$@"
 WRAPPER
       chmod +x /usr/local/bin/awslocal
