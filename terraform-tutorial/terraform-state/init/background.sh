@@ -102,6 +102,7 @@ fi
 
 # ── 2. Install tools & start services ──
 install_terraform
+install_awscli
 start_localstack
 
 # ── 3. Pre-apply so students have state to explore ──

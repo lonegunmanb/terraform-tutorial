@@ -1,40 +1,64 @@
-# 第二步：状态操作 (mv / rm)
+# 第二步：漂移检测
 
-### 重命名资源 (state mv)
+当有人绕过 Terraform 直接修改了资源（比如在 AWS 控制台手动改了标签），就会产生**漂移**（Drift）——真实环境与 Terraform 代码描述的期望状态不一致。
 
-假设你想把 `aws_s3_bucket.logs` 重命名为 `aws_s3_bucket.application_logs`：
+让我们模拟一次漂移，看看 Terraform 如何发现它。
 
-首先在 `main.tf` 中将 `resource "aws_s3_bucket" "logs"` 改为 `resource "aws_s3_bucket" "application_logs"`（同时更新 output 中的引用）。
+## 确认当前状态一致
 
-然后执行状态移动，告诉 Terraform "这不是删旧建新，而是改名"：
-
-```bash
-terraform state mv aws_s3_bucket.logs aws_s3_bucket.application_logs
-```
-
-验证：
+先运行 `plan` 确认当前没有差异：
 
 ```bash
-terraform state list
+cd /root/workspace
 terraform plan
 ```
 
-`plan` 应该显示 **No changes**——证明状态移动成功，没有触发资源重建。
+你应该看到 `No changes`——代码、状态文件、真实环境三者完全一致。
 
-### 从状态中移除 (state rm)
+## 在 Terraform 外部修改资源
 
-如果你想让 Terraform "忘记"某个资源（但不销毁真实资源）：
+用 `awslocal`（LocalStack 的 AWS CLI 封装）直接给 S3 存储桶添加一个新标签，模拟有人在 AWS 控制台手动操作：
 
 ```bash
-terraform state rm aws_dynamodb_table.locks
+awslocal s3api put-bucket-tagging --bucket my-app-data-bucket --tagging 'TagSet=[{Key=Name,Value=Data Bucket},{Key=Environment,Value=Lab},{Key=ManagedBy,Value=Terraform},{Key=CostCenter,Value=12345}]'
 ```
 
-再次 plan 看看会发生什么：
+验证标签已被修改：
+
+```bash
+awslocal s3api get-bucket-tagging --bucket my-app-data-bucket
+```
+
+你应该能看到多出了一个 `CostCenter: 12345` 标签——这个标签不在 Terraform 代码中。
+
+## Terraform 发现漂移
+
+再次运行 `plan`：
 
 ```bash
 terraform plan
 ```
 
-Terraform 会认为这个表需要**重新创建**，因为状态里已经没有它了。
+Terraform 检测到了漂移！它发现真实环境中的标签与代码中定义的不一致，会生成一个计划来**移除**那个手动添加的 `CostCenter` 标签，将资源恢复到代码描述的期望状态。
 
-> ⚠️ `state rm` 不会销毁真实资源，只是断开了 Terraform 的追踪。
+注意输出中的 `~` 符号，表示资源将被**就地修改**（in-place update）。
+
+## 修复漂移
+
+执行 `apply` 让 Terraform 修复漂移：
+
+```bash
+terraform apply -auto-approve
+```
+
+用 `awslocal` 验证标签已恢复：
+
+```bash
+awslocal s3api get-bucket-tagging --bucket my-app-data-bucket
+```
+
+`CostCenter` 标签已被移除，资源回到了代码描述的状态。
+
+> 💡 这就是 Terraform 状态管理的核心价值：**Terraform 通过状态文件作为记忆，对比代码与真实环境，自动发现并修复漂移**。这使得 `terraform plan` 不仅是一个部署工具，更是一个持续的合规检查工具。
+
+✅ 你已经亲手体验了漂移检测和修复的完整流程。

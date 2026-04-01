@@ -1,6 +1,6 @@
 {
   "title": "Terraform 状态管理",
-  "description": "理解 Terraform 状态文件的作用，学习状态查看、移动和导入操作",
+  "description": "深入理解 Terraform 状态文件：结构解析、漂移检测与资源删除",
   "details": {
     "intro": {
       "text": "init/init.md",
@@ -9,15 +9,15 @@
     },
     "steps": [
       {
-        "title": "查看状态",
+        "title": "探索状态文件",
         "text": "step1/text.md"
       },
       {
-        "title": "状态操作 (mv / rm)",
+        "title": "漂移检测",
         "text": "step2/text.md"
       },
       {
-        "title": "理解状态文件结构",
+        "title": "删除资源——状态文件的必要性",
         "text": "step3/text.md"
       }
     ],
