@@ -96,4 +96,4 @@ resource "aws_s3_bucket" "data" {
 2. **漂移检测** — 在 Terraform 之外修改资源，观察 Terraform 如何发现并修复漂移
 3. **删除资源** — 删除代码中的资源定义，理解为什么状态文件是不可或缺的
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/terraform-state" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-state" />

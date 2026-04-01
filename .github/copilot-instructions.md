@@ -62,7 +62,7 @@ scripts/
    ```
 2. If the chapter has a hands-on lab, link to the sandbox:
    ```markdown
-   <KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/<SCENARIO_NAME>" />
+   <KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/<SCENARIO_NAME>" />
    ```
    Note: Killercoda blocks iframe embedding (`X-Frame-Options: DENY`), so the component renders a link button that opens in a new tab.
 3. Run `npm run sync-sidebar` (or it runs automatically during `npm run build` via the `prebuild` hook). This updates the `// @auto-sidebar-start ... // @auto-sidebar-end` block in `config.mjs`.

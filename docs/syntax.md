@@ -154,7 +154,7 @@ EOF
 
 ### 🧪 动手实验
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/terraform-syntax-config-syntax" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-config-syntax" />
 
 ---
 
@@ -346,7 +346,7 @@ variable "database" {
 
 ### 🧪 动手实验
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/terraform-syntax-type" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-type" />
 
 ---
 

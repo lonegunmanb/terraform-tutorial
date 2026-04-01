@@ -89,7 +89,7 @@ awslocal ec2 describe-instances --output json
 3. **修改配置** — 将实例类型改为 `t2.small`，`plan` 查看差异，`apply` 并用 `awslocal` 确认变更
 4. **销毁** — `terraform destroy` 清理所有资源，用 `awslocal` 确认实例已消失
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman/course/terraform-tutorial/terraform-basics~embed" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-basics~embed" />
 
 ::: info 关于实验环境
 沙盒已预装 Terraform CLI、AWS CLI、awslocal 和 LocalStack（模拟 EC2）。工作目录中有一份预置的 `main.tf`，配置了 LocalStack 的 Endpoint 和伪 AWS 凭证，无需真实 AWS 账号。
