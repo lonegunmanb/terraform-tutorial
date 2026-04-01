@@ -15,9 +15,6 @@ features:
   - icon: 🚀
     title: 真实环境
     details: 每个章节内嵌 Killercoda 沙盒，预装 Terraform + LocalStack，打开即用
-  - icon: 📝
-    title: 纯 Markdown 编写
-    details: 所有教程内容用 Markdown 编写，GitHub Actions 自动构建部署
   - icon: 💰
     title: 零成本
     details: GitHub Pages 托管前端，Killercoda 提供免费算力，无需自己的服务器

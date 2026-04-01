@@ -32,13 +32,13 @@ sed -i '/resource "aws_dynamodb_table" "locks"/,/^}/d' main.tf
 sed -i '/output "lock_table"/,/^}/d' main.tf
 ```
 
-确认代码中已经没有这个资源了：
+确认代码中已经没有 DynamoDB 表的资源定义了：
 
 ```bash
-grep -c "dynamodb" main.tf
+grep "aws_dynamodb_table" main.tf
 ```
 
-输出应该是 `0`——代码中已经完全没有 DynamoDB 的定义了。
+应该没有任何输出——`resource` 和 `output` 块都已被删除，Terraform 代码中不再声明这个资源。
 
 ## Terraform 如何知道要销毁？
 

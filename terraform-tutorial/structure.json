@@ -2,7 +2,6 @@
   "items": [
     { "path": "terraform-basics" },
     { "path": "terraform-state" },
-    { "path": "terraform-tflint" },
-    { "path": "terraform-modules" }
+    { "path": "terraform-syntax" }
   ]
 }
