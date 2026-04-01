@@ -2,6 +2,7 @@
   "items": [
     { "path": "terraform-basics" },
     { "path": "terraform-state" },
-    { "path": "terraform-syntax" }
+    { "path": "terraform-syntax-config-syntax" },
+    { "path": "terraform-syntax-type" }
   ]
 }
