@@ -70,4 +70,4 @@ var.maybe_name == null
 local.display_name
 ```
 
-按 `Ctrl+C` 退出 console。
+按 Ctrl+C 退出 console。

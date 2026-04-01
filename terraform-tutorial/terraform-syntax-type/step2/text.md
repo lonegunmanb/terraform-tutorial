@@ -13,17 +13,35 @@ cat main.tf
 
 | 类型 | 描述 | 元素访问 |
 |------|------|----------|
-| `list(T)` | 有序集合，可重复 | 下标 `l[0]` |
-| `map(T)` | 键值对，键为 string | 键名 `m["key"]` |
-| `set(T)` | 无序，不重复 | 不支持下标，用 `contains()` |
+| list(T) | 有序集合，可重复 | 下标访问，如 l[0] |
+| map(T) | 键值对，键为 string | 键名访问，如 m["key"] |
+| set(T) | 无序，不重复 | 不支持下标，用 contains() |
 
-其中 `T` 是元素类型，例如 `list(string)`、`map(number)`。
+其中 T 是元素类型，例如：
+
+```hcl
+list(string)   # 字符串列表
+map(number)    # 值为数字的字典
+set(bool)      # 布尔值集合
+```
 
 ### 通配类型缩写
 
-`list` 等价于 `list(any)`，`map` 等价于 `map(any)`，`set` 等价于 `set(any)`。
+不指定元素类型时，默认使用 any 占位符：
 
-`any` 不是具体类型，而是占位符——它要求所有元素必须是同一类型。赋值时 Terraform 会自动推断实际类型，必要时进行隐式转换。例如 `["hello", 42, true]` 赋给 `list(any)` 后，所有元素会被转换为 `string`，结果为 `["hello", "42", "true"]`。
+```hcl
+list          # 等价于 list(any)
+map           # 等价于 map(any)
+set           # 等价于 set(any)
+```
+
+any 不是具体类型，而是占位符——它要求所有元素必须是**同一类型**。赋值时 Terraform 会自动推断实际类型，必要时进行隐式转换：
+
+```hcl
+# ["hello", 42, true] 赋给 list(any) 后
+# 所有元素会被转换为 string：
+# => ["hello", "42", "true"]
+```
 
 ## 运行代码观察
 
@@ -35,7 +53,7 @@ terraform plan
 
 ## ⚠️ "同一类型"的陷阱
 
-`string`、`number`、`bool` 之间可以互转，所以混在一起没问题。但一旦混入**结构完全不同的类型**（比如 `string` 和 `list`，或 `string` 和 `object`），Terraform 就无法找到一个兼容的目标类型，会直接报错。
+string、number、bool 之间可以互转，所以混在一起没问题。但一旦混入**结构完全不同的类型**（比如 string 和 list，或 string 和 object），Terraform 就无法找到一个兼容的目标类型，会直接报错。
 
 在 console 里试试这些会报错的表达式：
 
@@ -54,7 +72,18 @@ tolist(["hello", ["a", "b"]])
 tomap({name = "alice", config = { port = 8080 }})
 ```
 
-> 💡 **经验法则**：`map(any)` 的所有值必须是同一类型。如果你想让不同键存放不同类型的值（比如一个是 `string`，另一个是 `object`），应该用 `object` 而不是 `map`。这是初学者最容易踩的坑之一。
+---
+
+**经验法则**
+
+map(any) 的所有值必须是同一类型。如果你想让不同键存放不同类型的值，应该用 object 而不是 map——这是初学者最容易踩的坑之一。
+
+简单来说：
+
+- **值的类型都一样** → 用 map
+- **值的类型不一样** → 用 object
+
+---
 
 ## 用 console 交互探索
 
