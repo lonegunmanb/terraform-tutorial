@@ -101,8 +101,20 @@ name = "Hello, Terraform!"
 **字符串插值**使用 `${}` 引用表达式：
 
 ```hcl
-greeting = "Hello, ${var.name}!"
+variable "name" {
+  default = "World"
+}
+
+locals {
+  project     = "my-app"
+  environment = "dev"
+}
+
+greeting  = "Hello, ${var.name}!"
+# => "Hello, World!"
+
 full_name = "${local.project}-${local.environment}"
+# => "my-app-dev"
 ```
 
 **Heredoc** 语法用于多行字符串：

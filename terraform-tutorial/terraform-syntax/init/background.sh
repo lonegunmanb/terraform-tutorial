@@ -50,14 +50,17 @@ locals {
 output "project" {
   value       = local.project
   description = "项目名称"
+  # => "my-app"
 }
 
 output "tags" {
   value = local.tags
+  # => { Environment = "dev", Team = "platform" }
 }
 
 output "zones" {
   value = local.zones
+  # => ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
 EOTF
 fi
@@ -82,9 +85,12 @@ locals {
   greeting = "Hello, Terraform!"
 
   # ── 字符串插值：用 ${} 引用其他值 ──
+  # local.greeting = "Hello, Terraform!"，所以：
   message = "Project says: ${local.greeting}"
+  # => "Project says: Hello, Terraform!"
 
   # ── Heredoc 语法：<<EOF 保留原始缩进 ──
+  # 内容从第二行开始，保留所有缩进原样输出
   config_raw = <<EOF
 server {
   listen 80;
@@ -93,6 +99,7 @@ server {
 EOF
 
   # ── 缩进 Heredoc：<<-EOF 去除公共前导空格 ──
+  # 与上面输出相同，但允许代码中缩进对齐，更整洁
   config_clean = <<-EOF
     server {
       listen 80;
@@ -102,9 +109,11 @@ EOF
 
   # ── 转义字符 ──
   escaped = "第一行\n第二行\t带制表符"
+  # => 输出时 \n 变换行，\t 变制表符
 
   # ── 转义插值：$${} 输出字面量 ──
   literal = "这不是插值：$${not_a_ref}"
+  # => "这不是插值：${not_a_ref}"
 }
 
 output "greeting" {

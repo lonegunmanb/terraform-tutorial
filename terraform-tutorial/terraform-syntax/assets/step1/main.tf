@@ -35,12 +35,15 @@ locals {
 output "project" {
   value       = local.project
   description = "项目名称"
+  # => "my-app"
 }
 
 output "tags" {
   value = local.tags
+  # => { Environment = "dev", Team = "platform" }
 }
 
 output "zones" {
   value = local.zones
+  # => ["us-east-1a", "us-east-1b", "us-east-1c"]
 }
