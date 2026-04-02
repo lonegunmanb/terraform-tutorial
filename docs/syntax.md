@@ -352,7 +352,321 @@ variable "database" {
 
 ## 表达式
 
-<!-- TODO: 引用、算术运算、字符串模板、条件表达式、for 表达式、splat -->
+表达式是 Terraform 配置中用于计算值的核心机制。前面我们已经用到了字符串字面量、变量引用等简单表达式，本节将系统介绍 Terraform 支持的各种表达式。
+
+### 引用
+
+在 Terraform 中，可以通过以下方式引用各种命名对象的值：
+
+| 引用形式 | 含义 |
+|----------|------|
+| `var.<NAME>` | 输入变量 |
+| `local.<NAME>` | 局部值 |
+| `resource_type.name` | 资源属性 |
+| `data.data_type.name` | 数据源属性 |
+| `module.<NAME>` | 模块输出 |
+| `self` | 在 provisioner/connection 中引用当前资源 |
+| `terraform.workspace` | 当前工作区名称 |
+| `path.module` | 当前模块的文件系统路径 |
+| `path.root` | 根模块的文件系统路径 |
+| `path.cwd` | 当前工作目录的文件系统路径 |
+
+```hcl
+locals {
+  project = "demo"
+}
+
+output "info" {
+  value = "项目: ${local.project}, 工作区: ${terraform.workspace}"
+}
+```
+
+### 算术与逻辑运算符
+
+运算符要么是把两个值计算为第三个值（二元操作符），要么是把一个值转换为另一个值（一元操作符）。
+
+当一个表达式中含有多个运算符时，它们的优先级顺序为：
+
+1. `!`，`-` (负号)
+2. `*`，`/`，`%`
+3. `+`，`-` (减号)
+4. `>`，`>=`，`<`，`<=`
+5. `==`，`!=`
+6. `&&`
+7. `||`
+
+可以使用小括号覆盖默认优先级，例如 `1+2*3` 会被计算为 `7`，而 `(1+2)*3` 为 `9`。
+
+#### 算术运算符
+
+- `a + b`：返回 a 与 b 的和
+- `a - b`：返回 a 与 b 的差
+- `a * b`：返回 a 与 b 的积
+- `a / b`：返回 a 与 b 的商
+- `a % b`：返回 a 除以 b 的余数（取模），一般仅在两者为整数时有效
+- `-a`：返回 a 的相反数
+
+```hcl
+locals {
+  sum       = 3 + 4       # 7
+  remainder = 10 % 3      # 1
+  negative  = -(5)        # -5
+}
+```
+
+#### 相等性运算符
+
+- `a == b`：如果 a 与 b 类型与值都相等返回 `true`，否则返回 `false`
+- `a != b`：与 `==` 相反
+
+#### 比较运算符
+
+- `a < b`：如果 a 比 b 小则为 `true`
+- `a > b`：如果 a 比 b 大则为 `true`
+- `a <= b`：如果 a 小于等于 b 则为 `true`
+- `a >= b`：如果 a 大于等于 b 则为 `true`
+
+#### 逻辑运算符
+
+- `a || b`：a 或 b 中有至少一个为 `true` 则为 `true`
+- `a && b`：a 与 b 都为 `true` 则为 `true`
+- `!a`：如果 a 为 `true` 则为 `false`，反之亦然
+
+```hcl
+locals {
+  is_prod     = true
+  has_budget  = false
+  should_warn = local.is_prod && !local.has_budget  # true
+}
+```
+
+### 条件表达式
+
+条件表达式根据布尔条件在两个值中选择一个：
+
+```hcl
+condition ? true_val : false_val
+```
+
+如果 `condition` 为 `true`，结果是 `true_val`，否则为 `false_val`。两个候选值的类型必须相同。
+
+```hcl
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
+locals {
+  instance_type = var.environment == "prod" ? "m5.large" : "t3.micro"
+}
+```
+
+一个常见用法是用默认值替代非法值：
+
+```hcl
+# 如果 var.name 为空字符串，使用默认值
+name = var.name != "" ? var.name : "default-name"
+```
+
+::: tip
+上面的表达式推荐写为：`coalesce(var.name, "default-name")`
+:::
+
+条件表达式与 `null` 结合可以实现"可选赋值"——条件不满足时跳过赋值，使用资源属性的默认值：
+
+```hcl
+error_document = var.legacy ? "ERROR.HTM" : null
+```
+
+### 函数调用
+
+Terraform 支持在表达式中使用内建函数。通用语法是：
+
+```hcl
+函数名(参数1, 参数2, ...)
+```
+
+例如 `min` 函数接收任意多个数值参数，返回最小值：
+
+```hcl
+min(55, 3453, 2)  # => 2
+```
+
+#### 展开函数入参
+
+如果想把列表或元组的元素作为参数传递给函数，可以使用展开符 `...`：
+
+```hcl
+min([55, 2453, 2]...)  # => 2
+```
+
+展开符由三个独立的 `.` 组成，只能用在函数调用场景中。
+
+::: info 常用内建函数
+Terraform 提供了丰富的内建函数，按类别包括：
+
+- **字符串**：`upper`、`lower`、`format`、`join`、`split`、`trimspace`、`replace`、`regex`
+- **集合**：`length`、`contains`、`merge`、`flatten`、`keys`、`values`、`lookup`、`element`、`concat`、`distinct`、`sort`
+- **数值**：`min`、`max`、`abs`、`ceil`、`floor`、`log`、`pow`
+- **类型转换**：`tostring`、`tonumber`、`tobool`、`tolist`、`toset`、`tomap`
+- **编码**：`jsonencode`、`jsondecode`、`yamlencode`、`base64encode`
+- **文件**：`file`、`fileexists`、`templatefile`、`basename`、`dirname`
+- **日期**：`timestamp`、`formatdate`、`timeadd`
+- **逻辑**：`can`、`try`、`coalesce`、`coalescelist`
+
+完整列表参见 [Terraform 函数文档](https://developer.hashicorp.com/terraform/language/functions)。
+:::
+
+### 字符串模板
+
+字符串模板允许在字符串中嵌入表达式或通过循环动态构造字符串。
+
+#### 插值 (Interpolation)
+
+`${...}` 序列计算花括号之间的表达式的值，将结果转换为字符串后插入模板：
+
+```hcl
+"Hello, ${var.name}!"
+# var.name = "Juan" => "Hello, Juan!"
+```
+
+#### 指令 (Directive)
+
+`%{...}` 序列用于在字符串内部进行条件判断或遍历。
+
+**if/else/endif 指令**根据布尔表达式选择模板：
+
+```hcl
+"Hello, %{ if var.name != "" }${var.name}%{ else }unnamed%{ endif }!"
+```
+
+**for/endfor 指令**遍历集合，用每个元素渲染模板，然后拼接起来：
+
+```hcl
+<<-EOT
+%{ for ip in var.ip_list ~}
+server ${ip}
+%{ endfor ~}
+EOT
+```
+
+::: tip 去除空白的 ~ 符号
+所有模板序列的首尾都可以添加 `~` 符号。`~` 会去除模板序列相邻一侧的空白（空格和换行），常与 Heredoc 配合使用以控制输出格式。
+:::
+
+如果需要输出字面量 `${` 或 `%{`，重复第一个字符即可：`$${` 和 `%%{`。
+
+### for 表达式
+
+`for` 表达式将一种复合类型映射成另一种。输入类型中的每个元素都会被映射为一个或零个结果。
+
+**输出元组**——用方括号包裹：
+
+```hcl
+[for s in var.list : upper(s)]
+# var.list = ["hello", "world"] => ["HELLO", "WORLD"]
+```
+
+**输出对象**——用花括号包裹，使用 `=>` 分隔键值：
+
+```hcl
+{for s in var.list : s => upper(s)}
+# var.list = ["hello"] => { "hello" = "HELLO" }
+```
+
+**带过滤的 for**——添加 `if` 子句过滤元素：
+
+```hcl
+[for s in var.list : upper(s) if s != ""]
+```
+
+**遍历 map/object**——迭代器表示为两个临时变量（键和值）：
+
+```hcl
+[for k, v in var.map : "${k}=${v}"]
+```
+
+**分组 (group by)**——在输出对象时使用 `...` 将同键的值聚合为列表：
+
+```hcl
+{for s in var.list : substr(s, 0, 1) => s...}
+# ["apple", "avocado", "banana"]
+# => { "a" = ["apple", "avocado"], "b" = ["banana"] }
+```
+
+### Splat 表达式
+
+Splat 表达式提供了一种简洁的方式来提取列表中所有元素的某个属性，等价于特定模式的 `for` 表达式。
+
+假设 `var.list` 包含一组对象，每个对象有 `id` 属性，以下两种写法等价：
+
+```hcl
+# for 表达式
+[for o in var.list : o.id]
+
+# splat 表达式
+var.list[*].id
+```
+
+`[*]` 符号迭代列表中每一个元素，并返回它们在 `.` 右边的属性值。
+
+如果 splat 表达式被用于一个既不是列表又不是元组的值，该值会被自动包装成单元素列表。这在访问可能带有 `count` 参数的资源时很有用：
+
+```hcl
+# 不论 aws_instance.example 是否定义了 count，都能正确返回 id 列表
+aws_instance.example[*].id
+```
+
+::: warning 避免旧式 splat 语法
+Terraform 曾有一种使用 `.*` 而非 `[*]` 的旧式 splat 语法（如 `var.list.*.id`）。旧语法的行为与新语法不同，应尽量避免使用：
+
+```hcl
+# 旧语法等价于：
+[for o in var.list : o.interfaces][0].name
+
+# 新语法 [*] 等价于：
+[for o in var.list : o.interfaces[0].name]
+```
+
+注意右方括号的位置不同——新语法更符合直觉。
+:::
+
+### dynamic 块
+
+在资源块中，内嵌块通常是固定写死的。但某些资源类型包含可重复的内嵌块，需要根据数据动态生成。`dynamic` 块解决了这个问题：
+
+```hcl
+resource "aws_elastic_beanstalk_environment" "tfenvtest" {
+  name = "tf-test-name"
+
+  dynamic "setting" {
+    for_each = var.settings
+    content {
+      namespace = setting.value["namespace"]
+      name      = setting.value["name"]
+      value     = setting.value["value"]
+    }
+  }
+}
+```
+
+`dynamic` 块的组成部分：
+- **标签**（`"setting"`）——要生成的内嵌块类型
+- **for_each**——要迭代的复合类型值
+- **iterator**（可选）——当前迭代元素的临时变量名，默认为 `dynamic` 的标签名
+- **content**——定义生成的内嵌块的块体
+
+迭代器变量有两个属性：
+- `key`：map 时为键，list 时为下标，set 时与 value 相同
+- `value`：当前元素的值
+
+::: warning 最佳实践
+过度使用 `dynamic` 块会导致代码难以阅读和维护。建议只在构造可复用的模块代码时使用，尽可能手写内嵌块。
+:::
+
+### 🧪 动手实验
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-expression" />
 
 ---
 
