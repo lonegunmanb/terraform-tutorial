@@ -33,21 +33,23 @@ variable "db_password" {
 terraform apply -auto-approve
 ```
 
-先看方式 A——用 secret_string（普通属性）存储密码的 secret version：
+terraform state show 会隐藏 sensitive 值，显示为 (sensitive value)。要看到真实内容，需要直接查看状态文件。
+
+先看方式 A——用 secret_string（普通属性）存储密码：
 
 ```bash
-terraform state show aws_secretsmanager_secret_version.sensitive_demo
+grep -A 1 '"secret_string"' terraform.tfstate
 ```
 
-你会看到 secret_string 字段包含明文密码 "super-secret-123"。这就是 sensitive 的局限：它只遮住命令行输出，数据仍然在状态文件中。
+你会看到 secret_string 字段包含明文密码 "super-secret-123"。这就是 sensitive 的局限：它只遮住 CLI 输出，数据仍然以明文存储在状态文件中。
 
-再看方式 B——用 secret_string_wo（write-only 属性）存储密码的 secret version：
+再看方式 B——用 secret_string_wo（write-only 属性）存储密码：
 
 ```bash
-terraform state show aws_secretsmanager_secret_version.ephemeral_demo
+grep -A 1 '"secret_string_wo"' terraform.tfstate
 ```
 
-你会发现状态中没有密码值！secret_string_wo 是 write-only 属性，值只在 apply 时发送给 API，不会记录到状态文件中。
+你会发现状态文件中 secret_string_wo 的值为 null！write-only 属性只在 apply 时发送给 API，不会记录到状态文件中。
 
 ### ephemeral 资源（Terraform >= 1.10）
 
