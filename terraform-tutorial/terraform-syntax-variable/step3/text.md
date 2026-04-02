@@ -1,6 +1,6 @@
-# 第三步：敏感值与临时变量
+# 第三步：敏感值与临时资源
 
-本步骤介绍 sensitive、ephemeral、nullable 参数。
+本步骤通过对比 sensitive 和 ephemeral 两种方式，展示如何安全管理密码。
 
 ## 查看示例代码
 
@@ -9,7 +9,12 @@ cd /root/workspace/step3
 cat main.tf
 ```
 
-### sensitive 参数
+代码中用两种方式将密码存入 Secrets Manager，形成对比：
+
+- 方式 A（sensitive）：用 secret_string 存储——值会写入状态文件
+- 方式 B（ephemeral）：用 ephemeral 随机生成密码 + secret_string_wo（write-only 属性）存储——值不会写入状态文件
+
+### sensitive 变量
 
 将 sensitive 设为 true 后，Terraform 在 plan 和 apply 输出中会隐藏该变量的值：
 
@@ -20,52 +25,69 @@ variable "db_password" {
 }
 ```
 
-运行 plan 观察效果：
-
-```bash
-terraform plan
-```
-
-注意输出中 db_password 和 connection_string 都显示为 (sensitive value)——因为 connection_string 引用了 db_password，sensitive 会在表达式中传播。
-
 > 重要：sensitive 只影响命令行输出。Terraform 仍然会将敏感数据以明文记录在状态文件中。
 
-### ephemeral 参数（Terraform >= 1.10）
+### 执行 apply 并验证
 
-如果你希望敏感数据连状态文件都不写入，可以使用 ephemeral。临时变量的值在当前运行期间可用，但不会被持久化到状态文件或计划文件中：
+```bash
+terraform apply -auto-approve
+```
+
+先看方式 A——用 secret_string（普通属性）存储密码的 secret version：
+
+```bash
+terraform state show aws_secretsmanager_secret_version.sensitive_demo
+```
+
+你会看到 secret_string 字段包含明文密码 "super-secret-123"。这就是 sensitive 的局限：它只遮住命令行输出，数据仍然在状态文件中。
+
+再看方式 B——用 secret_string_wo（write-only 属性）存储密码的 secret version：
+
+```bash
+terraform state show aws_secretsmanager_secret_version.ephemeral_demo
+```
+
+你会发现状态中没有密码值！secret_string_wo 是 write-only 属性，值只在 apply 时发送给 API，不会记录到状态文件中。
+
+### ephemeral 资源（Terraform >= 1.10）
+
+列出状态中的所有资源：
+
+```bash
+terraform state list
+```
+
+你只会看到四个普通 resource，而看不到 ephemeral 资源（random_password 和 aws_secretsmanager_secret_version）。ephemeral 资源的值只在当前运行期间存在，运行结束后彻底消失。
+
+代码中使用了两个 ephemeral 资源：
 
 ```hcl
-variable "session_token" {
-  type      = string
-  ephemeral = true
+ephemeral "random_password" "db_password" {
+  length           = 16
+  override_special = "!#$%&*()-_=+[]{}<>:?"
+}
+
+ephemeral "aws_secretsmanager_secret_version" "db_password" {
+  secret_id = aws_secretsmanager_secret_version.ephemeral_demo.secret_id
 }
 ```
 
-查看代码中的 session_token 变量和 auth_header 输出：
+- random_password 每次运行时生成新密码，不持久化
+- aws_secretsmanager_secret_version 从 Secrets Manager 读回密码，也不持久化
 
-```bash
-cat main.tf | grep -A 5 ephemeral
-```
+::: tip
+在真实场景中，ephemeral 读回的密码可以传给资源的 write-only 属性（如 aws_db_instance 的 password_wo），实现端到端零持久化。
+:::
 
-ephemeral 与 sensitive 的核心区别：
+### sensitive vs ephemeral 对比
 
-| 特性 | sensitive | ephemeral |
-|------|-----------|----------|
+| 特性 | sensitive | ephemeral 资源 |
+|------|-----------|----------------|
 | plan/apply 输出中隐藏 | 是 | 是 |
 | 状态文件中记录 | 是（明文） | 否 |
 | 运行结束后可读取 | 是 | 否 |
 
-简单来说：sensitive 是"遮住眼睛"，数据仍在状态文件中；ephemeral 则彻底不持久化。
-
-临时变量只能在特定上下文中引用（locals、provider 块、provisioner、临时输出等），不能直接赋给普通资源属性——因为资源属性会写入状态文件，违背了 ephemeral 的设计意图。
-
-运行 plan 观察效果：
-
-```bash
-terraform plan
-```
-
-注意 auth_header 输出被标记为 ephemeral，不会出现在计划文件中。
+简单来说：sensitive 是"遮住眼睛"，数据仍在状态文件中；ephemeral 资源搭配 write-only 属性则彻底不持久化。
 
 ### nullable 参数
 
@@ -78,14 +100,3 @@ variable "region" {
   nullable = false
 }
 ```
-
-## 运行 plan 综合观察
-
-```bash
-terraform plan
-```
-
-观察 plan 输出中：
-- db_password 和 connection_string 显示为 (sensitive value)
-- auth_header 被标记为 ephemeral
-- region、app_name、app_label 正常显示
