@@ -95,14 +95,17 @@ variable "region" {
 }
 ```
 
-在 console 中验证：
+试试显式传入 null 值，创建一个临时的 tfvars 文件：
 
 ```bash
-terraform console
+echo 'region = null' > /tmp/null-test.tfvars
+terraform plan -var-file=/tmp/null-test.tfvars
 ```
 
-```
-var.region
-```
+观察输出中 region 的值——仍然是 "us-east-1"，而不是 null。因为 nullable = false，Terraform 会忽略 null 赋值并回退到默认值。
 
-你会看到 region 的值为 "us-east-1"。即使有人传入 null，Terraform 也会忽略并使用默认值。按 Ctrl+C 退出。
+清理临时文件：
+
+```bash
+rm /tmp/null-test.tfvars
+```
