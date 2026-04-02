@@ -40,6 +40,14 @@ variable "owner" {
   description = "资源所有者（有默认值，不会提示输入）"
 }
 
+# ── nullable = false：不允许为 null ──
+variable "region" {
+  type        = string
+  default     = "us-east-1"
+  nullable    = false
+  description = "部署区域，不允许为 null"
+}
+
 # ── 通过 var.<NAME> 引用变量 ──
 locals {
   greeting    = "Project: ${var.project}"
@@ -66,6 +74,10 @@ output "tags" {
 
 output "owner" {
   value = var.owner
+}
+
+output "region" {
+  value = var.region
 }
 
 output "greeting" {

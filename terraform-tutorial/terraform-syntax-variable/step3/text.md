@@ -90,15 +90,3 @@ ephemeral "aws_secretsmanager_secret_version" "db_password" {
 | 运行结束后可读取 | 是 | 否 |
 
 简单来说：sensitive 是"遮住眼睛"，数据仍在状态文件中；ephemeral 资源搭配 write-only 属性则彻底不持久化。
-
-### nullable 参数
-
-nullable 默认为 true，允许变量接受 null 值。设为 false 后，即使显式传入 null，Terraform 也会使用默认值：
-
-```hcl
-variable "region" {
-  type     = string
-  default  = "us-east-1"
-  nullable = false
-}
-```

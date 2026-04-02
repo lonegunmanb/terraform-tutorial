@@ -82,3 +82,27 @@ terraform plan -var="project=hello-world" -var="port=3000"
 ```
 
 观察输出——project 变成了 "hello-world"，port 变成了 3000，所有使用这些变量的表达式也随之改变。
+
+### nullable 参数
+
+nullable 默认为 true，允许变量接受 null 值。设为 false 后，即使显式传入 null，Terraform 也会使用默认值：
+
+```hcl
+variable "region" {
+  type     = string
+  default  = "us-east-1"
+  nullable = false
+}
+```
+
+在 console 中验证：
+
+```bash
+terraform console
+```
+
+```
+var.region
+```
+
+你会看到 region 的值为 "us-east-1"。即使有人传入 null，Terraform 也会忽略并使用默认值。按 Ctrl+C 退出。

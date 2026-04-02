@@ -10,12 +10,11 @@ variable "db_password" {
   description = "数据库密码（敏感值，plan/apply 输出中会被隐藏）"
 }
 
-# ── nullable = false ──
+# ── 普通变量 ──
 variable "region" {
   type        = string
   default     = "us-east-1"
-  nullable    = false
-  description = "部署区域，不允许为 null"
+  description = "部署区域"
 }
 
 # ── 普通变量 ──
