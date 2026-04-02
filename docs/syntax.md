@@ -350,9 +350,345 @@ variable "database" {
 
 ---
 
+## 表达式
+
+<!-- TODO: 引用、算术运算、字符串模板、条件表达式、for 表达式、splat -->
+
+---
+
 ## 输入变量 (variable)
 
-<!-- TODO: variable 块、类型约束、默认值、validation、sensitive -->
+输入变量是 Terraform 配置的参数化机制。把一组 Terraform 代码想象成一个函数，输入变量就是函数的入参——通过变量，我们可以让同一份代码在不同场景下创建不同的基础设施。
+
+### variable 块
+
+输入变量用 `variable` 块定义，紧跟关键字的标签是变量名：
+
+```hcl
+variable "image_id" {
+  type        = string
+  description = "机器镜像 ID"
+}
+
+variable "docker_ports" {
+  type = list(object({
+    internal = number
+    external = number
+    protocol = string
+  }))
+  default = [
+    {
+      internal = 8300
+      external = 8300
+      protocol = "tcp"
+    }
+  ]
+}
+```
+
+在代码中通过 `var.<NAME>` 引用变量值：
+
+```hcl
+resource "aws_instance" "web" {
+  ami = var.image_id
+}
+```
+
+在同一个模块（同一目录下的所有 `.tf` 文件）中，变量名必须唯一。以下关键字**不可以**作为变量名：`source`、`version`、`providers`、`count`、`for_each`、`lifecycle`、`depends_on`、`locals`。
+
+### 类型约束 (type)
+
+通过 `type` 参数限制变量接受的值的类型：
+
+```hcl
+variable "name" {
+  type = string
+}
+
+variable "ports" {
+  type = list(number)
+}
+
+variable "server" {
+  type = object({
+    name = string
+    port = number
+  })
+}
+```
+
+关于各种类型的详细说明，参见前文[类型](#类型)一节。
+
+### 默认值 (default)
+
+`default` 定义变量在未被赋值时使用的默认值：
+
+```hcl
+variable "region" {
+  type    = string
+  default = "us-east-1"
+}
+```
+
+没有默认值的变量在执行时**必须**被赋值，否则 Terraform 会在交互界面提示输入。
+
+### 描述 (description)
+
+`description` 向调用者说明变量的用途。当 Terraform 需要在命令行提示输入时，会显示这段描述：
+
+```hcl
+variable "image_id" {
+  type        = string
+  description = "The id of the machine image (AMI) to use for the server."
+}
+```
+
+```
+$ terraform apply
+var.image_id
+  The id of the machine image (AMI) to use for the server.
+
+  Enter a value:
+```
+
+::: tip
+描述应站在**使用者**的角度编写，而非维护者。描述不是代码注释——它是面向模块调用者的 API 文档。
+:::
+
+### 断言 (validation)
+
+`validation` 块允许对输入值进行自定义校验。`condition` 表达式为 `true` 时合法，为 `false` 时 Terraform 返回 `error_message` 中的错误信息：
+
+```hcl
+variable "instance_count" {
+  type = number
+
+  validation {
+    condition     = var.instance_count >= 1 && var.instance_count <= 10
+    error_message = "instance_count 必须在 1 到 10 之间。"
+  }
+}
+```
+
+结合 `can` 函数可以捕获表达式执行中的错误，常用于正则校验：
+
+```hcl
+variable "image_id" {
+  type = string
+
+  validation {
+    condition     = can(regex("^ami-", var.image_id))
+    error_message = "image_id 必须以 \"ami-\" 开头。"
+  }
+}
+```
+
+一个变量可以有**多个** `validation` 块，所有校验都必须通过：
+
+```hcl
+variable "bucket_name" {
+  type = string
+
+  validation {
+    condition     = length(var.bucket_name) >= 3 && length(var.bucket_name) <= 63
+    error_message = "长度必须在 3-63 个字符之间。"
+  }
+
+  validation {
+    condition     = can(regex("^[a-z0-9][a-z0-9.-]*[a-z0-9]$", var.bucket_name))
+    error_message = "只能包含小写字母、数字、点和连字符，且必须以字母或数字开头和结尾。"
+  }
+}
+```
+
+#### 跨变量引用
+
+自 Terraform v1.9 起，`condition` 中可以引用**其他变量**，不再局限于当前变量自身。这使得跨变量的联合校验成为可能：
+
+```hcl
+variable "min_count" {
+  type    = number
+  default = 1
+}
+
+variable "max_count" {
+  type    = number
+  default = 10
+
+  validation {
+    condition     = var.max_count >= var.min_count
+    error_message = "max_count（${var.max_count}）不能小于 min_count（${var.min_count}）。"
+  }
+}
+```
+
+::: warning 注意循环引用
+跨变量校验时，如果两个变量的 `validation` 互相引用对方，会形成循环依赖，Terraform 将报错。确保引用关系是**单向**的：
+
+```hcl
+# ✅ 单向引用：max_count 的校验引用 min_count
+variable "min_count" { type = number }
+variable "max_count" {
+  type = number
+  validation {
+    condition     = var.max_count >= var.min_count
+    error_message = "max_count 不能小于 min_count。"
+  }
+}
+
+# ❌ 循环引用：两者互相引用，会报错
+# variable "a" {
+#   validation { condition = var.a < var.b ... }
+# }
+# variable "b" {
+#   validation { condition = var.b > var.a ... }
+# }
+```
+:::
+
+### 敏感值 (sensitive)
+
+将 `sensitive` 设为 `true` 后，Terraform 在 `plan` 和 `apply` 输出中会用 `(sensitive value)` 隐藏该变量的值：
+
+```hcl
+variable "db_password" {
+  type      = string
+  sensitive = true
+}
+```
+
+```
+  + resource "aws_db_instance" "main" {
+      + password = (sensitive value)
+    }
+```
+
+::: warning
+`sensitive` 只影响命令行输出。Terraform **仍然会将敏感数据以明文记录在状态文件中**——任何能访问状态文件的人都能读取这些值。
+:::
+
+### 禁止为空 (nullable)
+
+`nullable`（默认 `true`）控制变量是否接受 `null` 值：
+
+```hcl
+variable "region" {
+  type     = string
+  default  = "us-east-1"
+  nullable = false
+}
+```
+
+当 `nullable = false` 时，即使调用者显式传入 `null`，Terraform 也会使用默认值，确保变量在模块内永远不为空。
+
+### 临时变量 (ephemeral)
+
+自 Terraform v1.10 起，可以将变量标记为 `ephemeral`。临时变量的值在当前 Terraform 运行期间可用，但**不会被记录到状态文件和计划文件中**：
+
+```hcl
+variable "session_token" {
+  type      = string
+  ephemeral = true
+}
+```
+
+这对于短生命周期的数据特别有用，例如临时令牌、会话标识符等——它们只需在执行期间存在，不应被持久化。
+
+#### ephemeral 与 sensitive 的区别
+
+| 特性 | `sensitive` | `ephemeral` |
+|------|------------|-------------|
+| plan/apply 输出中隐藏 | ✅ | ✅ |
+| 状态文件中记录 | ✅（明文） | ❌ |
+| 计划文件中记录 | ✅ | ❌ |
+| 运行结束后可读取 | ✅（从状态文件） | ❌ |
+
+简单来说：`sensitive` 只是"遮住眼睛"，数据仍然存在于状态文件中；`ephemeral` 则彻底不持久化，运行结束后数据消失。
+
+#### 引用限制
+
+临时变量只能在以下上下文中被引用，否则 Terraform 会报错：
+
+- 另一个临时变量
+- `local` 表达式
+- 临时输出值（`ephemeral = true` 的 `output`）
+- `provider` 块中的参数
+- `provisioner` 和 `connection` 块
+- `precondition` 和 `postcondition` 中的 `condition`
+
+```hcl
+variable "api_token" {
+  type      = string
+  ephemeral = true
+}
+
+# ✅ 可以在 local 中引用
+locals {
+  auth_header = "Bearer ${var.api_token}"
+}
+
+# ✅ 可以在 provider 中引用
+provider "http" {
+  token = var.api_token
+}
+
+# ❌ 不能直接赋给普通资源属性（会被写入状态文件）
+# resource "some_resource" "example" {
+#   token = var.api_token  # Error!
+# }
+```
+
+### 对输入变量赋值
+
+有四种方式为变量赋值：
+
+**1. 命令行参数 (`-var`)**
+
+```bash
+terraform apply -var="image_id=ami-abc123"
+terraform apply -var='tags={"env":"prod","team":"platform"}'
+```
+
+**2. 参数文件 (`.tfvars`)**
+
+```hcl
+# prod.tfvars
+image_id            = "ami-abc123"
+availability_zones  = ["us-east-1a", "us-east-1b"]
+```
+
+```bash
+terraform apply -var-file="prod.tfvars"
+```
+
+名为 `terraform.tfvars` 或 `*.auto.tfvars` 的文件会被**自动加载**，无需 `-var-file`。
+
+**3. 环境变量 (`TF_VAR_`)**
+
+```bash
+export TF_VAR_image_id=ami-abc123
+terraform plan
+```
+
+环境变量特别适合在 CI/CD 流水线中传递敏感数据。
+
+**4. 交互式输入**
+
+当以上方式都未提供值且变量没有默认值时，Terraform 会在终端提示输入。
+
+### 赋值优先级
+
+当多种方式同时为同一变量赋值时，后者覆盖前者（优先级从低到高）：
+
+1. 环境变量
+2. `terraform.tfvars`
+3. `terraform.tfvars.json`
+4. `*.auto.tfvars` / `*.auto.tfvars.json`（按文件名字母序）
+5. `-var` 和 `-var-file` 命令行参数（按出现顺序）
+
+### 🧪 动手实验
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-variable" />
 
 ---
 
@@ -377,12 +713,6 @@ variable "database" {
 ## 数据源 (data)
 
 <!-- TODO: data 块、查询已有资源、与 resource 的区别 -->
-
----
-
-## 表达式
-
-<!-- TODO: 引用、算术运算、字符串模板、条件表达式、for 表达式、splat -->
 
 ---
 

@@ -119,6 +119,7 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
    ```
    - Steps use `stepN/text.md` paths (directory-based, NOT flat `stepN.md`)
    - Assets use filenames relative to the `assets/` directory (NOT `workspace/main.tf`)
+   - Killercoda asset copy only uses the **basename** of `file`, placed into the `target` dir. `{"file": "step1/main.tf", "target": "/root/workspace"}` copies to `/root/workspace/main.tf` (NOT `/root/workspace/step1/main.tf`). If multiple files share the same basename they overwrite each other — set `target` to the full subdirectory path (e.g. `"target": "/root/workspace/step1"`) to avoid collisions.
    - The `background` and `foreground` keys under `intro` are what make the scripts execute
    - `setup-common.sh` MUST be the first asset, targeted to `/root` with `chmod: "+x"`
 5. The `init/background.sh` script should:
@@ -188,3 +189,4 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 - Do NOT place `background.sh`/`foreground.sh` at the scenario root — they must be in `init/` and referenced in `index.json`'s `intro` block, otherwise they will not execute.
 - Do NOT use flat step files (`step1.md`) — must be `step1/text.md` directory format.
 - Do NOT edit `terraform-tutorial/*/assets/setup-common.sh` directly — it is auto-generated from `scripts/setup-common.sh` and will be overwritten by `npm run sync-setup`.
+- Do NOT use dense inline backticks in Killercoda step files (`terraform-tutorial/*/step*/text.md`) — the Killercoda renderer injects copy-button `<span>` elements on each inline code fragment, which breaks rendering. Use plain text or fenced code blocks instead. This does NOT affect the VitePress docs (`docs/*.md`).

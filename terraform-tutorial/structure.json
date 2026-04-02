@@ -3,6 +3,7 @@
     { "path": "terraform-basics" },
     { "path": "terraform-state" },
     { "path": "terraform-syntax-config-syntax" },
-    { "path": "terraform-syntax-type" }
+    { "path": "terraform-syntax-type" },
+    { "path": "terraform-syntax-variable" }
   ]
 }
