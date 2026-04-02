@@ -26,7 +26,7 @@ variable "db_password" {
 terraform plan
 ```
 
-注意输出中 db_password 显示为 (sensitive value)，而 deployment_label 中包含了 db_password 引用的部分也会被标记为 sensitive。
+注意输出中 db_password 和 connection_string 都显示为 (sensitive value)——因为 connection_string 引用了 db_password，sensitive 会在表达式中传播。
 
 > 重要：sensitive 只影响命令行输出。Terraform 仍然会将敏感数据以明文记录在状态文件中。
 
@@ -79,13 +79,13 @@ variable "region" {
 }
 ```
 
-代码中还有一个没有默认值的变量 project_id——它将在下一步用于体验赋值方式。这一步先用 -var 提供它的值：
+## 运行 plan 综合观察
 
 ```bash
-terraform plan -var="project_id=proj-001"
+terraform plan
 ```
 
 观察 plan 输出中：
-- db_password 显示为 (sensitive value)
+- db_password 和 connection_string 显示为 (sensitive value)
 - auth_header 被标记为 ephemeral
-- 其他变量正常显示
+- region、app_name、app_label 正常显示

@@ -1,5 +1,5 @@
 # ==============================
-# Terraform 输入变量：敏感值与赋值
+# Terraform 输入变量：敏感值与临时变量
 # ==============================
 
 # ── sensitive 变量 ──
@@ -18,23 +18,11 @@ variable "region" {
   description = "部署区域，不允许为 null"
 }
 
-# ── 用于演示赋值方式的变量 ──
+# ── 普通变量（用于演示 sensitive 在表达式中的传播）──
 variable "app_name" {
   type        = string
   default     = "default-app"
-  description = "应用名称（可通过 -var、.tfvars 或环境变量赋值）"
-}
-
-variable "replica_count" {
-  type        = number
-  default     = 1
-  description = "副本数量"
-}
-
-# ── 无默认值的变量（用于演示交互式输入）──
-variable "project_id" {
-  type        = string
-  description = "项目 ID（无默认值，必须赋值，否则提示输入）"
+  description = "应用名称"
 }
 
 # ── ephemeral 临时变量（Terraform >= 1.10）──
@@ -46,10 +34,11 @@ variable "session_token" {
 }
 
 locals {
-  deployment_label = "${var.app_name}-${var.region}-x${var.replica_count}"
+  # sensitive 变量参与的表达式也会被标记为 sensitive
+  connection_string = "postgres://admin:${var.db_password}@db.${var.region}.example.com"
   # ephemeral 变量可以在 locals 中引用
-  auth_header      = "Bearer ${var.session_token}"
-  full_id          = "${var.project_id}-${var.app_name}"
+  auth_header       = "Bearer ${var.session_token}"
+  app_label         = "${var.app_name}-${var.region}"
 }
 
 output "db_password" {
@@ -65,20 +54,13 @@ output "app_name" {
   value = var.app_name
 }
 
-output "replica_count" {
-  value = var.replica_count
+output "connection_string" {
+  value     = local.connection_string
+  sensitive = true
 }
 
-output "deployment_label" {
-  value = local.deployment_label
-}
-
-output "project_id" {
-  value = var.project_id
-}
-
-output "full_id" {
-  value = local.full_id
+output "app_label" {
+  value = local.app_label
 }
 
 output "auth_header" {

@@ -5,7 +5,7 @@
 ## 进入工作目录
 
 ```bash
-cd /root/workspace/step3
+cd /root/workspace/step4
 ```
 
 代码中有一个没有默认值的变量 project_id，我们用它来逐一体验各种赋值方式。
