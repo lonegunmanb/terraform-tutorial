@@ -1,81 +1,140 @@
-# 第四步：练习与测试
+# 第四步：赋值方式与优先级
 
-综合运用前三步学到的知识，用输入变量驱动创建一个真实的 EC2 实例（运行在 LocalStack 上），然后用 terraform test 验证。
+继续使用上一步的代码，体验四种变量赋值方式和它们的优先级。
 
-## 查看练习文件
-
-```bash
-cd /root/workspace/step4
-cat exercises.tf
-```
-
-文件中有四道练习，每道都标有 >>> 在此处写入你的代码 <<< 的提示。
-
-## 练习说明
-
-### 练习 1：定义实例名称变量（带 validation）
-
-定义一个名为 instance_name 的 variable 块：
-- 类型为 string
-- 默认值为 "my-tutorial-vm"
-- 添加 validation 块：名称长度必须在 3 到 30 个字符之间（含边界）
-- error_message 为 "instance_name 长度必须在 3-30 个字符之间。"
-
-### 练习 2：定义实例类型变量（带枚举校验）
-
-定义一个名为 instance_type 的 variable 块：
-- 类型为 string
-- 默认值为 "t2.micro"
-- 添加 validation 块：只允许 "t2.micro"、"t2.small"、"t2.medium" 三个值
-- error_message 为 "instance_type 必须是 t2.micro、t2.small 或 t2.medium 之一。"
-
-### 练习 3：定义 sensitive 的标签变量
-
-定义一个名为 owner 的 variable 块：
-- 类型为 string
-- 默认值为 "ops-team"
-- 设置 sensitive = true
-
-### 练习 4：用变量创建 EC2 实例
-
-创建一个 aws_instance 资源，名称为 "exercise"：
-- ami 使用 "ami-0c55b159cbfafe1f0"
-- instance_type 使用 var.instance_type
-- tags 包含 Name = var.instance_name 和 Owner = var.owner
-
-## 编辑文件
-
-用编辑器修改 exercises.tf，完成四道练习。
-
-> 注意：不要修改 outputs.tf、provider.tf 和 tests/ 目录中的文件，它们用于自动验证你的答案。
-
-## 验证答案
-
-完成编辑后，运行测试：
+## 进入工作目录
 
 ```bash
-terraform test
+cd /root/workspace/step3
 ```
 
-如果所有测试通过，你会看到类似输出：
+代码中有一个没有默认值的变量 project_id，我们用它来逐一体验各种赋值方式。
 
-```
-tests/exercises.tftest.hcl... pass
-  run "create_instance_with_defaults"... pass
-  run "validate_instance_name_length"... pass
-  run "validate_instance_type_enum"... pass
-  run "create_instance_with_custom_vars"... pass
+## 方式 1：命令行参数 -var
 
-Success! 4 passed, 0 failed.
+```bash
+terraform plan -var="project_id=proj-001"
 ```
 
-测试做了这些事情：
+观察输出中 project_id 和 full_id 的值。再试试同时覆盖多个变量：
 
-- create_instance_with_defaults —— 用默认值真实创建 EC2 实例，验证 instance_type 和 instance_name 是否正确
-- validate_instance_name_length —— 故意传入长度为 2 的名称 "ab"，验证 validation 拦截非法输入
-- validate_instance_type_enum —— 故意传入 "t2.xlarge"，验证枚举校验
-- create_instance_with_custom_vars —— 传入自定义变量值创建另一个实例，验证变量正确传递
+```bash
+terraform plan -var="project_id=proj-001" -var="app_name=cli-app" -var="replica_count=3"
+```
 
-如果有测试失败，错误信息会告诉你哪道练习有问题，修改后重新运行 terraform test 即可。
+## 方式 2：参数文件 .tfvars
 
-✅ 所有测试通过后，你就完成了输入变量的学习！
+查看已准备好的参数文件：
+
+```bash
+cat dev.tfvars
+```
+
+使用 -var-file 指定参数文件：
+
+```bash
+terraform plan -var-file="dev.tfvars"
+```
+
+app_name 变成了 "web-frontend"，replica_count 变成了 5，project_id 变成了 "proj-dev"——这些值全部来自 dev.tfvars 文件。
+
+> 提示：名为 terraform.tfvars 或 *.auto.tfvars 的文件会被自动加载，无需 -var-file。
+
+## 方式 3：自动加载的 .auto.tfvars
+
+创建一个自动加载的参数文件并验证效果：
+
+```bash
+cat > staging.auto.tfvars <<'EOF'
+app_name      = "auto-loaded-app"
+replica_count = 7
+project_id    = "proj-auto"
+EOF
+```
+
+不需要 -var-file，Terraform 自动加载 *.auto.tfvars 文件：
+
+```bash
+terraform plan
+```
+
+观察输出：app_name 是 "auto-loaded-app"，project_id 是 "proj-auto"——全部来自自动加载的文件。
+
+用完后删除：
+
+```bash
+rm staging.auto.tfvars
+```
+
+## 方式 4：环境变量 TF_VAR_
+
+```bash
+export TF_VAR_app_name="env-app"
+export TF_VAR_replica_count=10
+export TF_VAR_project_id="proj-env"
+terraform plan
+```
+
+环境变量使用 TF_VAR_ 前缀加上变量名。这种方式特别适合在 CI/CD 中传递敏感数据。
+
+用完后清理环境变量：
+
+```bash
+unset TF_VAR_app_name TF_VAR_replica_count TF_VAR_project_id
+```
+
+## 方式 5：交互式输入
+
+当变量没有默认值且未通过其他方式赋值时，Terraform 会在终端提示输入。project_id 没有默认值，试试直接运行：
+
+```bash
+terraform plan
+```
+
+Terraform 会显示变量的 description 并等待你输入：
+
+```
+var.project_id
+  项目 ID（无默认值，必须赋值，否则提示输入）
+
+  Enter a value:
+```
+
+输入一个值（比如 "proj-interactive"）后按回车，Terraform 继续执行。
+
+## 赋值优先级
+
+当多种方式同时设置同一变量时，后者覆盖前者（优先级从低到高）：
+
+1. 环境变量
+2. terraform.tfvars
+3. terraform.tfvars.json
+4. *.auto.tfvars（按字母序）
+5. -var 和 -var-file 命令行参数
+
+动手验证——同时使用三种方式给 app_name 赋值：
+
+```bash
+export TF_VAR_app_name="from-env"
+cat > test.auto.tfvars <<'EOF'
+app_name = "from-auto-tfvars"
+EOF
+terraform plan -var="app_name=from-cli" -var="project_id=proj-test"
+```
+
+观察输出：app_name 是 "from-cli"，因为 -var 优先级最高。
+
+再去掉 -var，看 auto.tfvars 是否覆盖环境变量：
+
+```bash
+terraform plan -var="project_id=proj-test"
+```
+
+这次 app_name 是 "from-auto-tfvars"——auto.tfvars 优先级高于环境变量。
+
+清理：
+
+```bash
+unset TF_VAR_app_name
+rm test.auto.tfvars
+```

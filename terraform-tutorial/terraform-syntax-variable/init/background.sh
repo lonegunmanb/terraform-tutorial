@@ -8,7 +8,7 @@ source /root/setup-common.sh
 mkdir -p /root/workspace/step1
 mkdir -p /root/workspace/step2
 mkdir -p /root/workspace/step3
-mkdir -p /root/workspace/step4/tests
+mkdir -p /root/workspace/step5/tests
 
 # ── 2. Seed workspace files (fallback if assets copy fails) ──
 
@@ -253,6 +253,12 @@ variable "replica_count" {
   description = "副本数量"
 }
 
+# ── 无默认值的变量（用于演示交互式输入）──
+variable "project_id" {
+  type        = string
+  description = "项目 ID（无默认值，必须赋值，否则提示输入）"
+}
+
 # ── ephemeral 临时变量（Terraform >= 1.10）──
 variable "session_token" {
   type        = string
@@ -265,6 +271,7 @@ locals {
   deployment_label = "${var.app_name}-${var.region}-x${var.replica_count}"
   # ephemeral 变量可以在 locals 中引用
   auth_header      = "Bearer ${var.session_token}"
+  full_id          = "${var.project_id}-${var.app_name}"
 }
 
 output "db_password" {
@@ -288,6 +295,14 @@ output "deployment_label" {
   value = local.deployment_label
 }
 
+output "project_id" {
+  value = var.project_id
+}
+
+output "full_id" {
+  value = local.full_id
+}
+
 output "auth_header" {
   value     = local.auth_header
   ephemeral = true
@@ -299,11 +314,12 @@ if [ ! -f /root/workspace/step3/dev.tfvars ]; then
 cat > /root/workspace/step3/dev.tfvars <<'EOTF'
 app_name      = "web-frontend"
 replica_count = 5
+project_id    = "proj-dev"
 EOTF
 fi
 
-if [ ! -f /root/workspace/step4/exercises.tf ]; then
-cat > /root/workspace/step4/exercises.tf <<'EOTF'
+if [ ! -f /root/workspace/step5/exercises.tf ]; then
+cat > /root/workspace/step5/exercises.tf <<'EOTF'
 # =============================================
 # 🧪 输入变量综合练习：创建 EC2 实例
 # =============================================
@@ -375,8 +391,8 @@ cat > /root/workspace/step4/exercises.tf <<'EOTF'
 EOTF
 fi
 
-if [ ! -f /root/workspace/step4/outputs.tf ]; then
-cat > /root/workspace/step4/outputs.tf <<'EOTF'
+if [ ! -f /root/workspace/step5/outputs.tf ]; then
+cat > /root/workspace/step5/outputs.tf <<'EOTF'
 # 此文件用于测试验证，请勿修改
 
 output "check_instance_id" {
@@ -398,8 +414,8 @@ output "check_owner" {
 EOTF
 fi
 
-if [ ! -f /root/workspace/step4/provider.tf ]; then
-cat > /root/workspace/step4/provider.tf <<'EOTF'
+if [ ! -f /root/workspace/step5/provider.tf ]; then
+cat > /root/workspace/step5/provider.tf <<'EOTF'
 # 此文件用于配置 AWS Provider 连接 LocalStack，请勿修改
 
 terraform {
@@ -430,8 +446,8 @@ provider "aws" {
 EOTF
 fi
 
-if [ ! -f /root/workspace/step4/docker-compose.yml ]; then
-cat > /root/workspace/step4/docker-compose.yml <<'EOTF'
+if [ ! -f /root/workspace/step5/docker-compose.yml ]; then
+cat > /root/workspace/step5/docker-compose.yml <<'EOTF'
 services:
   localstack:
     image: localstack/localstack:3
@@ -448,9 +464,9 @@ services:
 EOTF
 fi
 
-if [ ! -f /root/workspace/step4/tests/exercises.tftest.hcl ]; then
-mkdir -p /root/workspace/step4/tests
-cat > /root/workspace/step4/tests/exercises.tftest.hcl <<'EOTF'
+if [ ! -f /root/workspace/step5/tests/exercises.tftest.hcl ]; then
+mkdir -p /root/workspace/step5/tests
+cat > /root/workspace/step5/tests/exercises.tftest.hcl <<'EOTF'
 run "create_instance_with_defaults" {
   command = apply
 
@@ -534,12 +550,12 @@ fi
 # ── 3. Install Terraform ──
 install_terraform
 
-# ── 4. Start LocalStack for step4 ──
-cd /root/workspace/step4
+# ── 4. Start LocalStack for step5 ──
+cd /root/workspace/step5
 start_localstack
 
 # ── 5. Pre-init all step directories ──
-for dir in /root/workspace/step1 /root/workspace/step2 /root/workspace/step3 /root/workspace/step4; do
+for dir in /root/workspace/step1 /root/workspace/step2 /root/workspace/step3 /root/workspace/step5; do
   cd "$dir"
   terraform init -input=false
 done

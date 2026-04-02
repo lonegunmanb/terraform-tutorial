@@ -17,12 +17,16 @@
         "text": "step2/text.md"
       },
       {
-        "title": "敏感值与赋值方式",
+        "title": "敏感值与临时变量",
         "text": "step3/text.md"
       },
       {
-        "title": "练习：用变量创建 EC2",
+        "title": "赋值方式与优先级",
         "text": "step4/text.md"
+      },
+      {
+        "title": "练习：用变量创建 EC2",
+        "text": "step5/text.md"
       }
     ],
     "finish": {
@@ -35,11 +39,11 @@
         {"file": "step2/main.tf", "target": "/root/workspace/step2"},
         {"file": "step3/main.tf", "target": "/root/workspace/step3"},
         {"file": "step3/dev.tfvars", "target": "/root/workspace/step3"},
-        {"file": "step4/exercises.tf", "target": "/root/workspace/step4"},
-        {"file": "step4/outputs.tf", "target": "/root/workspace/step4"},
-        {"file": "step4/provider.tf", "target": "/root/workspace/step4"},
-        {"file": "step4/docker-compose.yml", "target": "/root/workspace/step4"},
-        {"file": "step4/tests/exercises.tftest.hcl", "target": "/root/workspace/step4/tests"}
+        {"file": "step5/exercises.tf", "target": "/root/workspace/step5"},
+        {"file": "step5/outputs.tf", "target": "/root/workspace/step5"},
+        {"file": "step5/provider.tf", "target": "/root/workspace/step5"},
+        {"file": "step5/docker-compose.yml", "target": "/root/workspace/step5"},
+        {"file": "step5/tests/exercises.tftest.hcl", "target": "/root/workspace/step5/tests"}
       ]
     }
   },

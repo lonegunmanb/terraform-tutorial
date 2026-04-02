@@ -1,6 +1,6 @@
-# 第三步：敏感值、临时变量与赋值方式
+# 第三步：敏感值与临时变量
 
-本步骤介绍 sensitive、ephemeral、nullable 参数，以及四种变量赋值方式和优先级。
+本步骤介绍 sensitive、ephemeral、nullable 参数。
 
 ## 查看示例代码
 
@@ -79,73 +79,13 @@ variable "region" {
 }
 ```
 
-## 四种赋值方式
-
-### 方式 1：命令行参数 -var
+代码中还有一个没有默认值的变量 project_id——它将在下一步用于体验赋值方式。这一步先用 -var 提供它的值：
 
 ```bash
-terraform plan -var="app_name=cli-app" -var="replica_count=3"
+terraform plan -var="project_id=proj-001"
 ```
 
-观察 app_name 和 replica_count 的值被覆盖了。
-
-### 方式 2：参数文件 .tfvars
-
-查看已准备好的参数文件：
-
-```bash
-cat dev.tfvars
-```
-
-使用 -var-file 指定参数文件：
-
-```bash
-terraform plan -var-file="dev.tfvars"
-```
-
-app_name 变成了 "web-frontend"，replica_count 变成了 5——这些值来自 dev.tfvars 文件。
-
-> 提示：名为 terraform.tfvars 或 *.auto.tfvars 的文件会被自动加载，无需 -var-file。
-
-### 方式 3：环境变量 TF_VAR_
-
-```bash
-export TF_VAR_app_name="env-app"
-export TF_VAR_replica_count=10
-terraform plan
-```
-
-环境变量使用 TF_VAR_ 前缀加上变量名。这种方式特别适合在 CI/CD 中传递敏感数据。
-
-用完后清理环境变量：
-
-```bash
-unset TF_VAR_app_name TF_VAR_replica_count
-```
-
-### 方式 4：交互式输入
-
-当变量没有默认值且未通过其他方式赋值时，Terraform 会在终端提示输入（本示例所有变量都有默认值，所以不会触发）。
-
-## 赋值优先级
-
-当多种方式同时设置同一变量时，后者覆盖前者（优先级从低到高）：
-
-1. 环境变量
-2. terraform.tfvars
-3. terraform.tfvars.json
-4. *.auto.tfvars（按字母序）
-5. -var 和 -var-file 命令行参数
-
-验证优先级——同时使用环境变量和 -var：
-
-```bash
-export TF_VAR_app_name="from-env"
-terraform plan -var="app_name=from-cli"
-```
-
-观察输出：app_name 是 "from-cli"，因为命令行参数优先级高于环境变量。
-
-```bash
-unset TF_VAR_app_name
-```
+观察 plan 输出中：
+- db_password 显示为 (sensitive value)
+- auth_header 被标记为 ephemeral
+- 其他变量正常显示

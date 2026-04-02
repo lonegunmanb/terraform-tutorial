@@ -31,6 +31,12 @@ variable "replica_count" {
   description = "副本数量"
 }
 
+# ── 无默认值的变量（用于演示交互式输入）──
+variable "project_id" {
+  type        = string
+  description = "项目 ID（无默认值，必须赋值，否则提示输入）"
+}
+
 # ── ephemeral 临时变量（Terraform >= 1.10）──
 variable "session_token" {
   type        = string
@@ -43,6 +49,7 @@ locals {
   deployment_label = "${var.app_name}-${var.region}-x${var.replica_count}"
   # ephemeral 变量可以在 locals 中引用
   auth_header      = "Bearer ${var.session_token}"
+  full_id          = "${var.project_id}-${var.app_name}"
 }
 
 output "db_password" {
@@ -64,6 +71,14 @@ output "replica_count" {
 
 output "deployment_label" {
   value = local.deployment_label
+}
+
+output "project_id" {
+  value = var.project_id
+}
+
+output "full_id" {
+  value = local.full_id
 }
 
 output "auth_header" {
