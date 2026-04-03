@@ -1113,7 +1113,169 @@ output "instance_ip_addr" {
 
 ## 局部值 (local)
 
-<!-- TODO: locals 块、表达式计算、使用场景 -->
+我们在介绍输入变量时提到过，如果我们把一组 Terraform 代码想象成一个函数，那么输入变量就是函数的入参；函数可以有入参，也可以有返回值——输出值就是 Terraform 代码的返回值。那么局部值就相当于函数内部定义的**局部变量**。
+
+有时我们需要用一个比较复杂的表达式计算某个值，并且在多处反复使用。这时可以把这个复杂表达式赋予一个局部值，然后反复引用该局部值——避免重复，也让代码更易读、更易维护。
+
+### locals 块
+
+局部值通过 `locals` 块定义：
+
+```hcl
+locals {
+  project     = "my-app"
+  environment = "dev"
+}
+```
+
+一个 `locals` 块可以定义多个局部值。一个模块中也可以定义任意多个 `locals` 块——你可以按逻辑将局部值分组到不同的 `locals` 块中：
+
+```hcl
+# 项目信息
+locals {
+  project     = "my-app"
+  environment = "dev"
+}
+
+# 计算值
+locals {
+  full_name = "${local.project}-${local.environment}"
+  is_prod   = local.environment == "prod"
+}
+```
+
+### 引用局部值
+
+在代码中通过 `local.<NAME>` 引用局部值：
+
+```hcl
+locals {
+  project = "my-app"
+}
+
+output "project_name" {
+  value = local.project
+}
+```
+
+::: warning 注意 locals vs local
+定义时使用 `locals`（复数），引用时使用 `local`（单数）。这是一个常见的混淆点——定义块是 `locals {}`，但引用表达式是 `local.<NAME>`。
+:::
+
+局部值只能在**同一模块**内的代码中引用。
+
+### 表达式计算
+
+赋给局部值的不仅可以是简单的字面量，还可以是更复杂的表达式——引用其他资源的属性、输入变量、数据源，甚至是其他的局部值：
+
+```hcl
+variable "project" {
+  type    = string
+  default = "demo"
+}
+
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
+locals {
+  # 引用输入变量
+  full_name = "${var.project}-${var.environment}"
+
+  # 引用其他局部值
+  is_prod     = var.environment == "prod"
+  log_level   = local.is_prod ? "warn" : "debug"
+
+  # 使用函数和复杂表达式
+  common_tags = {
+    Project     = var.project
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+```
+
+### 使用场景
+
+局部值最适合在以下场景中使用：
+
+**1. 避免重复复杂表达式**
+
+当同一个表达式在多个地方使用时，用局部值提取它：
+
+```hcl
+locals {
+  common_tags = {
+    Project     = var.project
+    Environment = var.environment
+    ManagedBy   = "terraform"
+  }
+}
+
+resource "aws_s3_bucket" "data" {
+  bucket = "data-bucket"
+  tags   = local.common_tags
+}
+
+resource "aws_s3_bucket" "logs" {
+  bucket = "logs-bucket"
+  tags   = local.common_tags
+}
+```
+
+**2. 给复杂表达式起一个有意义的名字**
+
+局部值可以充当"命名表达式"，提高可读性：
+
+```hcl
+locals {
+  is_production    = var.environment == "prod"
+  needs_encryption = local.is_production || var.force_encryption
+  instance_type    = local.is_production ? "m5.large" : "t3.micro"
+}
+```
+
+**3. 预处理输入数据**
+
+```hcl
+variable "raw_cidrs" {
+  type    = list(string)
+  default = ["10.0.0.0/8", " 172.16.0.0/12 ", "192.168.0.0/16"]
+}
+
+locals {
+  # 去除每个 CIDR 的前后空格
+  clean_cidrs = [for cidr in var.raw_cidrs : trimspace(cidr)]
+}
+```
+
+::: tip 适度使用
+局部值可以帮助我们避免重复复杂的表达式，提升代码的可读性。但如果过度使用也有可能增加代码的复杂度——使得维护者需要在多个 `locals` 块之间跳转才能理解一个值的来源。
+
+适度使用局部值，仅用于反复引用同一复杂表达式的场景。当我们需要修改该表达式时，局部值将使得修改变得相当轻松。
+:::
+
+### 临时局部值 (ephemeral)
+
+自 Terraform v1.10 起，如果局部值的表达式中引用了**临时值**（如 `ephemeral = true` 的输入变量），则该局部值会**隐式**地成为临时值：
+
+```hcl
+variable "service_token" {
+  type      = string
+  ephemeral = true
+}
+
+locals {
+  session_token = "Bearer ${var.service_token}"
+}
+```
+
+`local.session_token` 隐式成为临时值，因为它依赖于临时输入变量 `var.service_token`。临时局部值不会被记录到状态文件和计划文件中，与其他临时值有相同的引用限制。
+
+### 🧪 动手实验
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-local" />
 
 ---
 
