@@ -1281,7 +1281,541 @@ locals {
 
 ## 资源 (resource)
 
-<!-- TODO: resource 块、meta-arguments (count, for_each, depends_on, lifecycle)、provisioner、dynamic 块 -->
+资源是 Terraform 最重要的组成部分。资源通过 `resource` 块来定义，一个 `resource` 可以定义一个或多个基础设施资源对象，例如 VPC、虚拟机，或是 DNS 记录、S3 存储桶等。
+
+### resource 块
+
+资源通过 `resource` 块定义。紧跟 `resource` 关键字的第一个标签是**资源类型**，第二个标签是资源的**本地名称**（Local Name）：
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-a1b2c3d4"
+  instance_type = "t2.micro"
+}
+```
+
+- **资源类型**（如 `aws_instance`）决定了被管理的基础设施对象的种类，以及该资源支持哪些参数和输出属性。资源类型名的第一个单词（下划线前）通常对应 Provider 名称——`aws_instance` 由 `aws` Provider 提供。
+- **本地名称**（如 `web`）用于在同一模块内引用该资源。类型 + 本地名称的组合在模块内必须唯一。
+- 花括号内的**块体**包含资源的参数赋值，不同资源类型有不同的可用参数，可查阅 Provider 文档了解。
+
+::: info 声明式语言
+Terraform 是声明式语言——描述的是期望的资源状态，而不是达到该状态的步骤。块的顺序和所在文件通常不重要，Terraform 根据资源间的依赖关系自动决定操作顺序。
+:::
+
+### 资源的行为
+
+对 Terraform 代码执行 `terraform apply` 时，Terraform 会：
+
+1. **创建**代码中定义但状态文件中不存在的资源
+2. **更新**状态文件中已有但与代码定义不一致的资源
+3. **销毁**状态文件中存在但代码中已删除的资源
+
+每当 Terraform 创建一个新资源，该资源的 ID 会被保存到状态文件中，使得后续可以对它进行更新或销毁。
+
+### 访问资源属性
+
+资源创建后会输出一些只读**属性**（Attribute），通常包含创建前无法预知的数据（如资源 ID、ARN 等）。在同一模块内通过 `<资源类型>.<名称>.<属性>` 引用：
+
+```hcl
+resource "aws_s3_bucket" "data" {
+  bucket = "my-data-bucket"
+}
+
+# 引用 S3 桶的 ARN 属性
+output "bucket_arn" {
+  value = aws_s3_bucket.data.arn
+}
+
+# 在其他资源中引用
+resource "aws_s3_object" "readme" {
+  bucket  = aws_s3_bucket.data.id
+  key     = "readme.txt"
+  content = "Hello from Terraform!"
+}
+```
+
+::: tip
+要了解某个资源类型的所有可用属性，查阅对应 Provider 的文档。文档中通常会分别列出参数（Argument）和属性（Attribute）。
+:::
+
+### 资源的依赖关系
+
+大部分情况下，Terraform 会通过分析表达式中的引用链自动推导资源间的依赖关系。例如上面的 `aws_s3_object.readme` 引用了 `aws_s3_bucket.data.id`，Terraform 会自动确保先创建桶再创建对象。
+
+但有时依赖关系无法从代码中推导出来——例如某个资源运行时需要另一个权限资源已经存在，但代码中并没有直接引用。这种场景需要用 `depends_on` 显式声明（见下文元参数部分）。
+
+### 元参数 (Meta-Arguments)
+
+`resource` 块支持一组特殊的**元参数**，它们可以用在所有资源类型上，改变资源的行为：
+
+| 元参数 | 用途 |
+|--------|------|
+| `depends_on` | 显式声明依赖关系 |
+| `count` | 创建多个资源实例 |
+| `for_each` | 迭代集合，为每个元素创建资源实例 |
+| `provider` | 指定非默认 Provider 实例 |
+| `lifecycle` | 自定义资源的生命周期行为 |
+
+#### depends_on
+
+`depends_on` 用于显式声明 Terraform 无法自动推导的隐含依赖关系：
+
+```hcl
+resource "aws_iam_role" "example" {
+  name               = "example"
+  assume_role_policy = "..."
+}
+
+resource "aws_iam_role_policy" "s3_access" {
+  name   = "s3-access"
+  role   = aws_iam_role.example.name
+  policy = jsonencode({
+    Statement = [{
+      Action = "s3:*"
+      Effect = "Allow"
+    }]
+  })
+}
+
+resource "aws_instance" "app" {
+  ami           = "ami-a1b2c3d4"
+  instance_type = "t2.micro"
+
+  # 代码中没有直接引用 s3_access，但运行时需要该权限，depends_on 可以确保只有当 s3 的权限配置完成后才会尝试创建虚拟机
+  depends_on = [
+    aws_iam_role_policy.s3_access,
+  ]
+}
+```
+
+::: warning
+`depends_on` 只应作为最后的手段使用。如果不得不使用，请通过注释说明原因，方便后人维护。
+:::
+
+#### count
+
+`count` 参数用于从单个 `resource` 块创建多个相似的资源实例：
+
+```hcl
+resource "aws_s3_bucket" "logs" {
+  count  = 3
+  bucket = "app-logs-${count.index}"
+}
+```
+
+`count.index` 是当前实例的索引号（从 0 开始）。声明了 `count` 的资源通过下标访问：
+
+```hcl
+# 访问第一个桶
+output "first_bucket" {
+  value = aws_s3_bucket.logs[0].id
+}
+
+# 获取所有桶的 ID
+output "all_bucket_ids" {
+  value = aws_s3_bucket.logs[*].id
+}
+```
+
+::: warning count 的陷阱
+`count` 使用数字索引标识资源。如果从列表中间删除一个元素，后续所有资源的索引都会移位，导致大量不必要的更新或重建。对于这类场景，推荐使用 `for_each`。
+:::
+
+#### for_each
+
+`for_each` 参数接受一个 `map` 或 `set(string)`，为集合中的每个元素创建一个资源实例：
+
+```hcl
+# 使用 map
+resource "aws_s3_bucket" "this" {
+  for_each = {
+    data = "my-data-bucket"
+    logs = "my-logs-bucket"
+  }
+
+  bucket = each.value
+  tags = {
+    Name = each.key
+  }
+}
+```
+
+在 `for_each` 块内通过 `each` 对象访问当前元素：
+
+- `each.key` — map 的键，或 set 中的值
+- `each.value` — map 的值，或 set 中的值
+
+声明了 `for_each` 的资源通过键访问：
+
+```hcl
+output "data_bucket_id" {
+  value = aws_s3_bucket.this["data"].id
+}
+```
+
+使用 `set(string)` 时，需要用 `toset` 转换：
+
+```hcl
+resource "aws_sqs_queue" "this" {
+  for_each = toset(["orders", "notifications", "events"])
+  name     = "${each.key}-queue"
+}
+```
+
+#### count 与 for_each 的选择
+
+- 资源实例**几乎完全一致**（只差一个序号）→ `count`
+- 资源实例**各有差异**，或需要稳定标识 → `for_each`
+
+`for_each` 使用键而非数字索引标识资源，删除集合中的某个元素只会影响对应的那一个资源实例，不会引起其他实例的变更。
+
+::: info count 和 for_each 不可同时使用
+一个 `resource` 块中不允许同时声明 `count` 和 `for_each`。
+:::
+
+#### provider
+
+当声明了同一类型 Provider 的多个实例（使用 `alias`）时，可以通过 `provider` 元参数指定资源使用哪个实例：
+
+```hcl
+provider "aws" {
+  region = "us-east-1"
+}
+
+provider "aws" {
+  alias  = "west"
+  region = "us-west-2"
+}
+
+resource "aws_s3_bucket" "west_bucket" {
+  provider = aws.west
+  bucket   = "my-west-bucket"
+}
+```
+
+未指定 `provider` 时，Terraform 默认使用资源类型名第一个单词对应的默认 Provider 实例。
+
+#### lifecycle
+
+`lifecycle` 块用于自定义资源的生命周期行为，嵌套在 `resource` 块内：
+
+```hcl
+resource "aws_s3_bucket" "important" {
+  bucket = "critical-data-bucket"
+
+  lifecycle {
+    prevent_destroy = true
+  }
+}
+```
+
+`lifecycle` 支持以下参数：
+
+**`create_before_destroy`** — 当资源需要被替换时，先创建新资源，再销毁旧资源（默认相反）：
+
+```hcl
+lifecycle {
+  create_before_destroy = true
+}
+```
+
+这在需要保持服务可用性的场景下非常有用——确保新资源就绪后再删除旧资源，避免服务中断。
+
+**`prevent_destroy`** — 阻止 Terraform 销毁该资源。如果执行计划包含销毁操作，Terraform 会报错并中止：
+
+```hcl
+lifecycle {
+  prevent_destroy = true
+}
+```
+
+这是一种安全机制，适用于数据库、存储桶等不应被意外删除的资源。注意：`prevent_destroy` 只在 `resource` 块存在时生效——如果直接删除整个 `resource` 块，Terraform 不会阻止销毁。
+
+**`ignore_changes`** — 忽略指定属性的变更。当某些属性在资源创建后会被外部系统修改时，这可以防止 Terraform 覆盖这些变更：
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-a1b2c3d4"
+  instance_type = "t2.micro"
+
+  lifecycle {
+    ignore_changes = [
+      tags,          # 忽略 tags 的变化
+    ]
+  }
+}
+```
+
+使用 `ignore_changes = all` 可以忽略所有属性的变更——资源创建后 Terraform 不再管理它。
+
+**`replace_triggered_by`** — 当指定的引用发生变化时，强制替换该资源：
+
+```hcl
+resource "aws_instance" "web" {
+  # ...
+
+  lifecycle {
+    replace_triggered_by = [
+      null_resource.always_replace  # 当这个资源变化时，替换 web 实例
+    ]
+  }
+}
+```
+
+::: warning lifecycle 不支持动态表达式
+`lifecycle` 块中的参数值必须是**字面量**，不能使用变量（`var.xxx`）、局部值（`local.xxx`）、资源属性或任何其他引用和表达式。例如：
+
+```hcl
+# ❌ 不合法！lifecycle 参数不能引用变量
+variable "is_prod" {
+  type    = bool
+  default = true
+}
+
+resource "aws_s3_bucket" "data" {
+  bucket = "my-bucket"
+
+  lifecycle {
+    prevent_destroy = var.is_prod  # Error: Variables not allowed
+  }
+}
+```
+
+这是 Terraform 的一个已知限制——`lifecycle` 块在表达式求值之前就需要被解析，因此无法依赖运行时才确定的值。社区对此有长期的讨论（参见 [hashicorp/terraform#25534](https://github.com/hashicorp/terraform/issues/25534)），但截至目前该限制仍未解除。
+:::
+
+### Precondition 与 Postcondition
+
+自 Terraform v1.2 起，`resource` 块支持 `precondition` 和 `postcondition` 块，用于在创建/更新资源前后进行自定义断言：
+
+```hcl
+resource "aws_s3_bucket" "data" {
+  bucket = var.bucket_name
+
+  # 创建前检查
+  lifecycle {
+    precondition {
+      condition     = length(var.bucket_name) >= 3
+      error_message = "桶名长度必须至少 3 个字符。"
+    }
+
+    postcondition {
+      condition     = self.arn != ""
+      error_message = "桶创建后未返回 ARN。"
+    }
+  }
+}
+```
+
+- **`precondition`** — 在 Terraform 计算资源配置之前执行，可以引用输入变量和其他已知值
+- **`postcondition`** — 在资源创建/更新之后执行，可以通过 `self` 引用当前资源的属性
+
+### Provisioner
+
+`provisioner` 块用于在资源创建或销毁时执行额外操作（如运行脚本）。Provisioner 是 Terraform 的"逃生舱"——当 Provider 不支持某些操作时的最后手段：
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = "ami-a1b2c3d4"
+  instance_type = "t2.micro"
+
+  # 创建时执行
+  provisioner "local-exec" {
+    command = "echo ${self.private_ip} >> ip_list.txt"
+  }
+
+  # 销毁时执行
+  provisioner "local-exec" {
+    when    = destroy
+    command = "echo 'Instance destroyed' >> ip_list.txt"
+  }
+}
+```
+
+常用的 provisioner 类型：
+
+- **`local-exec`** — 在运行 Terraform 的机器上执行命令
+- **`remote-exec`** — 通过 SSH 或 WinRM 在远程资源上执行命令（需配合 `connection` 块）
+- **`file`** — 将文件或目录复制到远程资源
+
+在 provisioner 块内不能通过父资源名称引用自身，必须使用特殊的 `self` 对象。例如 `self.private_ip` 而非 `aws_instance.web.private_ip`，因为按名称引用会产生循环依赖。
+
+::: warning 慎用 Provisioner
+Terraform 官方建议尽量避免使用 provisioner，因为：
+1. Provisioner 不会被记录在状态文件中，Terraform 无法跟踪其执行状态
+2. 如果 provisioner 失败，资源会被标记为"受损"（tainted）
+3. 大多数场景可以通过 Provider 原生功能、`cloud-init`、配置管理工具等更好地实现
+
+`local-exec` provisioner 相对安全，常用于触发外部操作（如通知、记录等）。
+:::
+
+#### when — 控制执行时机
+
+`when` 参数控制 provisioner 在什么时候执行。默认值为创建时执行，设为 `destroy` 则在资源销毁时执行：
+
+```hcl
+resource "aws_instance" "web" {
+  # ...
+
+  # 创建时执行（默认行为，可省略 when）
+  provisioner "local-exec" {
+    command = "echo 'Created ${self.id}' >> deploy.log"
+  }
+
+  # 销毁时执行
+  provisioner "local-exec" {
+    when    = destroy
+    command = "echo 'Destroying ${self.id}' >> deploy.log"
+  }
+}
+```
+
+**创建时预置器**（Creation-time provisioner）——如果失败，Terraform 会将资源标记为受损（tainted），下次 `apply` 时会销毁并重新创建该资源。这是因为失败的 provisioner 可能导致资源处于半配置状态，重建是唯一可靠的恢复方式。
+
+**销毁时预置器**（Destroy-time provisioner）——在资源被销毁**之前**执行。如果失败，Terraform 会报错并在下次 `apply` 时重新尝试。需要注意：
+
+- 销毁时预置器必须确保可以**安全地多次执行**（幂等性）
+- 如果资源配置了 `create_before_destroy = true`，销毁时预置器**不会执行**
+- 如果直接从配置中删除整个 `resource` 块，销毁时预置器也**不会执行**——因为 provisioner 配置随资源块一起消失了
+
+::: tip 安全删除带销毁时预置器的资源
+如果资源包含销毁时预置器，不要直接删除 `resource` 块。应分两步操作：
+1. 先设置 `count = 0`，执行 `apply` 销毁资源（此时销毁时预置器会正常执行）
+2. 再从配置中删除整个 `resource` 块
+:::
+
+#### on_failure — 失败行为
+
+默认情况下，provisioner 失败会导致 `terraform apply` 失败。可以通过 `on_failure` 参数改变行为：
+
+```hcl
+provisioner "local-exec" {
+  command    = "echo 'setup complete'"
+  on_failure = continue   # 失败时继续，不中止 apply
+}
+```
+
+- `on_failure = fail`（默认）— provisioner 失败时中止操作，资源被标记为受损
+- `on_failure = continue` — 忽略错误，继续后续操作
+
+#### 多个 provisioner
+
+一个资源可以包含多个 provisioner 块，Terraform 按定义顺序依次执行。可以在同一资源中混合使用创建时和销毁时预置器——Terraform 只会在对应的阶段执行相应的预置器。
+
+#### 无资源的 provisioner
+
+如果需要运行不与特定资源关联的 provisioner，可以搭配 `terraform_data` 资源使用：
+
+```hcl
+resource "terraform_data" "notify" {
+  triggers_replace = [aws_instance.web.id]
+
+  provisioner "local-exec" {
+    command = "notify-team.sh 'Instance ${aws_instance.web.id} deployed'"
+  }
+}
+```
+
+`terraform_data` 不管理真实的基础设施对象，但支持完整的资源生命周期，可以通过 `triggers_replace` 控制何时重新执行 provisioner。
+
+### dynamic 块
+
+在编写资源配置时，有时需要根据变量动态生成重复的嵌套块。`dynamic` 块提供了这种能力：
+
+```hcl
+variable "ingress_rules" {
+  type = list(object({
+    port        = number
+    description = string
+  }))
+  default = [
+    { port = 80,  description = "HTTP" },
+    { port = 443, description = "HTTPS" },
+    { port = 8080, description = "Alt HTTP" },
+  ]
+}
+
+resource "aws_security_group" "web" {
+  name = "web-sg"
+
+  dynamic "ingress" {
+    for_each = var.ingress_rules
+    content {
+      from_port   = ingress.value.port
+      to_port     = ingress.value.port
+      protocol    = "tcp"
+      cidr_blocks = ["0.0.0.0/0"]
+      description = ingress.value.description
+    }
+  }
+}
+```
+
+`dynamic` 块的工作方式：
+
+1. **标签**（`"ingress"`）对应要生成的嵌套块类型
+2. **`for_each`** — 要遍历的集合
+3. **`content`** — 嵌套块的内容模板
+4. 在 `content` 内通过 `<标签>.value` 访问当前元素（类似 `each.value`）
+
+可以通过 `iterator` 参数自定义迭代器变量名：
+
+```hcl
+dynamic "ingress" {
+  for_each = var.ingress_rules
+  iterator = rule        # 使用 rule 代替默认的 ingress
+  content {
+    from_port = rule.value.port
+    to_port   = rule.value.port
+    protocol  = "tcp"
+  }
+}
+```
+
+::: warning 适度使用
+`dynamic` 块虽然强大，但过度使用会严重降低代码可读性。Terraform 官方建议只在需要根据变量动态生成嵌套块时使用——如果嵌套块的数量和内容是固定的，直接写出来更清晰。
+:::
+
+### 删除资源
+
+有三种方式从 Terraform 管理中移除资源：
+
+1. **删除 `resource` 块并执行 `apply`** — Terraform 会销毁对应的实际资源
+2. **`terraform state rm`** — 仅从状态文件中移除记录，不销毁实际资源（"解除管理"）
+3. **`removed` 块**（Terraform v1.7+）— 在代码中声明某个资源不再受管理：
+
+```hcl
+removed {
+  from = aws_instance.old_server
+
+  lifecycle {
+    destroy = false   # 不销毁实际资源，只从状态中移除
+  }
+}
+```
+
+### 操作超时设置
+
+部分资源类型支持 `timeouts` 嵌套块，用于设置创建、更新、删除操作的超时时间：
+
+```hcl
+resource "aws_db_instance" "main" {
+  # ...
+
+  timeouts {
+    create = "60m"
+    delete = "2h"
+  }
+}
+```
+
+超时时间的格式是一个数字加单位后缀（`s` 秒、`m` 分钟、`h` 小时）。支持哪些操作取决于具体的资源类型。
+
+### 🧪 动手实验
+
+本节实验分为三个部分，每部分创建一个基于 LocalStack 的仿真应用：
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-resource" />
 
 ---
 
