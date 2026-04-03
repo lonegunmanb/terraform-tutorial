@@ -5,6 +5,7 @@
     { "path": "terraform-syntax-config-syntax" },
     { "path": "terraform-syntax-type" },
     { "path": "terraform-syntax-variable" },
-    { "path": "terraform-syntax-expression" }
+    { "path": "terraform-syntax-expression" },
+    { "path": "terraform-syntax-output" }
   ]
 }

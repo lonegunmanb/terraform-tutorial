@@ -13,12 +13,12 @@ Terraform 使用 HCL（HashiCorp Configuration Language）作为配置语言。H
 
 - [配置语法](#配置语法) — 块、参数、注释等基础语法元素
 - [类型](#类型) — Terraform 的类型系统：基本类型与复合类型
+- [表达式](#表达式) — 引用、运算符、条件、循环等
 - [输入变量 (variable)](#输入变量-variable) — 参数化配置，提高复用性
 - [输出值 (output)](#输出值-output) — 导出资源属性供外部使用
 - [局部值 (local)](#局部值-local) — 简化重复表达式
 - [资源 (resource)](#资源-resource) — Terraform 的核心：声明基础设施组件
 - [数据源 (data)](#数据源-data) — 查询已有资源或外部信息
-- [表达式](#表达式) — 引用、运算符、条件、循环等
 - [重载文件](#重载文件) — override 文件的用法
 - [Checks](#checks) — 自定义校验与断言
 
@@ -990,7 +990,124 @@ terraform plan
 
 ## 输出值 (output)
 
-<!-- TODO: output 块、description、sensitive、depends_on -->
+我们在介绍输入变量时提到过，如果我们把一组 Terraform 代码想象成一个函数，那么输入变量就是函数的入参；函数可以有入参，也可以有返回值——输出值就是 Terraform 代码的返回值。
+
+与大部分语言的函数只支持单返回值不同，Terraform 支持**多返回值**。`apply` 成功后，命令行会输出所有定义的输出值。也可以随时通过 `terraform output` 命令查看当前状态文件中的输出值。
+
+### output 块
+
+输出值使用 `output` 块定义，紧跟关键字的标签是输出名称：
+
+```hcl
+output "instance_ip_addr" {
+  value = aws_instance.server.private_ip
+}
+```
+
+`value` 参数是必填的，可以是任意合法的表达式——资源属性、变量引用、函数调用等。在同一个模块内，所有输出值的名称必须唯一。
+
+::: info
+输出值只有在执行 `terraform apply` 后才会被计算，仅执行 `terraform plan` 并不会计算输出值。Terraform 代码中也无法引用本目录下定义的输出值。
+:::
+
+### 描述 (description)
+
+与输入变量一样，`description` 向调用者说明输出值的含义：
+
+```hcl
+output "instance_ip_addr" {
+  value       = aws_instance.server.private_ip
+  description = "The private IP address of the main server instance."
+}
+```
+
+::: tip
+描述应站在**使用者**的角度编写——它是面向模块调用者的 API 文档。
+:::
+
+### 断言 (precondition)
+
+自 Terraform v1.2.0 起，`output` 块支持 `precondition` 块。与 `variable` 的 `validation` 类似，`precondition` 确保输出值满足某种约束。Terraform 在计算 `value` 表达式**之前**执行 `precondition` 检查，可以防止不合法的值被写入状态文件：
+
+```hcl
+output "api_endpoint" {
+  value = "https://${aws_instance.web.public_ip}:8443/"
+
+  precondition {
+    condition     = aws_instance.web.public_ip != ""
+    error_message = "Web 实例没有分配公网 IP 地址。"
+  }
+}
+```
+
+### 在命令行输出中隐藏值 (sensitive)
+
+将 `sensitive` 设为 `true` 后，`terraform apply` 成功后会打印 `<sensitive>` 代替真实值；`terraform output` 也会显示 `<sensitive>`，但 `terraform output -json` 仍可看到实际值：
+
+```hcl
+output "db_password" {
+  value     = aws_db_instance.main.password
+  sensitive = true
+}
+```
+
+```
+Outputs:
+
+db_password = <sensitive>
+```
+
+::: warning
+`sensitive` 只影响命令行输出。输出值仍然会以明文记录在状态文件中——任何有权限读取状态文件的人都能读取敏感数据。
+:::
+
+### 临时值 (ephemeral)
+
+自 Terraform v1.10 起，可以在**子模块**中将 `output` 标记为 `ephemeral`。临时输出的值在 `plan` 和 `apply` 期间可用，但**不会被记录到状态文件和计划文件中**，适合传递凭据、令牌等短生命周期数据：
+
+```hcl
+# modules/db/main.tf
+output "secret_id" {
+  value       = aws_secretsmanager_secret.example.id
+  description = "Temporary secret ID for accessing database."
+  ephemeral   = true
+}
+```
+
+临时输出只能在以下上下文中被引用：
+
+- 另一个临时输出值
+- 临时输入变量
+- 临时资源（ephemeral resource）
+
+::: warning
+根模块中**不可以**将 `output` 声明为 `ephemeral`。
+:::
+
+### depends_on
+
+一般来说，Terraform 会自动分析资源之间的依赖关系来决定创建顺序。但有时某些依赖关系无法通过代码分析得出，这时可以通过 `depends_on` 显式声明：
+
+```hcl
+output "instance_ip_addr" {
+  value       = aws_instance.server.private_ip
+  description = "The private IP address of the main server instance."
+
+  depends_on = [
+    # Security group rule must be created before this IP address could
+    # actually be used, otherwise the services will be unreachable.
+    aws_security_group_rule.local_access,
+  ]
+}
+```
+
+::: warning
+`output` 很少需要 `depends_on`，它只应作为最后的手段使用。如果不得不使用，请务必通过注释说明原因，方便后人维护。
+:::
+
+### 🧪 动手实验
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-output" />
 
 ---
 
