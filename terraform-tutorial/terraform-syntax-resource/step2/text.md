@@ -140,6 +140,14 @@ terraform graph | grep -E 'main_queue|dead_letter|app_queue|setup_step'
 
 规则：能用隐式依赖（属性引用）就不要用 `depends_on`。只有当依赖关系无法通过代码引用表达时，才需要 `depends_on`。
 
+## 清理
+
+进入下一步之前，先清理本步创建的所有资源：
+
+```bash
+terraform destroy -auto-approve
+```
+
 ## 关键点
 
 - count 适合创建几乎完全相同的资源，用数字索引区分

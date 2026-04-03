@@ -150,7 +150,7 @@ sed -i 's/prevent_destroy = true/prevent_destroy = false/' main.tf
 
 ## 清理
 
-在所有步骤完成后，可以清理创建的资源：
+完成所有实验后，清理本步创建的资源：
 
 ```bash
 terraform destroy -auto-approve

@@ -84,6 +84,22 @@ terraform plan
 terraform apply -auto-approve
 ```
 
+验证内容确实更新了：
+
+```bash
+awslocal s3 cp s3://my-tutorial-website/index.html -
+```
+
+你会看到 HTML 中已经变成了 "Hello from Terraform v2!"。
+
+## 清理
+
+进入下一步之前，先清理本步创建的所有资源：
+
+```bash
+terraform destroy -auto-approve
+```
+
 ## 关键点
 
 - resource 块有两个标签：资源类型和本地名称
