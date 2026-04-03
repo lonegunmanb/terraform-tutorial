@@ -53,3 +53,12 @@ run "check_splat" {
     error_message = "练习 4 未通过：第一个元素应为 \"alice\"（使用 splat 表达式）"
   }
 }
+
+run "check_functions" {
+  command = plan
+
+  assert {
+    condition     = output.check_fruit_summary == "APPLE, BANANA, CHERRY"
+    error_message = "练习 5 未通过：fruit_summary 应为 \"APPLE, BANANA, CHERRY\"（使用 distinct + sort + join + upper）"
+  }
+}

@@ -1,6 +1,6 @@
 # 第四步：练习与测试
 
-现在轮到你来写代码了！完成四道练习题，然后用 terraform test 验证答案。
+现在轮到你来写代码了！完成五道练习题，然后用 terraform test 验证答案。
 
 ## 查看练习文件
 
@@ -9,7 +9,7 @@ cd /root/workspace/step4
 cat exercises.tf
 ```
 
-文件中有四道练习，每道都标有 >>> 在此处写入你的代码 <<< 的提示。
+文件中有五道练习，每道都标有 >>> 在此处写入你的代码 <<< 的提示。
 
 ## 练习说明
 
@@ -45,6 +45,19 @@ cat exercises.tf
 
 期望结果：["alice", "bob", "carol"]
 
+### 练习 5：函数组合
+
+变量 fruits 已经定义好（包含重复元素）。在 locals 块中定义 fruit_summary：
+
+- 先用 distinct 去除重复元素
+- 再用 sort 排序
+- 然后用 join 以 ", " 连接
+- 最后用 upper 转为大写
+
+期望结果："APPLE, BANANA, CHERRY"
+
+提示：函数可以嵌套调用，如 upper(join(...))
+
 ## 编辑文件
 
 用编辑器修改 exercises.tf，完成四道练习。
@@ -67,8 +80,9 @@ tests/exercises.tftest.hcl... pass
   run "check_for_filter"... pass
   run "check_for_map"... pass
   run "check_splat"... pass
+  run "check_functions"... pass
 
-Success! 4 passed, 0 failed.
+Success! 5 passed, 0 failed.
 ```
 
 如果有测试失败，错误信息会告诉你哪道练习有问题，修改后重新运行 terraform test 即可。

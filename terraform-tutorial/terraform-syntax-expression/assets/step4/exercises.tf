@@ -1,7 +1,7 @@
 # =============================================
 # 🧪 表达式练习
 # =============================================
-# 完成以下四道练习，然后运行 terraform test 验证答案。
+# 完成以下五道练习，然后运行 terraform test 验证答案。
 #
 # 运行命令：
 #   terraform test
@@ -61,5 +61,23 @@ variable "users" {
 # 在 locals 块中定义 user_names：
 #   使用 splat 表达式 [*] 提取所有用户的 name 属性
 # 期望结果：["alice", "bob", "carol"]
+
+# >>> 在此处写入你的代码 <<<
+
+
+# ── 练习 5：函数组合 ──
+# 给定以下变量（已定义好，请勿修改）：
+variable "fruits" {
+  type    = list(string)
+  default = ["banana", "apple", "cherry", "apple"]
+}
+# 在 locals 块中定义 fruit_summary：
+#   1. 使用 distinct 去除重复元素
+#   2. 使用 sort 对结果排序
+#   3. 使用 join 以 ", " 连接
+#   4. 使用 upper 转为大写
+# 期望结果："APPLE, BANANA, CHERRY"
+#
+# 提示：函数可以嵌套调用，如 upper(join(...))
 
 # >>> 在此处写入你的代码 <<<
