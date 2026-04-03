@@ -618,50 +618,32 @@ aws_instance.example[*].id
 ```
 
 ::: warning 避免旧式 splat 语法
-Terraform 曾有一种使用 `.*` 而非 `[*]` 的旧式 splat 语法（如 `var.list.*.id`）。旧语法的行为与新语法不同，应尽量避免使用：
+Terraform 有一种使用 `.*` 的旧式 splat 语法。对于简单的单层属性访问（如 `var.list.*.id`），旧语法和新语法 `var.list[*].id` 结果相同。但在**链式访问嵌套属性**时，两者行为不同：
 
 ```hcl
-# 旧语法等价于：
-[for o in var.list : o.interfaces][0].name
-
-# 新语法 [*] 等价于：
-[for o in var.list : o.interfaces[0].name]
-```
-
-注意右方括号的位置不同——新语法更符合直觉。
-:::
-
-### dynamic 块
-
-在资源块中，内嵌块通常是固定写死的。但某些资源类型包含可重复的内嵌块，需要根据数据动态生成。`dynamic` 块解决了这个问题：
-
-```hcl
-resource "aws_elastic_beanstalk_environment" "tfenvtest" {
-  name = "tf-test-name"
-
-  dynamic "setting" {
-    for_each = var.settings
-    content {
-      namespace = setting.value["namespace"]
-      name      = setting.value["name"]
-      value     = setting.value["value"]
-    }
-  }
+variable "servers" {
+  default = [
+    { interfaces = [{ ip = "10.0.0.1" }, { ip = "10.0.0.2" }] },
+    { interfaces = [{ ip = "10.0.1.1" }, { ip = "10.0.1.2" }] },
+  ]
 }
+
+# 新语法 [*]：对每个元素完整求值 interfaces[0].ip
+var.servers[*].interfaces[0].ip
+# 等价于 [for s in var.servers : s.interfaces[0].ip]
+# => ["10.0.0.1", "10.0.1.1"]   ← 每个 server 的第一个接口 IP
+
+# 旧语法 .*：[0] 跳出 splat，作用在 splat 的结果列表上
+var.servers.*.interfaces[0]
+# 等价于 [for s in var.servers : s.interfaces][0]
+# => [{ ip = "10.0.0.1" }, { ip = "10.0.0.2" }]  ← 第一个 server 的所有接口
+
+var.servers.*.interfaces[0].ip
+# ❌ Error: Unsupported attribute
+# [0] 返回的是一个列表，无法再 .ip
 ```
 
-`dynamic` 块的组成部分：
-- **标签**（`"setting"`）——要生成的内嵌块类型
-- **for_each**——要迭代的复合类型值
-- **iterator**（可选）——当前迭代元素的临时变量名，默认为 `dynamic` 的标签名
-- **content**——定义生成的内嵌块的块体
-
-迭代器变量有两个属性：
-- `key`：map 时为键，list 时为下标，set 时与 value 相同
-- `value`：当前元素的值
-
-::: warning 最佳实践
-过度使用 `dynamic` 块会导致代码难以阅读和维护。建议只在构造可复用的模块代码时使用，尽可能手写内嵌块。
+简单来说：`[*]` 把后续的 `.` 和 `[]` 都应用到**每个元素**上，而 `.*` 只 splat `.` 属性访问，`[]` 下标会跳出 splat 作用在结果列表上，导致后续链式访问出错。始终使用 `[*]` 即可。
 :::
 
 ### 🧪 动手实验
@@ -1020,7 +1002,7 @@ terraform plan
 
 ## 资源 (resource)
 
-<!-- TODO: resource 块、meta-arguments (count, for_each, depends_on, lifecycle)、provisioner -->
+<!-- TODO: resource 块、meta-arguments (count, for_each, depends_on, lifecycle)、provisioner、dynamic 块 -->
 
 ---
 

@@ -116,3 +116,32 @@ locals {
 output "combined" {
   value = local.high_port_servers
 }
+
+# ── 新旧 splat 语法对比 ──
+variable "nodes" {
+  type = list(object({
+    name       = string
+    interfaces = list(object({ ip = string }))
+  }))
+  default = [
+    { name = "web", interfaces = [{ ip = "10.0.0.1" }, { ip = "10.0.0.2" }] },
+    { name = "api", interfaces = [{ ip = "10.0.1.1" }, { ip = "10.0.1.2" }] },
+  ]
+}
+
+locals {
+  # 新语法 [*]：对每个元素完整求值 interfaces[0].ip
+  first_ips_new = var.nodes[*].interfaces[0].ip
+  # => ["10.0.0.1", "10.0.1.1"]  ← 每个 node 的第一个接口 IP
+
+  # 旧语法 .*：[0] 跳出 splat，取的是结果列表的第 0 个元素
+  first_node_interfaces = var.nodes.*.interfaces[0]
+  # => [{ ip = "10.0.0.1" }, { ip = "10.0.0.2" }]  ← 第一个 node 的所有接口
+}
+
+output "splat_new_vs_legacy" {
+  value = {
+    new_syntax    = local.first_ips_new
+    legacy_syntax = local.first_node_interfaces
+  }
+}

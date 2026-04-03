@@ -66,10 +66,38 @@ var.servers[*].port
 
 输入 exit 退出。
 
+## 新旧 splat 语法对比
+
+代码中定义了一个包含嵌套 interfaces 的 nodes 变量。运行 terraform plan 后，观察 splat_new_vs_legacy 输出中两种语法的差异：
+
+- new_syntax（[*]）：每个 node 的第一个接口 IP -> ["10.0.0.1", "10.0.1.1"]
+- legacy_syntax（.*）：第一个 node 的所有接口 -> [{ip="10.0.0.1"}, {ip="10.0.0.2"}]
+
+在 console 中亲自验证：
+
+```bash
+terraform console
+```
+
+```
+var.nodes[*].interfaces[0].ip
+var.nodes.*.interfaces[0]
+var.nodes.*.interfaces[0].ip
+```
+
+你会发现：
+
+- [*] 把 [0] 和 .ip 都应用到每个元素上
+- .* 中 [0] 跳出了 splat，取的是结果列表的第 0 个元素
+- .* 后再链 .ip 会报错 Error: Unsupported attribute
+
+输入 exit 退出。
+
 ## 关键点
 
 - 方括号 [] 包裹的 for 输出元组，花括号 {} 输出对象
 - if 子句用于过滤，... 用于分组
 - splat [*] 是 for 表达式的简写，只能用于提取单一属性
+- 始终使用新语法 [*]，避免旧语法 .*
 
 ✅ 你已经掌握了 for 表达式和 splat 表达式。
