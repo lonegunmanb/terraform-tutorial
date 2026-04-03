@@ -1042,7 +1042,7 @@ output "api_endpoint" {
 
 ### 在命令行输出中隐藏值 (sensitive)
 
-将 `sensitive` 设为 `true` 后，`terraform apply` 成功后会打印 `<sensitive>` 代替真实值；`terraform output` 也会显示 `<sensitive>`，但 `terraform output -json` 仍可看到实际值：
+将 `sensitive` 设为 `true` 后，`terraform apply` 成功后会打印 `<sensitive>` 代替真实值；`terraform output` 列出所有输出时也会显示 `<sensitive>`，但指定输出名称（如 `terraform output db_password`）或使用 `terraform output -json` 时仍可看到实际值：
 
 ```hcl
 output "db_password" {

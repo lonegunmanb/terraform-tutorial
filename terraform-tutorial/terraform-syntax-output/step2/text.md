@@ -16,8 +16,8 @@ cat main.tf
 将 sensitive 设为 true 后：
 
 - terraform apply 输出中显示 `<sensitive>` 代替真实值
-- terraform output 也显示 `<sensitive>`
-- 但 terraform output -json 仍可看到实际值
+- terraform output 列出所有输出时显示 `<sensitive>`
+- 但指定输出名称（如 terraform output db_password）时会显示实际值
 
 如果输出值引用了一个 sensitive 变量，该输出也必须标记为 sensitive，否则 Terraform 会报错。
 
@@ -48,13 +48,21 @@ terraform apply -auto-approve
 terraform output database_password
 ```
 
-显示 `<sensitive>`。要看实际值：
+直接指定输出名称时，即使标记了 sensitive，Terraform 也会显示实际值。
+
+如果不指定名称，列出所有输出时，sensitive 值会被隐藏：
+
+```bash
+terraform output
+```
+
+也可以用 -json 格式输出：
 
 ```bash
 terraform output -json database_password
 ```
 
-或者用 -raw 参数（适合赋值给 shell 变量）：
+或者用 -raw 参数（不含引号，适合赋值给 shell 变量）：
 
 ```bash
 terraform output -raw database_password
@@ -90,7 +98,7 @@ Error: Resource precondition failed
 
 - sensitive 只影响命令行输出，状态文件中仍是明文
 - 引用 sensitive 变量的输出也必须标记 sensitive
-- terraform output -json 可以看到 sensitive 的实际值
+- terraform output <name> 指定名称时可以看到 sensitive 的实际值
 - precondition 在 value 表达式之前执行，可以提前拦截错误
 - precondition 保护的是状态文件中的数据一致性
 
