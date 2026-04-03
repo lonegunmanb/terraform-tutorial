@@ -1007,7 +1007,7 @@ output "instance_ip_addr" {
 `value` 参数是必填的，可以是任意合法的表达式——资源属性、变量引用、函数调用等。在同一个模块内，所有输出值的名称必须唯一。
 
 ::: info
-输出值只有在执行 `terraform apply` 后才会被计算，仅执行 `terraform plan` 并不会计算输出值。Terraform 代码中也无法引用本目录下定义的输出值。
+Terraform 代码中无法引用本模块内定义的输出值——输出值是给模块调用者或命令行使用的。
 :::
 
 ### 描述 (description)
