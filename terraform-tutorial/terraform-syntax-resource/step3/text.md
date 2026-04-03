@@ -71,7 +71,8 @@ terraform plan
 观察 plan 输出，特别注意：
 - events-table 有 3 个 attribute 块，由 dynamic 块生成
 - SNS topic 有 3 个 SQS 订阅，由 for_each 生成
-- report 桶配置了 provisioner
+
+注意：provisioner 不会在 plan 输出中显示——它们只在 apply 时实际执行。这也是 provisioner 的局限之一：Terraform 无法在计划阶段预览 provisioner 的行为。
 
 ```bash
 terraform apply -auto-approve
