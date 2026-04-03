@@ -101,7 +101,7 @@ terraform plan -var='subnet_ids=["subnet-aaa","subnet-ccc"]'
 仔细观察 plan 输出，你会看到截然不同的行为：
 
 **count 部分（`count_demo`）— 2 个变更：**
-- `count_demo[1]` 要**更新**（update in-place）— 从 count-subnet-bbb **改名**为 count-subnet-ccc
+- `count_demo[1]` 要**替换**（must be replaced）— 从 count-subnet-bbb **改名**为 count-subnet-ccc，由于队列名是不可变属性，必须先删后建
 - `count_demo[2]` 要**销毁**（destroy）
 
 **for_each 部分（`foreach_demo`）— 仅 1 个变更：**
