@@ -101,14 +101,25 @@ terraform plan -var='subnet_ids=["subnet-aaa","subnet-ccc"]'
 仔细观察 plan 输出，你会看到截然不同的行为：
 
 **count 部分（`count_demo`）— 2 个变更：**
-- `count_demo[1]` 要**替换**（must be replaced）— 从 count-subnet-bbb **改名**为 count-subnet-ccc，由于队列名是不可变属性，必须先删后建
-- `count_demo[2]` 要**销毁**（destroy）
+- `count_demo[1]`：`-/+` **替换**（must be replaced）— name 从 count-subnet-bbb 变为 count-subnet-ccc
+- `count_demo[2]`：`-` **销毁**（destroy）
 
 **for_each 部分（`foreach_demo`）— 仅 1 个变更：**
-- `foreach_demo["subnet-bbb"]` 要**销毁**（destroy）
+- `foreach_demo["subnet-bbb"]`：`-` **销毁**（destroy）
 - 其他两个完全不受影响
 
-这就是 count 的陷阱：资源按数字索引绑定。删除中间元素后，索引 1 原来对应 subnet-bbb，现在对应 subnet-ccc，导致后续所有资源都发生移位。实际效果是 subnet-ccc 的队列被**改名**，然后**多删一个**。
+注意 plan 输出中 `count_demo[1]` 前面的 `-/+` 标记和 `# forces replacement` 注释。这里涉及一个重要概念：
+
+### 就地更新 vs 替换（ForceNew）
+
+修改资源参数时，Terraform 有两种处理方式：
+
+- **就地更新**（update in-place，`~`）— 直接修改，资源不会中断。大部分参数支持就地更新。
+- **替换**（replacement，`-/+`）— 某些参数被标记为 **ForceNew**，表示该值在创建后不可变，必须销毁旧资源再创建新资源。SQS 队列的 name 就是 ForceNew 属性。
+
+`-/+` 表示默认的替换顺序：先删后建。如果资源配置了 `create_before_destroy = true`，plan 中会显示 `+/-`（先建后删），减少服务中断。
+
+回到 count 的问题：删除中间元素后，索引 1 原来对应 subnet-bbb，现在对应 subnet-ccc，导致后续所有资源都发生移位。subnet-ccc 的队列被**替换**（name 改变触发 ForceNew），然后**多删一个**——本质上影响了两个资源，而你只想删除一个。
 
 而 for_each 用有意义的键（subnet-aaa、subnet-bbb、subnet-ccc）标识每个资源，删除 subnet-bbb 只会精确地销毁那一个，其他资源完全不动。
 
