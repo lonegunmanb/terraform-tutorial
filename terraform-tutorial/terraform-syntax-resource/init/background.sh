@@ -375,7 +375,7 @@ resource "aws_dynamodb_table" "audit_log" {
   }
 
   lifecycle {
-    prevent_destroy = false  # 实验中设为 false 方便清理；生产环境应设为 true
+    prevent_destroy = false  # 设为 true 可阻止 destroy，但因不支持变量配置，实际项目中较少使用
   }
 }
 

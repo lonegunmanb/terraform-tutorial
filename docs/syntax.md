@@ -1556,7 +1556,12 @@ lifecycle {
 }
 ```
 
-这是一种安全机制，适用于数据库、存储桶等不应被意外删除的资源。注意：`prevent_destroy` 只在 `resource` 块存在时生效——如果直接删除整个 `resource` 块，Terraform 不会阻止销毁。
+这是一种安全机制，适用于数据库、存储桶等不应被意外删除的资源。但它有两个重要限制：
+
+1. `prevent_destroy` 只在 `resource` 块存在时生效——如果直接删除整个 `resource` 块，Terraform 不会阻止销毁
+2. 由于 `lifecycle` 不支持变量，`prevent_destroy` 的值只能硬编码为 `true` 或 `false`，无法根据环境动态切换（参见前文 [lifecycle 不支持动态表达式](#lifecycle) 的说明）
+
+因此在实际项目中 `prevent_destroy` 的使用并不多见——它在开发阶段会阻碍 `terraform destroy` 清理资源，而切换环境时又无法通过变量控制。
 
 **`ignore_changes`** — 忽略指定属性的变更。当某些属性在资源创建后会被外部系统修改时，这可以防止 Terraform 覆盖这些变更：
 
