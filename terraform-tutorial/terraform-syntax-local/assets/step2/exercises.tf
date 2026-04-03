@@ -27,8 +27,7 @@ variable "env" {
   default = "staging"
 }
 # 在 locals 块中定义：
-#   - full_name：值为 app_name 和 env 用 "-" 连接，如 "web-server-staging"
-#     提示：使用字符串插值 "${local.app_name}-${var.env}"
+#   - full_name：值为 local.app_name 和 var.env 用 "-" 连接，如 "web-server-staging"
 #   - is_production：当 env 等于 "prod" 时为 true，否则为 false
 
 # >>> 在此处写入你的代码 <<<
@@ -43,9 +42,8 @@ variable "users" {
 # 在 locals 块中定义：
 #   - user_count：用户数量（提示：使用 length 函数）
 #   - upper_users：将所有用户名转为大写的列表
-#     提示：[for u in var.users : upper(u)]
+#     提示：可以用 upper 函数将字符串转大写
 #   - user_tags：以用户名为键、"active" 为值的 map
-#     提示：{for u in var.users : u => "active"}
 
 # >>> 在此处写入你的代码 <<<
 
