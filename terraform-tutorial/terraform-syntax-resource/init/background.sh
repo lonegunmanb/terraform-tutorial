@@ -524,6 +524,7 @@ fi
 
 # ── 3. Install tools ──
 install_terraform
+install_awscli
 
 # ── 4. Start LocalStack ──
 start_localstack
