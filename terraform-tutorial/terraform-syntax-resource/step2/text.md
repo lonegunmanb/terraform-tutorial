@@ -123,6 +123,61 @@ terraform plan -var='subnet_ids=["subnet-aaa","subnet-ccc"]'
 
 而 for_each 用有意义的键（subnet-aaa、subnet-bbb、subnet-ccc）标识每个资源，删除 subnet-bbb 只会精确地销毁那一个，其他资源完全不动。
 
+## count/for_each 的值必须在 plan 阶段已知
+
+接下来演示另一个重要限制。创建一个新文件，用 random_integer 生成一个随机数作为 count 的值：
+
+```bash
+cat > known.tf <<'EOF'
+terraform {
+  required_providers {
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+}
+
+resource "random_integer" "num" {
+  min = 1
+  max = 5
+}
+
+resource "aws_sqs_queue" "dynamic_queues" {
+  count = random_integer.num.result
+  name  = "dynamic-queue-${count.index}"
+}
+EOF
+```
+
+看起来没问题？试试初始化并执行 plan：
+
+```bash
+terraform init
+terraform plan
+```
+
+Terraform 会报错：
+
+```
+Error: Invalid count argument
+
+  The "count" value depends on resource attributes that cannot be
+  determined until apply, so Terraform cannot predict how many
+  instances will be created.
+```
+
+这是因为 random_integer.num.result 只有在 apply 阶段（实际创建资源后）才能确定具体的数字。而 Terraform 在 plan 阶段就需要知道要管理多少个资源实例才能构建依赖图——如果数量未知，整个计划就无法生成。
+
+这个限制不仅针对直接引用。即使你通过变量间接传递，只要求值链上游最终依赖了资源输出，同样会报错。
+
+确认报错后，删除这个文件，恢复正常状态：
+
+```bash
+rm known.tf
+terraform init
+```
+
 ## depends_on：隐式 vs 显式依赖
 
 代码中有两组依赖关系对比：
@@ -164,6 +219,7 @@ terraform destroy -auto-approve
 - count 适合创建几乎完全相同的资源，用数字索引区分
 - for_each 适合每个实例有不同配置的场景，用键标识
 - for_each 比 count 更稳定 — 删除集合中的元素不会影响其他资源
+- count 和 for_each 的值必须在 plan 阶段已知，不能依赖其他资源的输出
 - depends_on 只在隐式依赖无法推导时使用
 
 完成后继续下一步。

@@ -1500,6 +1500,55 @@ resource "aws_sqs_queue" "this" {
 一个 `resource` 块中不允许同时声明 `count` 和 `for_each`。
 :::
 
+#### count 与 for_each 的值必须在 plan 阶段已知
+
+`count` 的数值和 `for_each` 的集合必须在 Terraform 执行计划（`plan`）阶段就能确定，**不能依赖于其他资源的输出属性**——因为这些属性只有在 `apply` 阶段资源实际创建后才知道。
+
+```hcl
+# ❌ 报错！count 依赖了尚未创建的资源的输出
+resource "random_integer" "num" {
+  min = 1
+  max = 5
+}
+
+resource "aws_s3_bucket" "dynamic" {
+  count  = random_integer.num.result  # Error!
+  bucket = "dynamic-bucket-${count.index}"
+}
+
+# ❌ 报错！for_each 依赖了尚未创建的资源的输出
+resource "aws_sqs_queue" "per_bucket" {
+  for_each = toset([for i in range(random_integer.num.result) : "q-${i}"])  # Error!
+  name     = each.key
+}
+```
+
+Terraform 会报错：
+
+```
+│ Error: Invalid count argument
+│ The "count" value depends on resource attributes that cannot be
+│ determined until apply, so Terraform cannot predict how many
+│ instances will be created.
+```
+
+这是因为 Terraform 需要在 `plan` 阶段就确定要管理哪些资源实例——如果实例数量或标识依赖于运行时才知道的值，Terraform 无法构建正确的依赖图。
+
+以下值可以安全地用于 `count` 和 `for_each`：
+
+- **字面量**：`count = 3`、`for_each = toset(["a", "b"])`
+- **输入变量**：`count = var.instance_count`（前提是变量本身的值在 plan 阶段已知——如果调用模块时用另一个资源的输出给变量赋值，同样会报错）
+- **局部值**：`for_each = local.config_map`（同理，局部值的表达式不能间接依赖未知的资源输出）
+- **数据源属性**（查询参数在 plan 阶段已知时）：`count = length(data.aws_availability_zones.available.names)`
+
+关键在于**整条求值链**上不能出现 apply 阶段才确定的值。例如，即使 `count` 写的是 `var.n`，但如果调用模块时 `n = aws_xxx.foo.result`，最终 `count` 仍然依赖了资源输出，Terraform 一样会报错。
+
+::: tip 解决方案
+如果确实需要根据一个资源的输出来决定另一个资源的数量，通常的做法是：
+1. 将已知的输入（如变量）作为 `count` / `for_each` 的来源，而非资源输出
+2. 将操作拆分为两个 `terraform apply`：第一次创建上游资源，第二次用 `-var` 或数据源引用其结果
+:::
+
 #### provider
 
 当声明了同一类型 Provider 的多个实例（使用 `alias`）时，可以通过 `provider` 元参数指定资源使用哪个实例：
@@ -1853,7 +1902,175 @@ resource "aws_db_instance" "main" {
 
 ## 数据源 (data)
 
-<!-- TODO: data 块、查询已有资源、与 resource 的区别 -->
+资源（`resource`）是 Terraform 中的"托管资源"——Terraform 会对其进行增删改操作。而数据源（`data`）是一种特殊的**只读**资源，它只是**查询**已存在的数据或外部信息，不会创建或修改任何基础设施对象。
+
+### data 块
+
+数据源通过 `data` 块声明。紧跟 `data` 关键字的第一个标签是**数据源类型**，第二个标签是**本地名称**：
+
+```hcl
+data "aws_ami" "latest_ubuntu" {
+  most_recent = true
+
+  owners = ["099720109477"]  # Canonical
+
+  filter {
+    name   = "name"
+    values = ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]
+  }
+}
+```
+
+块体内的参数是**查询条件**——不同的数据源类型接受不同的查询条件参数，这些参数告诉数据源要查询什么数据。
+
+数据源类型加本地名称的组合在同一模块内必须唯一——这与资源的命名规则一致。
+
+### 引用数据源
+
+通过 `data.<类型>.<名称>.<属性>` 引用数据源的输出属性：
+
+```hcl
+resource "aws_instance" "web" {
+  ami           = data.aws_ami.latest_ubuntu.id
+  instance_type = "t3.micro"
+}
+```
+
+注意引用路径以 `data.` 开头，这将其与托管资源（`resource`）的引用区分开来。
+
+### data 与 resource 的区别
+
+| 对比 | `resource`（托管资源） | `data`（数据源） |
+|------|----------------------|-----------------|
+| 操作类型 | 增、删、改 | **只读** |
+| 状态文件 | 记录资源状态 | 缓存查询结果 |
+| 销毁操作 | `terraform destroy` 会销毁 | 不会销毁任何东西 |
+| 用途 | 声明要管理的基础设施 | 查询/计算辅助信息 |
+
+简单来说：`resource` 是"我要创建这个东西"，`data` 是"帮我查一下这个东西的信息"。
+
+### 典型使用场景
+
+数据源最常见的使用场景是：
+
+**1. 查询已有资源的信息**
+
+很多时候，某些基础设施资源不由当前 Terraform 代码管理（可能由另一个团队、另一份代码、或手动创建），但当前代码需要引用它的属性：
+
+```hcl
+# 查询由其他团队管理的 VPC
+data "aws_vpc" "main" {
+  filter {
+    name   = "tag:Name"
+    values = ["production-vpc"]
+  }
+}
+
+# 在这个 VPC 中创建子网
+resource "aws_subnet" "app" {
+  vpc_id     = data.aws_vpc.main.id
+  cidr_block = "10.0.1.0/24"
+}
+```
+
+**2. 查询动态信息**
+
+```hcl
+# 获取当前 AWS 账号信息
+data "aws_caller_identity" "current" {}
+
+# 获取当前区域
+data "aws_region" "current" {}
+
+output "account_id" {
+  value = data.aws_caller_identity.current.account_id
+}
+
+output "region" {
+  value = data.aws_region.current.name
+}
+```
+
+**3. 读取本地或外部数据**
+
+某些数据源不访问远程 API，而是在 Terraform 进程内部计算。这些"本地数据源"每次执行计划时都会重新计算：
+
+```hcl
+# 读取本地文件内容
+data "local_file" "config" {
+  filename = "${path.module}/config.json"
+}
+
+# 构建 IAM 策略文档
+data "aws_iam_policy_document" "s3_read" {
+  statement {
+    actions   = ["s3:GetObject"]
+    resources = ["arn:aws:s3:::my-bucket/*"]
+  }
+}
+```
+
+### 数据源行为
+
+数据源的读取时机取决于查询参数中引用的值是否在 `plan` 阶段就已知：
+
+- 如果查询参数只引用字面量或已知值（如输入变量），数据源在 **refresh 阶段**读取——`terraform plan` 时就可以使用其结果
+- 如果查询参数引用了尚未创建的资源属性，数据源的读取会被**推迟到 apply 阶段**——在依赖的资源创建完成后才执行
+
+```hcl
+# plan 阶段就能读取（参数是字面量）
+data "aws_s3_bucket" "existing" {
+  bucket = "my-known-bucket"
+}
+
+# 推迟到 apply 阶段（依赖尚未创建的资源）
+data "aws_s3_bucket" "dynamic" {
+  bucket = aws_s3_bucket.new_bucket.id
+}
+```
+
+### 数据源参数
+
+数据源的大部分参数由对应的数据源类型定义。但与资源类似，Terraform 也为所有数据源提供了一些**元参数**：
+
+- **`depends_on`** — 显式声明依赖关系
+- **`count`** / **`for_each`** — 创建多个数据源实例
+- **`provider`** — 指定使用的 Provider 实例
+
+这些元参数的行为与 `resource` 块上的完全一致——在[资源](#资源-resource)一节中已经详细介绍，这里不再赘述。
+
+### lifecycle
+
+与资源不同，数据源的 `lifecycle` 块**只支持 `precondition` 和 `postcondition`**，不支持 `prevent_destroy`、`ignore_changes` 等参数——这很合理，因为数据源本身就不会创建或销毁任何东西。
+
+```hcl
+data "aws_ami" "app" {
+  most_recent = true
+  owners      = ["self"]
+
+  filter {
+    name   = "tag:Component"
+    values = ["app-server"]
+  }
+
+  lifecycle {
+    postcondition {
+      condition     = self.tags["Component"] == "app-server"
+      error_message = "查到的 AMI 缺少 Component=app-server 标签。"
+    }
+  }
+}
+```
+
+### 🧪 动手实验
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-data" />
+
+---
+
+## 临时资源 (ephemeral)
+
+<!-- ephemeral 本质，特点 -->
 
 ---
 

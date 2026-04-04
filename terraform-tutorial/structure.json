@@ -8,6 +8,7 @@
     { "path": "terraform-syntax-expression" },
     { "path": "terraform-syntax-output" },
     { "path": "terraform-syntax-local" },
-    { "path": "terraform-syntax-resource" }
+    { "path": "terraform-syntax-resource" },
+    { "path": "terraform-syntax-data" }
   ]
 }
