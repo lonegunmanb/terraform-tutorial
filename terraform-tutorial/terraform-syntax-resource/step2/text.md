@@ -129,15 +129,6 @@ terraform plan -var='subnet_ids=["subnet-aaa","subnet-ccc"]'
 
 ```bash
 cat > known.tf <<'EOF'
-terraform {
-  required_providers {
-    random = {
-      source  = "hashicorp/random"
-      version = "~> 3.0"
-    }
-  }
-}
-
 resource "random_integer" "num" {
   min = 1
   max = 5
