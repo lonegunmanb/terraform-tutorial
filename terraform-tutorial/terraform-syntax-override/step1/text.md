@@ -91,29 +91,65 @@ echo 'local.name_prefix' | terraform console
 echo 'local.common_tags' | terraform console
 ```
 
-project 从 "myapp" 变成了 "real-infra"，name_prefix 随之变为 "real-infra-prod"。common_tags 中的 Project 也自动更新了。
+你会看到 project = "real-infra"（原本是 "myapp"），name_prefix = "real-infra-prod"（原本是 "myapp-prod"）。common_tags 中的 Project 也随之更新。
 
 关键点：只有 project 这一个命名值被覆盖，environment 和 name_prefix 的定义保持不变——它们只是引用了被覆盖后的值。
 
 ## 实验 3：lifecycle 的按参数合并
 
-main.tf 中 NAT Gateway 配置了 lifecycle { ignore_changes = [tags] }。现在在重载文件中添加 create_before_destroy：
+main.tf 中 NAT Gateway 配置了 lifecycle { ignore_changes = [tags] }。lifecycle 与其他嵌套块不同——它的合并方式是**按参数逐条合并**，而非整体替换。
+
+为了亲眼看到这个行为，我们先创建一个带 ignore_changes 的 VPC：
 
 ```bash
-cat > override.tf <<'EOF'
-variable "environment" {
-  default = "prod"
+cat > lifecycle_demo.tf <<'EOF'
+resource "aws_vpc" "lifecycle_demo" {
+  cidr_block = "10.99.0.0/16"
+
+  tags = {
+    Version = "v1"
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
 }
 
-variable "instance_type" {
-  default = "m5.large"
+output "demo_vpc_id" {
+  value = aws_vpc.lifecycle_demo.id
 }
+EOF
+```
 
-locals {
-  project = "real-infra"
-}
+创建 VPC：
 
-resource "aws_nat_gateway" "main" {
+```bash
+terraform apply -auto-approve -target=aws_vpc.lifecycle_demo
+```
+
+现在用 awslocal 在 Terraform 外部修改 VPC 的标签：
+
+```bash
+VPC_ID=$(terraform output -raw demo_vpc_id)
+awslocal ec2 create-tags --resources "$VPC_ID" --tags Key=ExternalTag,Value=added-outside
+awslocal ec2 describe-tags --filters "Name=resource-id,Values=$VPC_ID"
+```
+
+你会看到 VPC 现在有两个标签：Version=v1 和 ExternalTag=added-outside。
+
+运行 plan 看看 Terraform 是否检测到变更：
+
+```bash
+terraform plan -target=aws_vpc.lifecycle_demo
+```
+
+输出 "No changes"——因为 ignore_changes = [tags] 让 Terraform 忽略了外部的标签修改。
+
+接下来创建重载文件，**只**添加 create_before_destroy：
+
+```bash
+cat > lifecycle_demo_override.tf <<'EOF'
+resource "aws_vpc" "lifecycle_demo" {
   lifecycle {
     create_before_destroy = true
   }
@@ -121,13 +157,22 @@ resource "aws_nat_gateway" "main" {
 EOF
 ```
 
+如果 lifecycle 像其他嵌套块一样整体替换，ignore_changes 就会丢失，Terraform 就会检测到外部添加的标签。再次 plan：
+
 ```bash
-terraform validate
+terraform plan -target=aws_vpc.lifecycle_demo
 ```
 
-配置合法。合并后 NAT Gateway 的 lifecycle 同时包含 ignore_changes = [tags] 和 create_before_destroy = true——两个参数都保留。这是 lifecycle 的特殊合并行为：按参数逐条合并。
+仍然 "No changes"！这证明了 lifecycle 是**按参数合并**的——override 添加了 create_before_destroy，但源块中的 ignore_changes = [tags] 依然保留。
 
-注意重载的 resource 块中没有写 availability_mode、vpc_id、availability_zone_address 等参数，它们在源块中的定义都保持不变。
+清理演示文件：
+
+```bash
+terraform destroy -auto-approve -target=aws_vpc.lifecycle_demo
+rm -f lifecycle_demo.tf lifecycle_demo_override.tf
+```
+
+同样的规则也适用于 main.tf 中的 NAT Gateway——如果你在重载文件中只写 create_before_destroy，源块中的 ignore_changes = [tags] 会被保留。
 
 ## 实验 4：嵌套块的整体替换
 
@@ -184,7 +229,21 @@ rm -f nat_override.tf sg_override.tf
 
 ## 实验 5：多个重载文件的叠加
 
-重载文件按文件名字典序依次加载。当前目录中有实验 3 创建的 override.tf。创建第二个重载文件来验证叠加效果：
+重载文件按文件名字典序依次加载。先创建一个重载文件覆盖多个值：
+
+```bash
+cat > override.tf <<'EOF'
+variable "environment" {
+  default = "prod"
+}
+
+locals {
+  project = "real-infra"
+}
+EOF
+```
+
+再创建第二个重载文件来验证叠加效果：
 
 ```bash
 cat > z_override.tf <<'EOF'
