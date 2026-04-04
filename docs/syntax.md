@@ -19,6 +19,7 @@ Terraform 使用 HCL（HashiCorp Configuration Language）作为配置语言。H
 - [局部值 (local)](#局部值-local) — 简化重复表达式
 - [资源 (resource)](#资源-resource) — Terraform 的核心：声明基础设施组件
 - [数据源 (data)](#数据源-data) — 查询已有资源或外部信息
+- [临时资源 (ephemeral)](#临时资源-ephemeral) — 不持久化的临时数据与凭据
 - [重载文件](#重载文件) — override 文件的用法
 - [Checks](#checks) — 自定义校验与断言
 
@@ -2070,7 +2071,231 @@ data "aws_ami" "app" {
 
 ## 临时资源 (ephemeral)
 
-<!-- ephemeral 本质，特点 -->
+自 Terraform v1.10 起，Terraform 引入了一种全新的块类型——`ephemeral`（临时资源）。临时资源本质上是**临时性**的 Terraform 资源：它们拥有独特的生命周期，**不会存储在状态文件或计划文件中**。每个 `ephemeral` 块描述一个或多个临时资源，典型用途包括获取临时密码、短期凭据，或与另一个系统建立临时连接。
+
+前面我们已经在输入变量和输出值中介绍了 `ephemeral` 关键字——临时变量和临时输出只是标记数据的临时性。而 `ephemeral` **资源**则更进一步：它由 Provider 提供，拥有自己的生命周期（打开、续约、关闭），可以与外部系统交互获取敏感数据。
+
+### ephemeral 块
+
+`ephemeral` 块的结构与 `resource` 块和 `data` 块一致——紧跟关键字的第一个标签是**资源类型**，第二个标签是**本地名称**：
+
+```hcl
+ephemeral "类型" "名称" {
+  # 属性赋值
+}
+```
+
+例如，使用临时资源从 AWS Secrets Manager 获取数据库凭据：
+
+```hcl
+ephemeral "aws_secretsmanager_secret_version" "db_master" {
+  secret_id = data.aws_db_instance.example.master_user_secret[0].secret_arn
+}
+
+locals {
+  credentials = jsondecode(ephemeral.aws_secretsmanager_secret_version.db_master.secret_string)
+}
+
+provider "postgresql" {
+  host     = data.aws_db_instance.example.address
+  port     = data.aws_db_instance.example.port
+  username = local.credentials["username"]
+  password = local.credentials["password"]
+}
+```
+
+在这个例子中，数据库凭据通过临时资源获取，传递给 `provider` 配置——整个过程中凭据**不会被写入状态文件**。
+
+### 生命周期
+
+`ephemeral` 的生命周期与 `resource` 和 `data` 截然不同：
+
+1. **打开 (Open)** — 当 Terraform 需要访问临时资源的结果时，它会"打开"该资源。例如，打开一个包含 Vault 机密的临时资源时，Vault Provider 会获取租约并返回机密。
+
+2. **续约 (Renew)** — 如果 Terraform 需要使用临时资源的时间超过了远程系统设置的过期时间，Terraform 会要求 Provider 定期续约。例如，对 Vault 机密续约时，Provider 会调用租约续约 API 延长到期时间。
+
+3. **关闭 (Close)** — 当 Terraform 不再需要临时资源时，将其关闭。这发生在所有依赖临时资源的操作完成之后。例如，关闭 Vault 机密意味着 Provider 明确吊销租约，令 Vault 立即撤销相关凭证。
+
+这种"打开—续约—关闭"的生命周期意味着临时资源持有的数据**只在当前 Terraform 运行期间存在**，运行结束后自动消失。
+
+为什么会有续约呢？因为这里所谓的“打开”，有时候并不是说我们打开一个盒子，读取里面存放的静态的数据，对于动态机密，所谓“打开”指的是创建了一个机密，例如一个数据库用户名和对应的密码，在关闭时会将它删除，那么这时如果我们临近了这个机密租约的时候我们必须续约，告知管理动态机密的系统延长其租约有效期，否则一旦到期，相关的机密真的会从系统中被删除。
+
+### 引用临时资源
+
+通过 `ephemeral.<类型>.<名称>.<属性>` 引用临时资源的属性。但临时资源的引用有严格的限制——只能在以下**临时上下文**中使用：
+
+- 另一个 `ephemeral` 资源
+- `local` 表达式（引用临时值后该 local 也隐式变为临时）
+- 临时输入变量（`ephemeral = true` 的 `variable`）
+- 临时输出值（`ephemeral = true` 的 `output`）
+- `provider` 块中的参数
+- `provisioner` 和 `connection` 块
+- `precondition` 和 `postcondition` 中的 `condition`
+
+如果尝试在普通 `resource` 的属性中直接引用临时资源，Terraform 会报错——因为普通资源的属性会被写入状态文件，而临时数据不允许被持久化。
+
+```hcl
+ephemeral "random_password" "db" {
+  length  = 32
+  special = true
+}
+
+# ✅ 可以在 local 中引用
+locals {
+  db_password = ephemeral.random_password.db.result
+}
+
+# ✅ 可以在 provider 中引用
+provider "postgresql" {
+  password = local.db_password
+}
+
+# ❌ 不能直接赋给普通资源属性
+# resource "aws_db_instance" "main" {
+#   password = local.db_password  # Error! 临时值只能赋给 write-only 属性
+# }
+```
+
+### Write-Only 属性
+
+上面看到，临时资源的值不能赋给普通资源的属性——因为普通属性会被写入状态文件。那如果我们确实需要把一个临时生成的密码传递给资源（比如写入 Secrets Manager），该怎么办？
+
+答案是 **Write-Only 属性**。自 Terraform v1.11 起，Provider 可以将资源的某些属性标记为 write-only：这些属性的值会被发送给云 API，但**不会保存到状态文件中**。这样临时资源的值就可以安全地"穿过"资源边界。
+
+#### 命名约定
+
+Write-only 属性遵循统一的命名约定——在原属性名后添加 `_wo` 后缀，并搭配一个 `_wo_version` 字段：
+
+| 原属性 | Write-Only 属性 | 版本控制属性 |
+|--------|----------------|-------------|
+| `secret_string` | `secret_string_wo` | `secret_string_wo_version` |
+| `password` | `password_wo` | `password_wo_version` |
+
+```hcl
+resource "aws_secretsmanager_secret_version" "db" {
+  secret_id                = aws_secretsmanager_secret.db.id
+  secret_string_wo         = local.db_credentials   # 值发送给 API，但不保存到状态
+  secret_string_wo_version = 1                       # 递增此数字触发更新
+}
+```
+
+`_wo` 属性和对应的原属性（如 `secret_string`）是**互斥**的——不能同时使用。
+
+#### 为什么需要 `_wo_version`
+
+如果只有一个 `_wo` 属性，Terraform 无法判断值是否发生了变化——因为旧值不在状态文件中，无从对比。为了解决这个问题，每个 write-only 属性都搭配一个 `_wo_version` 数字：状态文件只记录版本号，不记录值本身。
+
+Terraform 通过 `_wo_version` 来决定是否需要更新：
+
+- **版本号没变** → Terraform 认为值也没变，跳过更新
+- **版本号递增** → Terraform 知道值已更新，重新发送给 API
+
+```hcl
+# 初始版本
+resource "aws_secretsmanager_secret_version" "db" {
+  secret_id                = aws_secretsmanager_secret.db.id
+  secret_string_wo         = local.db_credentials
+  secret_string_wo_version = 1   # 版本 1
+}
+
+# 密码轮换时，递增版本号
+resource "aws_secretsmanager_secret_version" "db" {
+  secret_id                = aws_secretsmanager_secret.db.id
+  secret_string_wo         = local.new_db_credentials
+  secret_string_wo_version = 2   # 版本 2 → 触发更新
+}
+```
+
+#### 为什么其他方案不可行
+
+你可能会想：为什么不直接对比 `_wo` 属性的新旧值来决定是否更新？或者为什么不用哈希值？以下是几种替代方案及其问题：
+
+**方案 1：直接对比新旧值**
+
+状态文件中不保存旧值（这正是 write-only 的意义），所以没有旧值可供对比。如果保存了旧值就不是 write-only 了——敏感数据又回到了状态文件中。
+
+**方案 2：保存值的哈希**
+
+理论上可以在状态中保存 `sha256(secret_string_wo)` 来检测变更。但这有安全风险：
+
+- 哈希值可被用于**彩虹表攻击**——如果密码空间较小，攻击者可以枚举候选值并比对哈希
+- 即使使用加盐哈希（salted hash），它仍然泄露了"值是否发生了变化"这一信息，在某些合规场景下不被接受
+- 不同的 Provider 和属性对安全级别的要求不同，统一的哈希方案难以满足所有场景
+
+**方案 3：每次 apply 都发送**
+
+如果不做任何检测，每次 `terraform apply` 都重新发送 `_wo` 的值，那么：
+
+- 每次 `plan` 都会显示该资源有变更（即使值完全没变），产生大量噪音
+- 某些 API 对写入操作有频率限制或会产生新的版本记录（如 Secrets Manager 每次写入创建一个新版本）
+- 在团队协作中，"每次都有变更"会破坏变更审查的信号——无法区分哪些是真正的变更
+- 更关键的是，许多 `ephemeral` 资源（如 Vault 动态机密）每次"打开"都会生成**全新的值**——每次 `apply` 都会产生一个新密码并写入目标系统，导致密码被频繁轮换，而这完全不受使用者控制
+
+**`_wo_version` 方案**刚好在安全性和可用性之间取得了平衡：状态文件中只保存一个无意义的数字（不泄露任何机密信息），而更新与否完全由使用者通过递增版本号来显式控制。只有当用户**主动**递增版本号时，Terraform 才会重新打开 ephemeral 资源获取新值并发送给 API——避免了每次运行都意外触发密码轮换的问题。
+
+### 与 resource 和 data 的区别
+
+| 对比 | `resource` | `data` | `ephemeral` |
+|------|-----------|--------|-------------|
+| 操作类型 | 增、删、改 | 只读查询 | 打开、续约、关闭 |
+| 状态文件 | ✅ 记录 | ✅ 缓存 | ❌ 不记录 |
+| 计划文件 | ✅ 记录 | ✅ 记录 | ❌ 不记录 |
+| 引用限制 | 无 | 无 | 仅限临时上下文 |
+| 典型用途 | 创建基础设施 | 查询已有信息 | 获取短期凭据/机密 |
+
+### 何时使用 ephemeral
+
+临时资源最适合以下场景：
+
+**1. 获取短期凭据**
+
+从 Vault、AWS Secrets Manager 等系统获取凭据，用于配置 Provider 或 Provisioner，不留痕迹：
+
+```hcl
+ephemeral "aws_secretsmanager_secret_version" "api_key" {
+  secret_id = "prod/api-key"
+}
+
+provider "datadog" {
+  api_key = ephemeral.aws_secretsmanager_secret_version.api_key.secret_string
+}
+```
+
+**2. 生成不持久化的随机值**
+
+使用 `random` Provider 的临时资源生成密码，确保密码不出现在状态文件中：
+
+```hcl
+ephemeral "random_password" "secret" {
+  length  = 24
+  special = true
+}
+```
+
+与 `resource "random_password"` 不同，`ephemeral "random_password"` 生成的密码**不会保存到状态文件**。每次 Terraform 运行都会重新生成——这正是临时凭据的期望行为。
+
+**3. 建立临时连接**
+
+Provider 可以实现临时资源来管理短暂的连接或会话：
+
+```hcl
+ephemeral "vault_token" "deploy" {
+  policies = ["deploy-policy"]
+  ttl      = "1h"
+}
+```
+
+Terraform 运行期间 token 有效，运行结束后自动吊销。
+
+### 元参数
+
+临时资源支持与 `resource` 和 `data` 相同的元参数：`depends_on`、`count`、`for_each`、`provider`、`lifecycle`。它们的行为与前文[资源](#资源-resource)一节中介绍的完全一致。
+
+临时资源**不支持** `provisioner` 元参数。
+
+### 🧪 动手实验
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-ephemeral" />
 
 ---
 

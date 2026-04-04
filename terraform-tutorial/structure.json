@@ -9,6 +9,7 @@
     { "path": "terraform-syntax-output" },
     { "path": "terraform-syntax-local" },
     { "path": "terraform-syntax-resource" },
-    { "path": "terraform-syntax-data" }
+    { "path": "terraform-syntax-data" },
+    { "path": "terraform-syntax-ephemeral" }
   ]
 }
