@@ -54,7 +54,7 @@ resource "aws_sqs_queue" "notifications" {
 # 这个检查会产生警告，因为我们没有给桶设置标签
 check "bucket_has_tags" {
   assert {
-    condition     = length(keys(aws_s3_bucket.website.tags)) > 0
+    condition     = length(aws_s3_bucket.website.tags_all) > 0
     error_message = "S3 桶 ${aws_s3_bucket.website.id} 没有设置任何标签，建议添加 ManagedBy 标签。"
   }
 }
