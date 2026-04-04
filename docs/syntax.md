@@ -2531,4 +2531,147 @@ provider "aws" {
 
 ## Checks
 
-<!-- TODO: check 块、assert、precondition/postcondition -->
+自 Terraform v1.5.0 起，Terraform 引入了 `check` 块——一种在资源生命周期之外验证基础设施状态的机制。
+
+前面我们已经在各个章节中介绍了 Terraform 的多种验证手段：`variable` 中的 `validation`、`resource` 和 `data` 中的 `precondition` / `postcondition`、`output` 中的 `precondition`。它们的共同点是——验证失败就报错，阻止 Terraform 继续执行。
+
+`check` 块则不同：**验证失败只产生警告，不会阻止后续操作**。这使得它非常适合用于检测基础设施的整体健康状态——即使检查未通过，资源的创建和更新仍然正常进行。
+
+### check 块
+
+`check` 块通过一个标签定义检查的本地名称，块内可以包含一个可选的**有限作用域数据源**和至少一个 `assert` 块：
+
+```hcl
+check "health_check" {
+  data "http" "terraform_io" {
+    url = "https://www.terraform.io"
+  }
+
+  assert {
+    condition     = data.http.terraform_io.status_code == 200
+    error_message = "${data.http.terraform_io.url} returned an unhealthy status code"
+  }
+}
+```
+
+`check` 块在每次 `plan` 和 `apply` 操作的**最后一步**执行（在所有 postcondition 之后）。如果断言失败，Terraform 输出警告信息并**继续执行**，不会中止操作。
+
+### 有限作用域的数据源
+
+`check` 块内可以定义一个 `data` 块，作为**有限作用域的数据源**（scoped data source）。它的行为与普通 `data` 块相似，但有以下限制：
+
+1. **作用域受限** — 只能在定义它的 `check` 块内引用，不能在 `check` 块外部使用
+2. **错误降级为警告** — 如果数据源运行时发生错误（如网络不通、端点不存在），这些错误被标记为警告，不会阻止 Terraform 继续执行
+3. **不支持 `count` 和 `for_each`** — 有限作用域的数据源只支持 `depends_on` 和 `provider` 元参数
+
+这种设计使得 `check` 块非常适合进行"尝试性"的健康检查——即使检查目标暂时不可达，也不影响正常的基础设施管理流程。
+
+#### 使用 depends_on
+
+当 `check` 块验证的基础设施是由同一配置创建的时候，第一次 `plan` 时资源尚未创建，检查会失败并产生无意义的警告。可以通过 `depends_on` 让数据源依赖于相关资源，使得在资源创建之前检查保持 `known after apply` 状态：
+
+```hcl
+resource "aws_s3_bucket" "website" {
+  bucket = "my-website"
+}
+
+check "website_health" {
+  data "http" "website" {
+    url = "http://my-website.s3.amazonaws.com/index.html"
+
+    depends_on = [aws_s3_bucket.website]
+  }
+
+  assert {
+    condition     = data.http.website.status_code == 200
+    error_message = "网站返回非 200 状态码"
+  }
+}
+```
+
+::: tip
+只有在内嵌数据源依赖于某项资源、但又没有显式引用其数据时，才需要使用 `depends_on`。如果数据源的参数已经引用了资源属性，Terraform 会自动推导依赖关系。
+:::
+
+### 断言 (assert)
+
+每个 `check` 块必须包含**至少一个** `assert` 块。`assert` 块的语法与 `precondition` / `postcondition` 一致，包含 `condition` 和 `error_message` 两个参数：
+
+```hcl
+check "bucket_accessible" {
+  assert {
+    condition     = aws_s3_bucket.data.arn != ""
+    error_message = "S3 存储桶未返回有效的 ARN。"
+  }
+}
+```
+
+与 `precondition` / `postcondition` 不同的是，`assert` 的断言**不会影响 Terraform 的执行**。失败的断言以**警告信息**输出，后续操作正常继续。
+
+`assert` 中的 `condition` 表达式可以引用：
+- 同一 `check` 块内定义的有限作用域数据源
+- 同一模块中的任意资源、数据源、输入变量和输出值
+
+一个 `check` 块可以包含**多个** `assert` 块，所有断言都会被执行：
+
+```hcl
+check "api_health" {
+  data "http" "api" {
+    url = "https://api.example.com/health"
+  }
+
+  assert {
+    condition     = data.http.api.status_code == 200
+    error_message = "API 返回非 200 状态码：${data.http.api.status_code}。"
+  }
+
+  assert {
+    condition     = can(jsondecode(data.http.api.response_body))
+    error_message = "API 返回的不是合法的 JSON 格式。"
+  }
+}
+```
+
+### check 块的元参数
+
+`check` 块**不支持** `count`、`for_each`、`lifecycle` 等元参数。每个 `check` 块在每次操作中执行一次。
+
+### check 与其他验证方式的对比
+
+| 特性 | `variable` validation | `precondition` | `postcondition` | `check` assert |
+|------|----------------------|----------------|-----------------|----------------|
+| 执行时机 | plan 前 | plan/apply 前 | plan/apply 后 | 最后执行 |
+| 失败行为 | **报错**，阻止后续 | **报错**，阻止后续 | **报错**，阻止后续 | **警告**，继续执行 |
+| 作用范围 | 单个变量 | 单个资源/数据源/输出 | 单个资源/数据源 | 独立的检查块 |
+| 可引用范围 | 当前变量（v1.9 起可跨变量） | 同模块任意值 | 同模块任意值 + `self` | 同模块任意值 + 内嵌数据源 |
+| 内嵌数据源 | ❌ | ❌ | ❌ | ✅ |
+| 版本要求 | v0.13+ | v1.2+ | v1.2+ | v1.5+ |
+
+### 何时使用 check
+
+选择 `check` 还是其他验证方式，核心考量在于：**验证失败时，是否应该阻止 Terraform 继续执行？**
+
+**使用 `check` 的场景：**
+
+- **验证基础设施的整体健康状态** — 例如确认网站可访问、API 返回正确状态码。这类问题不应阻止基础设施变更
+- **监测可能暂时不可用的外部依赖** — 网络抖动、第三方服务宕机等临时问题不应阻塞部署
+- **配合 HCP Terraform 进行持续验证** — HCP Terraform 的健康检查功能会定期执行 `check` 块，持续监控基础设施状态
+
+**使用 `precondition` / `postcondition` 的场景：**
+
+- **确保单个资源的配置符合预期** — 例如 AMI 的架构必须匹配实例类型
+- **在资源创建前验证前提条件** — 例如确认依赖的权限策略已就位
+- **验证失败时必须阻止操作** — 如果继续执行可能导致不可逆的损害
+
+**使用 `variable` validation 的场景：**
+
+- **校验用户输入** — 格式检查、范围检查、命名规范等
+- **需要尽早失败** — 在 plan 之前就发现问题，节省时间
+
+::: tip
+一个简单的判断标准：如果验证失败意味着"出了问题但不影响继续工作"，用 `check`；如果意味着"出了问题就不能继续"，用 `precondition` / `postcondition` 或 `validation`。
+:::
+
+### 🧪 动手实验
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-check" />

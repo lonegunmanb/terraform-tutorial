@@ -1,0 +1,27 @@
+{
+  "title": "Terraform Checks",
+  "description": "学习 check 块：有限作用域数据源、assert 断言、与 precondition/postcondition 的对比",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      { "title": "check 块演示：健康检查与断言", "text": "step1/text.md" },
+      { "title": "小测验：补全 check 块", "text": "step2/text.md" }
+    ],
+    "finish": { "text": "finish/finish.md" },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "step1/main.tf", "target": "/root/workspace/step1"},
+        {"file": "step2/main.tf", "target": "/root/workspace/step2"},
+        {"file": "step2/check_test.tftest.hcl", "target": "/root/workspace/step2"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": { "imageid": "ubuntu" },
+  "interface": { "layout": "editor-terminal" }
+}

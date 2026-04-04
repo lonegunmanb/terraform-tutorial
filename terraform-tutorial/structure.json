@@ -11,6 +11,7 @@
     { "path": "terraform-syntax-resource" },
     { "path": "terraform-syntax-data" },
     { "path": "terraform-syntax-ephemeral" },
-    { "path": "terraform-syntax-override" }
+    { "path": "terraform-syntax-override" },
+    { "path": "terraform-syntax-check" }
   ]
 }
