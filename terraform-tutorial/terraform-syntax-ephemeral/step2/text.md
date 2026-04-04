@@ -49,56 +49,10 @@ awslocal secretsmanager get-secret-value \
 现在来看关键差异——状态文件中保存了什么：
 
 ```bash
-# 不安全方式：密码完整地保存在状态文件中
-terraform state show random_password.db_password_resource
+cat terraform.tfstate | python3 check_state.py
 ```
 
-你会看到密码的明文。再查看 secret_version 资源：
-
-```bash
-terraform state show aws_secretsmanager_secret_version.db_credentials_insecure
-```
-
-`secret_string` 字段中包含完整的 JSON 凭据（用户名、密码、主机等）——全部明文。
-
-现在看安全方式：
-
-```bash
-terraform state show aws_secretsmanager_secret_version.db_credentials
-```
-
-注意 `secret_string_wo` 字段不在状态中——write-only 属性不会被持久化。再搜索临时密码：
-
-```bash
-cat terraform.tfstate | grep "ephemeral" || echo "状态文件中没有 ephemeral 的痕迹"
-```
-
-临时资源根本不存在于状态文件中。
-
-## 汇总对比
-
-```bash
-echo "=== 不安全方式：状态文件中的敏感数据 ==="
-cat terraform.tfstate | python3 -c "
-import json, sys
-state = json.load(sys.stdin)
-for r in state.get('resources', []):
-    if r.get('name') == 'db_password_resource':
-        for inst in r.get('instances', []):
-            pwd = inst.get('attributes', {}).get('result', '')
-            print(f'  random_password.result = {pwd}')
-    if r.get('name') == 'db_credentials_insecure' and r.get('type') == 'aws_secretsmanager_secret_version':
-        for inst in r.get('instances', []):
-            ss = inst.get('attributes', {}).get('secret_string', '')
-            if ss:
-                print(f'  secret_version.secret_string = {ss}')
-"
-
-echo ""
-echo "=== 安全方式：状态文件中无敏感数据 ==="
-echo "  ephemeral random_password: 不在状态中"
-echo "  secret_string_wo: 不在状态中"
-```
+不安全方式的密码和完整 JSON 凭据全部暴露在状态文件中；而安全方式的 ephemeral 资源和 write-only 属性在状态文件中都找不到任何痕迹。
 
 ## 清理
 
