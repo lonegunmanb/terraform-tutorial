@@ -31,13 +31,15 @@ ephemeral "random_password" "ephemeral_password" {
   special = true
 }
 
-# 临时资源的值只能通过 local 中转
+# 临时资源的值可以通过 local 中转（local 本身也是临时的）
 locals {
   eph_password = ephemeral.random_password.ephemeral_password.result
 }
 
-# 临时 output（仅用于演示，不会持久化）
-output "ephemeral_password" {
-  value     = local.eph_password
-  ephemeral = true
-}
+# 注意：ephemeral 值不能作为根模块的 output 输出
+# 下面这样写会报错：
+#   output "ephemeral_password" {
+#     value     = local.eph_password
+#     ephemeral = true
+#   }
+# 错误信息：Ephemeral output not allowed — 根模块不允许临时输出

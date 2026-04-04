@@ -13,7 +13,7 @@ cat main.tf
 
 - **resource "random_password"** — 普通资源，密码会保存到状态文件
 - **ephemeral "random_password"** — 临时资源，密码不会保存到状态文件
-- ephemeral 的值通过 `local` 中转后，用 `ephemeral = true` 的 output 输出
+- ephemeral 的值可以通过 `local` 中转，但不能作为根模块的 output 输出
 
 ## 执行 Apply
 
@@ -21,9 +21,7 @@ cat main.tf
 terraform apply -auto-approve
 ```
 
-注意输出中的差异：
-- `resource_password` 显示为 `(sensitive value)` — 值被隐藏但仍然存在于状态文件中
-- `ephemeral_password` 显示为 `(ephemeral value)` — 值不会被持久化
+注意输出中 resource_password 显示为 `(sensitive value)` — 值被隐藏但仍然存在于状态文件中。
 
 ## 检查状态文件
 
@@ -41,9 +39,9 @@ terraform state list
 terraform state show random_password.resource_password
 ```
 
-你会看到密码的完整值（`result`、`bcrypt_hash` 等）都明文记录在状态中。
+你会看到 result 和 bcrypt_hash 显示为 (sensitive value)——命令行隐藏了它们。但这只是显示层面的保护，数据实际上明文存储在状态文件中。
 
-再直接查看状态文件的 JSON 内容，搜索密码：
+直接查看状态文件的 JSON 内容，搜索密码：
 
 ```bash
 cat terraform.tfstate | python3 -m json.tool | grep -A2 '"result"'
@@ -70,8 +68,8 @@ terraform apply -auto-approve
 ```
 
 注意观察：
-- `random_password.resource_password` 显示 **no changes** — 因为状态文件中已经有了，不需要重新生成
-- 而临时资源每次运行都会重新生成（因为没有状态记录）
+- random_password.resource_password 显示 **no changes** — 因为状态文件中已经有了，不需要重新生成
+- 而临时资源每次运行都会重新生成（因为没有状态记录），但你在输出中看不到它的值（根模块不允许临时输出）
 
 ## 清理
 
@@ -83,7 +81,7 @@ terraform destroy -auto-approve
 
 - resource 生成的密码保存在状态文件中，任何能读取状态的人都能看到
 - ephemeral 生成的密码不保存到状态文件，每次运行都重新生成
-- ephemeral 的值只能在临时上下文中引用（local、provider、ephemeral output 等）
-- `sensitive = true` 只是隐藏命令行输出，数据仍在状态文件中；ephemeral 则彻底不持久化
+- ephemeral 的值只能在临时上下文中引用（local、provider、provisioner 等），不能作为根模块的 output
+- sensitive = true 只是隐藏命令行输出，数据仍在状态文件中；ephemeral 则彻底不持久化
 
 完成后继续下一步。
