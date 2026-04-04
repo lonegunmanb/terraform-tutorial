@@ -31,11 +31,11 @@ terraform plan
 
 观察 plan 输出。注意 check 块的警告信息：
 
-- `bucket_has_tags` 的断言失败，因为 S3 桶没有标签——但这只是一个**警告**（Warning），不是错误
-- `queue_timeout_reasonable` 的两个断言都通过，没有任何输出
-- `website_health` 中的有限作用域数据源标记为 `read during apply`（因为它依赖尚未创建的资源）
+- `bucket_has_tags` 显示 `Check block assertion known after apply`——因为 `tags_all` 是计算属性，plan 阶段资源尚未创建，无法确定其值
+- `queue_timeout_reasonable` 的两个断言同样等待 apply 后才能评估
+- `website_health` 中的有限作用域数据源也标记为 `known after apply`（因为它依赖尚未创建的资源）
 
-**关键观察：尽管 check 断言失败了，plan 仍然正常完成！** 如果把同样的条件写在 postcondition 里，Terraform 会报错并中止操作。
+**关键观察：即使 check 块无法在 plan 阶段评估，plan 仍然正常完成！** Terraform 只是输出警告，提示结果将在 apply 后才知晓。
 
 现在执行 apply：
 
@@ -46,10 +46,10 @@ terraform apply -auto-approve
 观察 apply 的输出：
 
 - 三个资源成功创建
-- `bucket_has_tags` 再次输出警告——桶确实没有标签
+- `bucket_has_tags` 的断言现在被真正评估——因为桶没有标签，断言失败，输出**警告**
 - `website_health` 检查执行了 HTTP 请求，观察它的结果
 
-**注意 check 块的警告不影响任何资源的创建和输出。** 这就是 check 与 postcondition 的核心区别。
+**注意 check 块的警告不影响任何资源的创建和输出。** 这就是 check 与 postcondition 的核心区别——如果把同样的条件写在 postcondition 里，Terraform 会报错并中止操作。
 
 ## 修复 check 警告
 
