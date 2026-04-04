@@ -10,6 +10,7 @@
     { "path": "terraform-syntax-local" },
     { "path": "terraform-syntax-resource" },
     { "path": "terraform-syntax-data" },
-    { "path": "terraform-syntax-ephemeral" }
+    { "path": "terraform-syntax-ephemeral" },
+    { "path": "terraform-syntax-override" }
   ]
 }

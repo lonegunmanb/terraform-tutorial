@@ -2301,7 +2301,231 @@ Terraform 运行期间 token 有效，运行结束后自动吊销。
 
 ## 重载文件
 
-<!-- TODO: override files 的作用和使用场景 -->
+一般来说，Terraform 会加载模块目录内所有的 `.tf` 和 `.tf.json` 文件，并要求文件内定义的对象互不重复。如果两个文件尝试定义同一个对象，Terraform 会报错。
+
+但在某些特殊场景中，能够用一个单独的文件来**重载**已有对象配置的某些部分会非常有用。例如：
+
+- 由工程师编写的配置文件，在运行时被程序生成的 JSON 配置部分覆盖
+- 在 CI/CD 流水线中，用重载文件替换后端配置或 Provider 版本约束
+- 在测试环境中，覆盖某些资源的参数（如实例类型、区域等）而不修改原始代码
+
+### 重载文件的识别规则
+
+Terraform 对以下两类文件进行特殊处理：
+
+1. 文件名恰好为 `override.tf` 或 `override.tf.json`
+2. 文件名以 `_override.tf` 或 `_override.tf.json` 结尾（如 `dev_override.tf`、`testing_override.tf`）
+
+Terraform 的加载顺序如下：
+
+1. 先加载所有**普通**代码文件（非重载文件），构建初始配置
+2. 按**文件名字典序**逐个加载重载文件，将其中的顶级块合并到已有配置中
+
+### 基本示例
+
+假设我们有一个 `main.tf`：
+
+```hcl
+resource "aws_instance" "web" {
+  instance_type = "t2.micro"
+  ami           = "ami-408c7f28"
+}
+```
+
+再创建一个 `override.tf`：
+
+```hcl
+resource "aws_instance" "web" {
+  ami = "foo"
+}
+```
+
+Terraform 合并后的实际配置等价于：
+
+```hcl
+resource "aws_instance" "web" {
+  instance_type = "t2.micro"
+  ami           = "foo"
+}
+```
+
+`override.tf` 中的 `ami` 覆盖了 `main.tf` 中的值，而 `instance_type` 保持不变。
+
+### 合并行为
+
+不同的块类型有着略微不同的合并规则。总体遵循以下原则：
+
+1. 重载文件中的顶级块会和普通文件中**同类型同名**的顶级块合并
+2. 重载块中的**参数**（Argument）会覆盖源块中的同名参数
+3. 重载块中的**嵌套块**（Nested Block）会**整体替换**源块中所有同类型嵌套块——源块中没有被重载的其他类型嵌套块保持不变
+4. 嵌套块的内容**不会**逐参数合并——是整体替换
+5. 合并后的配置仍然必须满足对应块类型的所有验证规则
+
+如果有多个重载文件定义了同一个顶级块，效果是**叠加**的——后加载的重载文件在前一个的基础上继续合并。
+
+#### 合并 resource 和 data 块
+
+- `lifecycle` 块比较特殊：**按参数逐条合并**。例如重载块只定义 `create_before_destroy`，源块定义了 `ignore_changes`，合并后两者都保留
+- 如果重载块包含 `provisioner`，源块中**所有的** `provisioner` 会被丢弃（整体替换）
+- 如果重载块包含 `connection`，也会**完全覆盖**源块的 `connection`
+- **不允许**在重载块中定义 `depends_on`，否则 Terraform 会报错
+
+```hcl
+# main.tf
+resource "aws_instance" "web" {
+  ami           = "ami-abc123"
+  instance_type = "t2.micro"
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+# override.tf — lifecycle 按参数合并
+resource "aws_instance" "web" {
+  instance_type = "t3.micro"   # 覆盖 instance_type
+
+  lifecycle {
+    create_before_destroy = true   # 新增，不影响 ignore_changes
+  }
+}
+
+# 合并结果：
+# resource "aws_instance" "web" {
+#   ami           = "ami-abc123"
+#   instance_type = "t3.micro"
+#   lifecycle {
+#     ignore_changes        = [tags]
+#     create_before_destroy = true
+#   }
+# }
+```
+
+#### 合并 variable 块
+
+- 参数合并遵循标准流程
+- 如果源块定义了 `default` 而重载块修改了 `type`，Terraform 会尝试将原 `default` 值转换成新类型，转换失败则报错
+- 如果源块定义了 `type` 而重载块修改了 `default`，新的 `default` 值必须能转换成原类型
+
+```hcl
+# main.tf
+variable "port" {
+  type    = number
+  default = 8080
+}
+
+# override.tf — 修改默认值
+variable "port" {
+  default = 3000
+}
+
+# 合并结果：type = number, default = 3000
+```
+
+#### 合并 output 块
+
+- 参数合并遵循标准流程
+- 与 resource 相同，**不允许**在重载块中定义 `depends_on`
+
+#### 合并 locals 块
+
+`locals` 的合并是按**命名值**逐条执行的，不论命名值是在哪个 `locals` 块中定义的：
+
+```hcl
+# main.tf
+locals {
+  project     = "my-app"
+  environment = "dev"
+}
+
+# override.tf — 只覆盖 environment
+locals {
+  environment = "staging"
+}
+
+# 合并结果：project = "my-app", environment = "staging"
+```
+
+#### 合并 terraform 块
+
+- `required_providers` 会**逐 Provider 合并**——重载块可以修改单个 Provider 的版本约束而不影响其他 Provider
+- `required_version` 会被**完全覆盖**——如果重载块定义了 `required_version`，源块中的约束被忽略
+
+```hcl
+# main.tf
+terraform {
+  required_version = ">= 1.3"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
+  }
+}
+
+# override.tf — 只修改 aws 的版本约束
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.80"
+    }
+  }
+}
+
+# 合并结果：
+# required_version = ">= 1.3"（保持不变）
+# aws version = "~> 5.80"（被覆盖）
+# random version = "~> 3.0"（保持不变）
+```
+
+### 使用场景
+
+重载文件最适合以下场景：
+
+**1. 环境差异化配置**
+
+在不修改主配置文件的情况下，用重载文件调整特定环境的参数：
+
+```hcl
+# dev_override.tf — 开发环境覆盖
+variable "instance_type" {
+  default = "t3.micro"
+}
+
+variable "min_count" {
+  default = 1
+}
+```
+
+**2. CI/CD 流水线中的自动化覆盖**
+
+构建工具可以生成 `override.tf.json` 来注入构建时才确定的参数，例如镜像版本、后端配置等。
+
+**3. 本地测试时临时覆盖**
+
+将 `override.tf` 加入 `.gitignore`，开发者可以在本地自由覆盖配置而不影响团队：
+
+```hcl
+# override.tf（.gitignore 中排除，不提交到 Git）
+provider "aws" {
+  region = "ap-southeast-1"
+}
+```
+
+::: warning 慎用重载文件
+重载文件会使代码变得难以理解——阅读主配置文件时，读者无法确定哪些值会被重载，必须检查所有重载文件才能得到最终配置。
+
+使用重载文件时，务必在原始配置中被重载的部分**添加注释**，提醒读者注意重载文件的存在。只在确实需要的场景中使用重载文件。
+:::
+
+### 🧪 动手实验
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-override" />
 
 ---
 
