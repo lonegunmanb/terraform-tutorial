@@ -55,21 +55,15 @@ terraform apply -auto-approve
 
 现在让我们给 S3 桶添加标签来修复 `bucket_has_tags` 的警告。
 
-用编辑器打开 main.tf，找到 `aws_s3_bucket` 资源，添加 tags 参数：
+用编辑器打开 main.tf，找到 `aws_s3_bucket` 资源块，添加 `tags` 参数，改为：
 
-```bash
-cat > /tmp/fix.py << 'PYEOF'
-import re
-with open("main.tf", "r") as f:
-    content = f.read()
-content = content.replace(
-    'resource "aws_s3_bucket" "website" {\n  bucket = "demo-website-bucket"\n}',
-    'resource "aws_s3_bucket" "website" {\n  bucket = "demo-website-bucket"\n  tags = {\n    ManagedBy = "terraform"\n  }\n}'
-)
-with open("main.tf", "w") as f:
-    f.write(content)
-PYEOF
-python3 /tmp/fix.py
+```hcl
+resource "aws_s3_bucket" "website" {
+  bucket = "demo-website-bucket"
+  tags = {
+    ManagedBy = "terraform"
+  }
+}
 ```
 
 再次执行 apply：
