@@ -195,7 +195,13 @@ EOF
 terraform validate
 ```
 
-配置合法。但合并后的实际效果是：源块中原本的两个 availability_zone_address 块被全部丢弃，替换为重载块中的一个。NAT Gateway 从双可用区变为单可用区——us-east-1b 的配置消失了。
+配置合法。现在用 plan 看看合并后的 NAT Gateway 实际会创建什么：
+
+```bash
+terraform plan -target=aws_nat_gateway.main
+```
+
+仔细观察 plan 输出中 aws_nat_gateway.main 的部分——你会发现只剩下一个 availability_zone_address 块（us-east-1a），原本 main.tf 中的两个 availability_zone_address 块被全部丢弃，替换为重载块中的一个。NAT Gateway 从双可用区变为单可用区——us-east-1b 的配置消失了。
 
 再试试安全组。创建另一个重载文件，将三个 ingress 规则替换为一个：
 
@@ -217,7 +223,13 @@ EOF
 terraform validate
 ```
 
-配置仍然合法。但源块中的三个 ingress 规则（HTTP/HTTPS/SSH）全部被丢弃，只剩下重载块中定义的 8080 端口规则。egress 块不受影响——因为重载块中没有定义 egress 类型的嵌套块。
+配置仍然合法。用 plan 来验证合并后的安全组规则：
+
+```bash
+terraform plan -target=aws_security_group.web
+```
+
+观察 plan 输出中 aws_security_group.web 的部分——源块中的三个 ingress 规则（HTTP/HTTPS/SSH）全部被丢弃，只剩下重载块中定义的 8080 端口规则。egress 块不受影响——因为重载块中没有定义 egress 类型的嵌套块。
 
 这就是嵌套块的合并规则：同类型嵌套块整体替换，而非逐个合并。与 lifecycle（按参数合并）的行为完全不同。
 
