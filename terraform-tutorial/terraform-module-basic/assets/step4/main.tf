@@ -29,8 +29,15 @@ provider "aws" {
 #
 # 要求：
 # 1. 模块接受一个 string 类型的输入变量 bucket_name
-# 2. 模块创建一个 aws_s3_bucket 资源，名称为 bucket_name 的值
-# 3. 模块输出 bucket_id（桶的 id）和 bucket_arn（桶的 arn）
+# 2. 模块创建一个 aws_s3_bucket 资源（bucket = var.bucket_name）
+# 3. 模块输出 bucket_id（值为 aws_s3_bucket.xxx.id）
+#    和 bucket_arn（值为 aws_s3_bucket.xxx.arn）
+#
+# 提示：aws_s3_bucket 资源的用法如下：
+#   resource "aws_s3_bucket" "this" {
+#     bucket = var.bucket_name    # bucket 参数指定桶名
+#   }
+#   可用属性：.id（桶 ID）、.arn（桶 ARN）
 #
 # 然后在下方调用该模块，创建一个名为 "quiz-bucket" 的桶
 # ══════════════════════════════════════════
