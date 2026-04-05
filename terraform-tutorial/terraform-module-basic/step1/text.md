@@ -77,19 +77,9 @@ output "data_bucket_id" {
   description = "数据桶的 ID"
 }
 
-output "data_bucket_arn" {
-  value       = aws_s3_bucket.app_data.arn
-  description = "数据桶的 ARN"
-}
-
 output "logs_bucket_id" {
   value       = aws_s3_bucket.app_logs.id
   description = "日志桶的 ID"
-}
-
-output "logs_bucket_arn" {
-  value       = aws_s3_bucket.app_logs.arn
-  description = "日志桶的 ARN"
 }
 EOF
 ```

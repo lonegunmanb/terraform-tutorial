@@ -24,41 +24,15 @@ provider "aws" {
   }
 }
 
-# 通过 module 块调用子模块，传入不同参数创建不同的桶
-module "data_bucket" {
-  source      = "./modules/s3-bucket"
-  bucket_name = "my-app-data"
-  tags = {
-    Environment = "production"
-    Purpose     = "data-storage"
-  }
-}
+# ══════════════════════════════════════════
+# 测验：请在 modules/storage 目录下创建一个模块
+#
+# 要求：
+# 1. 模块接受一个 string 类型的输入变量 bucket_name
+# 2. 模块创建一个 aws_s3_bucket 资源，名称为 bucket_name 的值
+# 3. 模块输出 bucket_id（桶的 id）和 bucket_arn（桶的 arn）
+#
+# 然后在下方调用该模块，创建一个名为 "quiz-bucket" 的桶
+# ══════════════════════════════════════════
 
-module "logs_bucket" {
-  source      = "./modules/s3-bucket"
-  bucket_name = "my-app-logs"
-  tags = {
-    Environment = "production"
-    Purpose     = "logging"
-  }
-}
-
-output "data_bucket_id" {
-  value       = module.data_bucket.bucket_id
-  description = "数据桶的 ID"
-}
-
-output "data_bucket_arn" {
-  value       = module.data_bucket.bucket_arn
-  description = "数据桶的 ARN"
-}
-
-output "logs_bucket_id" {
-  value       = module.logs_bucket.bucket_id
-  description = "日志桶的 ID"
-}
-
-output "logs_bucket_arn" {
-  value       = module.logs_bucket.bucket_arn
-  description = "日志桶的 ARN"
-}
+# TODO: 在这里用 module 块调用 modules/storage 模块

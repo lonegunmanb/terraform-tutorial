@@ -238,6 +238,11 @@ resource "aws_secretsmanager_secret" "api_key" {
 output "api_key_secret_arn" {
   value = aws_secretsmanager_secret.api_key.arn
 }
+
+output "api_key_length" {
+  value     = local.api_key_value
+  ephemeral = true
+}
 EOTF
 fi
 
@@ -258,7 +263,17 @@ run "test_secret_created" {
   }
 }
 
-# ── 测试 2：Secret ARN 包含名称 ──
+# ── 测试 2：临时密码长度正确 ──
+run "test_ephemeral_password_length" {
+  command = apply
+
+  assert {
+    condition     = length(output.api_key_length) == 20
+    error_message = "临时密码长度应为 20 个字符"
+  }
+}
+
+# ── 测试 3：Secret ARN 包含名称 ──
 run "test_secret_name" {
   command = apply
 
