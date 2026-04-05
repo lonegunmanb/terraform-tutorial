@@ -137,13 +137,6 @@ terraform plan
 
 Terraform 显示 "No changes"——无论代码分散在多个文件还是集中在一个文件，对 Terraform 来说完全等价。
 
-恢复原样：
-
-```bash
-# 恢复多文件结构（从 all-in-one.tf 中无法自动拆分，直接重新初始化即可）
-rm all-in-one.tf
-```
-
 ## 清理
 
 ```bash
