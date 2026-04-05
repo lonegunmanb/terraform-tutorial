@@ -18,6 +18,7 @@ cat main.tf
 ## 执行根模块
 
 ```bash
+terraform init
 terraform plan
 ```
 

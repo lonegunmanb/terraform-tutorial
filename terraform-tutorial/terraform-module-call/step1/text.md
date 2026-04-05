@@ -51,6 +51,7 @@ cat ../modules/s3-bucket/outputs.tf
 ## 执行本地模块调用
 
 ```bash
+terraform init
 terraform plan
 ```
 
