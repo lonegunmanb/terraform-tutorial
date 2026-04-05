@@ -24,15 +24,32 @@ provider "aws" {
   }
 }
 
-# ══════════════════════════════════════════
-# 测验：请在 modules/storage 目录下创建一个模块
-#
-# 要求：
-# 1. 模块接受一个 string 类型的输入变量 bucket_name
-# 2. 模块创建一个 aws_s3_bucket 资源，名称为 bucket_name 的值
-# 3. 模块输出 bucket_id（桶的 id）和 bucket_arn（桶的 arn）
-#
-# 然后在下方调用该模块，创建一个名为 "quiz-bucket" 的桶
-# ══════════════════════════════════════════
+# ── 调用子模块创建 S3 桶 ──
 
-# TODO: 在这里用 module 块调用 modules/storage 模块
+module "data_bucket" {
+  source      = "./modules/s3-bucket"
+  bucket_name = "my-app-data"
+  tags = {
+    Purpose = "data"
+  }
+}
+
+module "logs_bucket" {
+  source      = "./modules/s3-bucket"
+  bucket_name = "my-app-logs"
+  tags = {
+    Purpose = "logs"
+  }
+}
+
+output "data_bucket_id" {
+  value = module.data_bucket.bucket_id
+}
+
+output "data_bucket_arn" {
+  value = module.data_bucket.bucket_arn
+}
+
+output "logs_bucket_id" {
+  value = module.logs_bucket.bucket_id
+}
