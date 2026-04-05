@@ -1,5 +1,5 @@
 run "module_creates_bucket" {
-  command = plan
+  command = apply
 
   assert {
     condition     = module.quiz.bucket_id == "quiz-bucket"

@@ -1,0 +1,55 @@
+{
+  "title": "Terraform 模块调用",
+  "description": "学习如何调用模块：source 来源、版本约束、传参与输出引用、count 与 for_each",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "模块来源与版本约束",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "传参与输出引用",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "count、for_each 与 depends_on",
+        "text": "step3/text.md"
+      },
+      {
+        "title": "测验：综合模块调用",
+        "text": "step4/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "modules/s3-bucket/main.tf", "target": "/root/workspace/modules/s3-bucket"},
+        {"file": "modules/s3-bucket/variables.tf", "target": "/root/workspace/modules/s3-bucket"},
+        {"file": "modules/s3-bucket/outputs.tf", "target": "/root/workspace/modules/s3-bucket"},
+        {"file": "modules/dual-bucket/main.tf", "target": "/root/workspace/modules/dual-bucket"},
+        {"file": "modules/dual-bucket/variables.tf", "target": "/root/workspace/modules/dual-bucket"},
+        {"file": "modules/dual-bucket/outputs.tf", "target": "/root/workspace/modules/dual-bucket"},
+        {"file": "step1/main.tf", "target": "/root/workspace/step1"},
+        {"file": "step2/main.tf", "target": "/root/workspace/step2"},
+        {"file": "step3/main.tf", "target": "/root/workspace/step3"},
+        {"file": "step4/main.tf", "target": "/root/workspace/step4"},
+        {"file": "step4/tests/module_call_test.tftest.hcl", "target": "/root/workspace/step4/tests"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

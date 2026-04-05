@@ -71,4 +71,4 @@ Success! 1 passed, 0 failed.
 cat tests/module_test.tftest.hcl
 ```
 
-terraform test 使用 .tftest.hcl 文件定义测试用例。每个 run 块代表一个测试，assert 块定义断言条件。这里使用 command = plan（只做计划不实际创建）来验证模块输出是否符合预期。
+terraform test 使用 .tftest.hcl 文件定义测试用例。每个 run 块代表一个测试，assert 块定义断言条件。这里使用 command = apply（实际创建资源后再断言）来验证模块输出是否符合预期。测试结束后 Terraform 会自动清理创建的资源。
