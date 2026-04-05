@@ -104,14 +104,14 @@ terraform output
 
 你会看到 data_bucket_id、data_bucket_arn、logs_bucket_id 和 all_bucket_ids 四个输出。
 
-## 模块输出作为另一个模块的输入
+## 在其他资源中使用模块输出
 
-模块输出最常见的用途之一是作为另一个模块的输入参数。试试添加一个新的模块调用，将之前模块的输出传进去：
+模块输出不仅能在根模块的 output 中展示，还可以在其他资源的配置中直接引用。试试添加一个新资源，使用之前模块的输出值：
 
 ```bash
 cat >> main.tf <<'EOF'
 
-# 演示：将模块输出组合后创建新资源
+# 演示：在资源中引用模块输出
 resource "aws_s3_bucket" "combined_report" {
   bucket = "${module.data_bucket.bucket_id}-report"
   tags = {
@@ -129,7 +129,7 @@ EOF
 terraform apply -auto-approve
 ```
 
-注意 combined_report 桶的名称使用了 module.data_bucket.bucket_id 的值作为前缀。这就是模块间通过输出传递数据的方式。
+注意 combined_report 桶的名称使用了 module.data_bucket.bucket_id 的值作为前缀，tags 中引用了 module.data_bucket.bucket_arn。这就是在资源中引用模块输出的方式——同样的语法也可以用于将一个模块的输出传给另一个模块作为输入参数。
 
 ## 清理
 
