@@ -5,7 +5,7 @@ Terraform 默认使用 local 后端，将状态文件存储在当前工作目录
 ## 初始化并创建资源
 
 ```bash
-cd /root/workspace
+cd /root/workspace/step1
 terraform init
 ```
 

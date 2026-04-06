@@ -6,8 +6,9 @@ source /root/setup-common.sh
 
 # ── 1. Seed workspace files (fallback if assets copy fails) ──
 mkdir -p /root/workspace
-cd /root/workspace
 
+# docker-compose.yml at workspace root (shared by all steps)
+cd /root/workspace
 if [ ! -f docker-compose.yml ]; then
 cat > docker-compose.yml <<'EOF'
 services:
@@ -26,9 +27,8 @@ services:
 EOF
 fi
 
-if [ ! -f main.tf ]; then
-cat > main.tf <<'EOTF'
-terraform {
+# main.tf template shared by all steps
+MAIN_TF='terraform {
   required_version = ">= 1.0"
   required_providers {
     aws = {
@@ -65,8 +65,14 @@ resource "aws_s3_bucket" "demo" {
 output "bucket_name" {
   value = aws_s3_bucket.demo.bucket
 }
-EOTF
-fi
+'
+
+for step in step1 step2 step3; do
+  mkdir -p /root/workspace/$step
+  if [ ! -f /root/workspace/$step/main.tf ]; then
+    echo "$MAIN_TF" > /root/workspace/$step/main.tf
+  fi
+done
 
 # ── 2. Install tools ──
 install_terraform
@@ -91,7 +97,7 @@ awslocal dynamodb create-table \
   --billing-mode PAY_PER_REQUEST
 
 # ── 5. Pre-cache Terraform providers (aws + time) ──
-cd /root/workspace
+cd /root/workspace/step1
 cat > _time_provider.tf <<'EOTF'
 terraform {
   required_providers {
@@ -105,5 +111,10 @@ EOTF
 terraform init -input=false
 rm -f _time_provider.tf
 rm -rf .terraform .terraform.lock.hcl
+
+# ── 6. Pre-apply step2 so students have local state to migrate ──
+cd /root/workspace/step2
+terraform init -input=false
+terraform apply -auto-approve -input=false
 
 finish_setup

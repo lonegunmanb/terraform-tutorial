@@ -2,6 +2,17 @@
 
 现在我们将状态从本地迁移到 S3 远程后端，并亲手体验**状态锁定**的作用。
 
+## 确认当前状态
+
+step2 目录已经预先执行了 terraform apply，有一个使用本地后端的 S3 存储桶资源：
+
+```bash
+cd /root/workspace/step2
+terraform state list
+```
+
+你应该看到 aws_s3_bucket.demo——当前状态存储在本地 terraform.tfstate 文件中。
+
 ## 确认基础设施就绪
 
 实验环境已预先创建了存放状态文件的 S3 桶和用于状态锁定的 DynamoDB 表：
@@ -18,7 +29,6 @@ awslocal dynamodb list-tables
 用以下命令替换 main.tf，添加 S3 后端配置（含 DynamoDB 锁定）：
 
 ```bash
-cd /root/workspace
 cat > main.tf <<'EOF'
 terraform {
   required_version = ">= 1.0"
@@ -141,8 +151,7 @@ EOF
 运行脚本：
 
 ```bash
-cd /root/workspace
-bash ./step2/show-lock.sh
+bash ./show-lock.sh
 ```
 
 观察输出，你会看到以下关键信息：

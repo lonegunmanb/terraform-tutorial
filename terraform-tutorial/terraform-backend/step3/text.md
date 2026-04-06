@@ -4,12 +4,20 @@
 
 Terraform 提供了**部分配置**（Partial Configuration）机制：在代码中只声明后端类型和非敏感参数，将敏感或环境相关的参数推迟到 terraform init 阶段再提供。
 
-## 创建部分配置
+## 查看当前状态
 
-先回退到本地后端，从头演示部分配置的用法：
+step3 目录有一份使用本地后端的 Terraform 代码（尚未 apply）。我们将从这里开始演示部分配置。
 
 ```bash
-cd /root/workspace
+cd /root/workspace/step3
+cat main.tf
+```
+
+## 方式一：通过配置文件提供参数
+
+先修改 main.tf，添加一个空的 S3 后端声明：
+
+```bash
 cat > main.tf <<'EOF'
 terraform {
   required_version = ">= 1.0"
@@ -58,8 +66,6 @@ EOF
 
 注意 backend "s3" 块几乎是空的——只声明了使用 S3 后端，没有任何具体参数。
 
-## 方式一：通过配置文件提供参数
-
 创建一个后端配置文件，包含所有后端参数：
 
 ```bash
@@ -90,7 +96,11 @@ EOF
 terraform init -backend-config=backend.s3.tfbackend
 ```
 
-当提示迁移时输入 yes。
+初始化成功后，apply 创建资源：
+
+```bash
+terraform apply -auto-approve
+```
 
 验证状态已存储到 S3：
 

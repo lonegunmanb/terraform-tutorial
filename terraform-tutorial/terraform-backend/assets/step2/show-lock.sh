@@ -3,7 +3,7 @@
 # 后台运行 terraform apply，等待锁出现后展示锁信息
 
 set -e
-cd /root/workspace
+cd /root/workspace/step2
 
 echo "========================================"
 echo "  开始演示状态锁定"
