@@ -56,7 +56,7 @@ cat terraform.tfstate | python3 -m json.tool | head -30
 awslocal s3 ls
 ```
 
-你应该能看到 backend-demo-bucket 已被创建。同时确认 terraform 能正确管理它：
+你应该能看到 step1-demo-bucket 已被创建。同时确认 terraform 能正确管理它：
 
 ```bash
 terraform plan

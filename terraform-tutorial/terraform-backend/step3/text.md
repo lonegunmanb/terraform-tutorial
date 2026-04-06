@@ -51,7 +51,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "demo" {
-  bucket = "backend-demo-bucket"
+  bucket = "step3-demo-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"
@@ -144,7 +144,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "demo" {
-  bucket = "backend-demo-bucket"
+  bucket = "step3-demo-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"
@@ -191,7 +191,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "demo" {
-  bucket = "backend-demo-bucket"
+  bucket = "step3-demo-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"

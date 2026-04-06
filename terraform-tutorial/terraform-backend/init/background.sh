@@ -27,8 +27,14 @@ services:
 EOF
 fi
 
-# main.tf template shared by all steps
-MAIN_TF='terraform {
+# main.tf template function — each step gets a unique bucket name
+seed_main_tf() {
+  local step_name="$1"
+  local dir="$2"
+  mkdir -p "$dir"
+  [ -f "$dir/main.tf" ] && return
+  cat > "$dir/main.tf" <<EOTF
+terraform {
   required_version = ">= 1.0"
   required_providers {
     aws = {
@@ -55,7 +61,7 @@ provider "aws" {
 }
 
 resource "aws_s3_bucket" "demo" {
-  bucket = "backend-demo-bucket"
+  bucket = "${step_name}-demo-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"
@@ -65,14 +71,12 @@ resource "aws_s3_bucket" "demo" {
 output "bucket_name" {
   value = aws_s3_bucket.demo.bucket
 }
-'
+EOTF
+}
 
-for step in step1 step2 step3; do
-  mkdir -p /root/workspace/$step
-  if [ ! -f /root/workspace/$step/main.tf ]; then
-    echo "$MAIN_TF" > /root/workspace/$step/main.tf
-  fi
-done
+seed_main_tf step1 /root/workspace/step1
+seed_main_tf step2 /root/workspace/step2
+seed_main_tf step3 /root/workspace/step3
 
 # ── 2. Install tools ──
 install_terraform
