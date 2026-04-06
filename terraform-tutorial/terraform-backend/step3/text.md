@@ -50,8 +50,8 @@ provider "aws" {
   }
 }
 
-resource "aws_s3_bucket" "demo" {
-  bucket = "step3-demo-bucket"
+resource "aws_s3_bucket" "app" {
+  bucket = "partial-config-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"
@@ -59,7 +59,7 @@ resource "aws_s3_bucket" "demo" {
 }
 
 output "bucket_name" {
-  value = aws_s3_bucket.demo.bucket
+  value = aws_s3_bucket.app.bucket
 }
 EOF
 ```
@@ -143,8 +143,8 @@ provider "aws" {
   }
 }
 
-resource "aws_s3_bucket" "demo" {
-  bucket = "step3-demo-bucket"
+resource "aws_s3_bucket" "app" {
+  bucket = "partial-config-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"
@@ -152,7 +152,7 @@ resource "aws_s3_bucket" "demo" {
 }
 
 output "bucket_name" {
-  value = aws_s3_bucket.demo.bucket
+  value = aws_s3_bucket.app.bucket
 }
 EOF
 terraform init -migrate-state <<< "yes"
@@ -190,8 +190,8 @@ provider "aws" {
   }
 }
 
-resource "aws_s3_bucket" "demo" {
-  bucket = "step3-demo-bucket"
+resource "aws_s3_bucket" "app" {
+  bucket = "partial-config-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"
@@ -199,7 +199,7 @@ resource "aws_s3_bucket" "demo" {
 }
 
 output "bucket_name" {
-  value = aws_s3_bucket.demo.bucket
+  value = aws_s3_bucket.app.bucket
 }
 EOF
 ```

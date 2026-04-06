@@ -2,10 +2,20 @@
 
 Terraform 默认使用 local 后端，将状态文件存储在当前工作目录中。让我们先体验这种默认行为。
 
+## 查看代码
+
+```bash
+cd /root/workspace
+cat main.tf
+```
+
+代码定义了两个 S3 存储桶：
+- demo-app-bucket — 应用数据桶
+- terraform-state-bucket — 状态存储桶，后续步骤将用它来存放 Terraform 状态文件
+
 ## 初始化并创建资源
 
 ```bash
-cd /root/workspace/step1
 terraform init
 ```
 
@@ -39,6 +49,20 @@ cat terraform.tfstate | python3 -m json.tool | head -30
 
 状态文件是一个 JSON 文件，记录了 Terraform 管理的所有资源。注意其中的 serial 字段——每次状态更新时递增，用于并发控制。
 
+## 确认资源已创建
+
+```bash
+awslocal s3 ls
+```
+
+你应该能看到 demo-app-bucket 和 terraform-state-bucket 都已被创建。
+
+```bash
+terraform plan
+```
+
+输出应显示 No changes——代码、状态文件、真实环境三者一致。
+
 ## 理解本地后端的局限
 
 本地后端意味着：
@@ -48,18 +72,4 @@ cat terraform.tfstate | python3 -m json.tool | head -30
 - 没有状态锁定——如果两人同时操作，状态可能被破坏
 - 状态文件可能包含敏感信息（密码、密钥），存储在本地不够安全
 
-在接下来的步骤中，我们将把状态迁移到远程后端来解决这些问题。
-
-## 确认资源已创建
-
-```bash
-awslocal s3 ls
-```
-
-你应该能看到 step1-demo-bucket 已被创建。同时确认 terraform 能正确管理它：
-
-```bash
-terraform plan
-```
-
-输出应显示 No changes——代码、状态文件、真实环境三者一致。
+在下一步中，我们将把状态迁移到刚刚创建的 terraform-state-bucket 中，体验远程后端。

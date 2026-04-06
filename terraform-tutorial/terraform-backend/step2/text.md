@@ -1,32 +1,21 @@
 # 第二步：配置 S3 后端
 
-现在我们将状态从本地迁移到 S3 远程后端，并亲手体验**状态锁定**的作用。
+在上一步中，我们用本地后端创建了两个 S3 存储桶，其中 terraform-state-bucket 就是为远程后端准备的。现在我们将状态迁移到这个桶中，并亲手体验**状态锁定**的作用。
 
 ## 确认当前状态
 
-step2 目录已经预先执行了 terraform apply，有一个使用本地后端的 S3 存储桶资源：
+确认当前 Terraform 使用本地后端管理着资源：
 
 ```bash
-cd /root/workspace/step2
+cd /root/workspace
 terraform state list
 ```
 
-你应该看到 aws_s3_bucket.demo——当前状态存储在本地 terraform.tfstate 文件中。
-
-## 确认基础设施就绪
-
-实验环境已预先创建了存放状态文件的 S3 桶和用于状态锁定的 DynamoDB 表：
-
-```bash
-awslocal s3 ls
-awslocal dynamodb list-tables
-```
-
-你应该能看到 terraform-state-bucket（存放状态）和 terraform-locks 表（用于锁定）。
+你应该看到 aws_s3_bucket.demo 和 aws_s3_bucket.state——状态目前存储在本地 terraform.tfstate 文件中。
 
 ## 修改配置，添加 S3 后端
 
-用以下命令替换 main.tf，添加 S3 后端配置（含 DynamoDB 锁定）：
+用以下命令替换 main.tf，添加 S3 后端配置（含 DynamoDB 锁定）。注意资源定义保持不变，只是在 terraform 块中新增了 backend "s3"：
 
 ```bash
 cat > main.tf <<'EOF'
@@ -76,27 +65,41 @@ provider "aws" {
   s3_use_path_style           = true
 
   endpoints {
-    s3  = "http://localhost:4566"
-    sts = "http://localhost:4566"
+    s3       = "http://localhost:4566"
+    dynamodb = "http://localhost:4566"
+    sts      = "http://localhost:4566"
   }
 }
 
 resource "aws_s3_bucket" "demo" {
-  bucket = "step2-demo-bucket"
+  bucket = "demo-app-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"
   }
 }
 
-output "bucket_name" {
+resource "aws_s3_bucket" "state" {
+  bucket = "terraform-state-bucket"
+  tags = {
+    Name      = "Terraform State Bucket"
+    ManagedBy = "Terraform"
+  }
+}
+
+output "demo_bucket" {
   value = aws_s3_bucket.demo.bucket
+}
+
+output "state_bucket" {
+  value = aws_s3_bucket.state.bucket
 }
 EOF
 ```
 
 注意 backend "s3" 块中的关键配置：
-- bucket / key 指定状态文件的存储位置
+- bucket 指向上一步创建的 terraform-state-bucket
+- key 指定状态文件在桶中的路径
 - dynamodb_table 指定用于状态锁定的 DynamoDB 表
 
 ## 迁移状态到 S3
@@ -107,7 +110,7 @@ EOF
 terraform init
 ```
 
-当提示 Do you want to migrate all workspaces to "s3"? 时，输入 yes 并回车。
+当提示 Do you want to migrate all workspaces to "s3"? 时，输入 yes 并回车。Terraform 会将本地 terraform.tfstate 中的状态数据迁移到 S3 桶中。
 
 ## 验证迁移结果
 
@@ -117,13 +120,15 @@ terraform init
 awslocal s3 ls s3://terraform-state-bucket/demo/
 ```
 
+你应该能看到 terraform.tfstate 文件——状态已经从本地迁移到了远程存储。
+
 确认 Terraform 仍能正常管理资源：
 
 ```bash
 terraform plan
 ```
 
-输出应显示 No changes。
+输出应显示 No changes——迁移对资源管理没有任何影响。
 
 ## 体验状态锁定
 
@@ -187,8 +192,6 @@ sed -i '/^resource "time_sleep"/,/^}/d' main.tf
 terraform apply -auto-approve
 ```
 
-Terraform 会销毁 time_sleep 资源，状态中只剩下 S3 存储桶。
-
 确认状态干净：
 
 ```bash
@@ -200,6 +203,7 @@ terraform plan
 ## 关键点
 
 - S3 后端将状态存储在远程 S3 存储桶中，团队成员可以共享
+- 状态存储桶由上一步的 Terraform 代码创建，是一个普通的 S3 存储桶
 - dynamodb_table 参数启用基于 DynamoDB 的状态锁定，防止并发操作冲突
 - Terraform 在执行 apply/destroy 等修改操作时自动获取锁，完成后自动释放
 - 持有锁期间，其他 Terraform 操作会立即报错，避免状态被破坏

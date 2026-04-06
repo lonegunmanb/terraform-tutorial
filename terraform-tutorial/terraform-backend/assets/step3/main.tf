@@ -24,14 +24,14 @@ provider "aws" {
   }
 }
 
-resource "aws_s3_bucket" "demo" {
-  bucket = "step3-demo-bucket"
+resource "aws_s3_bucket" "app" {
+  bucket = "partial-config-bucket"
   tags = {
-    Name      = "Demo Bucket"
+    Name      = "Partial Config Demo"
     ManagedBy = "Terraform"
   }
 }
 
 output "bucket_name" {
-  value = aws_s3_bucket.demo.bucket
+  value = aws_s3_bucket.app.bucket
 }

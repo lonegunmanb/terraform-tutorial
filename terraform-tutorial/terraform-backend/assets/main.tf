@@ -19,19 +19,34 @@ provider "aws" {
   s3_use_path_style           = true
 
   endpoints {
-    s3  = "http://localhost:4566"
-    sts = "http://localhost:4566"
+    s3       = "http://localhost:4566"
+    dynamodb = "http://localhost:4566"
+    sts      = "http://localhost:4566"
   }
 }
 
+# 应用数据桶
 resource "aws_s3_bucket" "demo" {
-  bucket = "step2-demo-bucket"
+  bucket = "demo-app-bucket"
   tags = {
     Name      = "Demo Bucket"
     ManagedBy = "Terraform"
   }
 }
 
-output "bucket_name" {
+# 状态存储桶 —— 后续步骤将把 Terraform 状态迁移到这个桶中
+resource "aws_s3_bucket" "state" {
+  bucket = "terraform-state-bucket"
+  tags = {
+    Name      = "Terraform State Bucket"
+    ManagedBy = "Terraform"
+  }
+}
+
+output "demo_bucket" {
   value = aws_s3_bucket.demo.bucket
+}
+
+output "state_bucket" {
+  value = aws_s3_bucket.state.bucket
 }
