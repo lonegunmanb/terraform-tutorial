@@ -190,10 +190,10 @@ module "app" {
 }
 
 # 场景2: 资源 depends_on module
-# app 模块的所有资源必须全部创建完，finalizer 才开始
+# app 和 downstream 模块的所有资源必须全部创建完，finalizer 才开始
 resource "aws_s3_bucket" "finalizer" {
   bucket     = "dep-finalizer"
-  depends_on = [module.app]
+  depends_on = [module.app, module.downstream]
 }
 
 # 场景3: module depends_on module
@@ -222,6 +222,7 @@ aws_s3_bucket.config: Creation complete after 1s
 module.app.aws_s3_bucket.this[0]: Creating...
 module.app.aws_s3_bucket.this[0]: Creation complete after 0s
 module.downstream.aws_s3_bucket.this[0]: Creating...
+module.downstream.aws_s3_bucket.this[0]: Creation complete after 0s
 aws_s3_bucket.finalizer: Creating...
 ...
 ```
@@ -229,10 +230,10 @@ aws_s3_bucket.finalizer: Creating...
 逐一对照：
 
 - **config 先完成** → app 模块的资源才开始（场景1：module depends_on 资源）
-- **app 的所有资源都完成** → finalizer 才开始（场景2：资源 depends_on module）
 - **app 的所有资源都完成** → downstream 的资源才开始（场景3：module depends_on module）
+- **app 和 downstream 的所有资源都完成** → finalizer 才开始（场景2：资源 depends_on 多个 module）
 
-注意 finalizer 和 downstream 都要等 app 模块内**所有**资源完成——不是只等其中一个。这就是 module 级别 depends_on 的整体性。
+注意 finalizer 同时依赖 app 和 downstream 两个模块，必须等它们**全部**完成才能开始。这就是 module 级别 depends_on 的整体性。
 
 清理刚添加的代码：
 
