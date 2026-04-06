@@ -40,34 +40,33 @@ have a provider named registry.terraform.io/hashicorp/azapi
 
 这就是 required_providers 存在的核心原因：**告诉 Terraform 去哪里找 Provider**。
 
-## 对比：正确声明的代码
+## 修复：添加 required_providers
 
-现在看看正确声明了 required_providers 的代码：
-
-```bash
-cd /root/workspace/step1/working
-cat main.tf
-```
-
-注意关键区别——多了一个 terraform 块：
+现在让我们来修复这段代码。用编辑器（左侧面板）打开 /root/workspace/step1/main.tf，在文件**最前面**添加一个 terraform 块：
 
 ```hcl
 terraform {
   required_providers {
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.0"
+    azapi = {
+      source  = "Azure/azapi"
+      version = "~> 2.0"
     }
   }
 }
 ```
 
-这里明确告诉 Terraform 三件事：
-- Provider 的本地名称是 null
-- 去 hashicorp/null 这个源地址下载
-- 使用 3.x 版本
+你也可以用命令快速插入：
 
-## 初始化正确的代码
+```bash
+sed -i '1i terraform {\n  required_providers {\n    azapi = {\n      source  = "Azure/azapi"\n      version = "~> 2.0"\n    }\n  }\n}\n' main.tf
+```
+
+这个 terraform 块明确告诉 Terraform 三件事：
+- Provider 的本地名称是 azapi
+- 去 Azure/azapi 这个源地址下载
+- 使用 2.x 版本
+
+## 重新初始化
 
 ```bash
 terraform init
@@ -77,20 +76,12 @@ terraform init
 
 ```
 Initializing provider plugins...
-- Finding hashicorp/null versions matching "~> 3.0"...
-- Installing hashicorp/null v3.x.x...
-- Installed hashicorp/null v3.x.x
+- Finding Azure/azapi versions matching "~> 2.0"...
+- Installing Azure/azapi v2.x.x...
+- Installed Azure/azapi v2.x.x
 
 Terraform has been successfully initialized!
 ```
-
-运行 plan 验证一下：
-
-```bash
-terraform plan
-```
-
-一切正常。
 
 ## 查看锁定文件
 
@@ -106,9 +97,9 @@ cat .terraform.lock.hcl
 
 - Terraform 根据资源类型名的第一个单词（下划线前）推断 Provider 本地名称
 - 没有 required_providers 时，Terraform 默认去 hashicorp 命名空间查找
-- 对于非 hashicorp 命名空间的 Provider（如 aliyun/alicloud），必须在 required_providers 中显式声明 source
+- 对于非 hashicorp 命名空间的 Provider（如 Azure/azapi），必须在 required_providers 中显式声明 source
 - 即使是 hashicorp 命名空间的 Provider，也推荐声明 required_providers 以锁定版本
 
 > 记住：每次复制 Terraform 代码时，不仅要复制 resource 和 provider 块，还要确保 terraform 块中的 required_providers 声明完整。
 
-✅ 你已经理解了 required_providers 声明的必要性。
+✅ 你已经理解了 required_providers 声明的必要性，并亲手修复了一段缺少声明的代码。

@@ -5,7 +5,7 @@ set -x
 source /root/setup-common.sh
 
 # ── 1. Ensure workspace directories exist ──
-mkdir -p /root/workspace/step1/working
+mkdir -p /root/workspace/step1
 mkdir -p /root/workspace/step2/tests
 
 # ── 2. Seed workspace files (fallback if assets copy fails) ──
@@ -39,34 +39,6 @@ resource "azapi_resource" "vnet" {
       }
     }
   }
-}
-EOTF
-fi
-
-if [ ! -f /root/workspace/step1/working/main.tf ]; then
-cat > /root/workspace/step1/working/main.tf <<'EOTF'
-# 正确的写法：声明了 required_providers
-# 对比 step1/main.tf，注意多出的 terraform 块
-
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    null = {
-      source  = "hashicorp/null"
-      version = "~> 3.0"
-    }
-  }
-}
-
-resource "null_resource" "demo" {
-  triggers = {
-    message = "Hello from Terraform!"
-  }
-}
-
-output "resource_id" {
-  value       = null_resource.demo.id
-  description = "null_resource 的 ID"
 }
 EOTF
 fi
