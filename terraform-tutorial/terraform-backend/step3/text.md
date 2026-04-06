@@ -115,7 +115,10 @@ terraform plan
 
 除了配置文件，也可以直接在命令行中以键值对形式提供参数。我们在方式一的基础上，用 -reconfigure 切换到不同的状态路径来演示：
 
+注意：endpoints 是嵌套块，无法通过 -backend-config="KEY=VALUE" 传递。对于端点配置，需要使用环境变量：
+
 ```bash
+export AWS_ENDPOINT_URL_S3=http://localhost:4566
 terraform init -reconfigure \
   -backend-config="bucket=terraform-state-bucket" \
   -backend-config="key=cli-demo/terraform.tfstate" \
@@ -130,7 +133,7 @@ terraform init -reconfigure \
   -backend-config="skip_region_validation=true"
 ```
 
-注意这里使用了 -reconfigure 而非 -migrate-state。-reconfigure 直接切换后端配置而不迁移状态——这正是我们想要的，因为我们只想演示参数传递方式，同一份资源仍由方式一的状态文件管理。
+这体现了命令行键值对的一个局限：它只能传递扁平的键值参数，无法传递嵌套块（如 endpoints）。在实际项目中，端点配置通常通过环境变量（AWS_ENDPOINT_URL_S3）或配置文件来提供。
 
 apply 使新后端生效：
 
