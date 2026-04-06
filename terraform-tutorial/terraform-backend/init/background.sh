@@ -163,7 +163,3 @@ rm -f _time_provider.tf
 rm -rf .terraform .terraform.lock.hcl
 
 finish_setup
-terraform init -input=false
-terraform apply -auto-approve -input=false
-
-finish_setup
