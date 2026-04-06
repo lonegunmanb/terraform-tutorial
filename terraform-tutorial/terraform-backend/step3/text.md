@@ -113,101 +113,10 @@ terraform plan
 
 ## 方式二：通过命令行键值对提供参数
 
-先回退到本地后端：
+除了配置文件，也可以直接在命令行中以键值对形式提供参数。我们在方式一的基础上，用 -reconfigure 切换到不同的状态路径来演示：
 
 ```bash
-cat > main.tf <<'EOF'
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region     = "us-east-1"
-  access_key = "test"
-  secret_key = "test"
-
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
-  skip_requesting_account_id  = true
-  s3_use_path_style           = true
-
-  endpoints {
-    s3  = "http://localhost:4566"
-    sts = "http://localhost:4566"
-  }
-}
-
-resource "aws_s3_bucket" "app" {
-  bucket = "partial-config-bucket"
-  tags = {
-    Name      = "Demo Bucket"
-    ManagedBy = "Terraform"
-  }
-}
-
-output "bucket_name" {
-  value = aws_s3_bucket.app.bucket
-}
-EOF
-terraform init -migrate-state <<< "yes"
-```
-
-重新添加空的 backend 块：
-
-```bash
-cat > main.tf <<'EOF'
-terraform {
-  required_version = ">= 1.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-
-  backend "s3" {}
-}
-
-provider "aws" {
-  region     = "us-east-1"
-  access_key = "test"
-  secret_key = "test"
-
-  skip_credentials_validation = true
-  skip_metadata_api_check     = true
-  skip_requesting_account_id  = true
-  s3_use_path_style           = true
-
-  endpoints {
-    s3  = "http://localhost:4566"
-    sts = "http://localhost:4566"
-  }
-}
-
-resource "aws_s3_bucket" "app" {
-  bucket = "partial-config-bucket"
-  tags = {
-    Name      = "Demo Bucket"
-    ManagedBy = "Terraform"
-  }
-}
-
-output "bucket_name" {
-  value = aws_s3_bucket.app.bucket
-}
-EOF
-```
-
-这次通过命令行键值对提供参数：
-
-```bash
-terraform init \
+terraform init -reconfigure \
   -backend-config="bucket=terraform-state-bucket" \
   -backend-config="key=cli-demo/terraform.tfstate" \
   -backend-config="region=us-east-1" \
@@ -221,9 +130,15 @@ terraform init \
   -backend-config="skip_region_validation=true"
 ```
 
-当提示迁移时输入 yes。
+注意这里使用了 -reconfigure 而非 -migrate-state。-reconfigure 直接切换后端配置而不迁移状态——这正是我们想要的，因为我们只想演示参数传递方式，同一份资源仍由方式一的状态文件管理。
 
-验证：
+apply 使新后端生效：
+
+```bash
+terraform apply -auto-approve
+```
+
+验证状态已存储到新路径：
 
 ```bash
 awslocal s3 ls s3://terraform-state-bucket/cli-demo/
