@@ -24,6 +24,7 @@ export default defineConfig({
           { text: '课程介绍', link: '/intro' },
           { text: '基础：Terraform 基本生命周期', link: '/basics' },
           { text: '状态管理', link: '/state' },
+          { text: 'Backend 配置', link: '/backend' },
           { text: 'Terraform 语法', link: '/syntax' },
           { text: 'Provider 配置', link: '/provider' },
           { text: 'Terraform 模块', link: '/module' }
