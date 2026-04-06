@@ -2,14 +2,14 @@
 
 ## 场景：从网上复制来的代码
 
-假设你从一篇博客文章中复制了一段使用 Yandex Cloud Provider 的 Terraform 代码。让我们看看它长什么样：
+假设你从一篇博客文章中复制了一段使用 Azure API Provider（azapi）的 Terraform 代码。让我们看看它长什么样：
 
 ```bash
 cd /root/workspace/step1
 cat main.tf
 ```
 
-这段代码直接使用了 yandex Provider 来创建虚拟机，但**没有声明 required_providers**。
+这段代码直接使用了 azapi Provider 来创建 Azure 资源，但**没有声明 required_providers**。
 
 ## 尝试初始化
 
@@ -21,27 +21,22 @@ terraform init
 
 ```
 Initializing provider plugins...
-- Finding latest version of hashicorp/yandex...
+- Finding latest version of hashicorp/azapi...
 
 Error: Failed to query available provider packages
 
 Could not retrieve the list of available versions for provider
-hashicorp/yandex: provider registry registry.terraform.io does not
-have a provider named registry.terraform.io/hashicorp/yandex
-
-Did you intend to use yandex-cloud/yandex? If so, you must specify
-that source address in each module which requires that provider.
+hashicorp/azapi: provider registry registry.terraform.io does not
+have a provider named registry.terraform.io/hashicorp/azapi
 ```
 
 为什么会失败？因为：
 
-1. Terraform 看到代码中使用了 yandex 开头的资源
+1. Terraform 看到代码中使用了 azapi 开头的资源
 2. 没有 required_providers 声明，Terraform 只能猜测 Provider 的源地址
-3. Terraform 默认去 hashicorp 命名空间查找，即 hashicorp/yandex
-4. 但 Yandex Cloud Provider 的真实源地址是 yandex-cloud/yandex，不在 hashicorp 命名空间下
-5. hashicorp/yandex 不存在，初始化失败
-
-注意 Terraform 甚至贴心地提示了："Did you intend to use yandex-cloud/yandex?"——它猜到了你可能要用的 Provider，但你必须在 required_providers 中显式声明。
+3. Terraform 默认去 hashicorp 命名空间查找，即 hashicorp/azapi
+4. 但 Azure API Provider 的真实源地址是 Azure/azapi，不在 hashicorp 命名空间下
+5. hashicorp/azapi 不存在，初始化失败
 
 这就是 required_providers 存在的核心原因：**告诉 Terraform 去哪里找 Provider**。
 
