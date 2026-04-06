@@ -38,6 +38,10 @@ module "vpc" {
   enable_nat_gateway = false
   enable_vpn_gateway = false
 
+  manage_default_network_acl    = false
+  manage_default_route_table    = false
+  manage_default_security_group = false
+
   tags = {
     Terraform   = "true"
     Environment = "dev"
