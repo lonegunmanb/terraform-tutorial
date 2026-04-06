@@ -1,9 +1,9 @@
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.5.7"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = ">= 6.39"
     }
   }
 }
@@ -32,16 +32,20 @@ variable "bucket_names" {
 }
 
 module "buckets_count" {
-  source      = "../modules/s3-bucket"
-  count       = length(var.bucket_names)
-  bucket_name = "count-${var.bucket_names[count.index]}"
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "5.12.0"
+
+  count         = length(var.bucket_names)
+  bucket        = "count-${var.bucket_names[count.index]}"
+  force_destroy = true
+
   tags = {
     Index = count.index
   }
 }
 
 output "count_bucket_ids" {
-  value = module.buckets_count[*].bucket_id
+  value = module.buckets_count[*].s3_bucket_id
 }
 
 # ── 使用 for_each 批量调用模块 ──
@@ -68,12 +72,16 @@ variable "environments" {
 }
 
 module "env_buckets" {
-  source      = "../modules/s3-bucket"
-  for_each    = var.environments
-  bucket_name = "app-${each.value.suffix}"
-  tags        = each.value.tags
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "5.12.0"
+
+  for_each      = var.environments
+  bucket        = "app-${each.value.suffix}"
+  force_destroy = true
+
+  tags = each.value.tags
 }
 
 output "env_bucket_ids" {
-  value = { for k, v in module.env_buckets : k => v.bucket_id }
+  value = { for k, v in module.env_buckets : k => v.s3_bucket_id }
 }

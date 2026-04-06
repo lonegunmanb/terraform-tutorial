@@ -2,13 +2,13 @@ run "web_assets_bucket" {
   command = apply
 
   assert {
-    condition     = module.web_assets.bucket_id == "quiz-web-assets"
-    error_message = "module.web_assets 的 bucket_id 应为 quiz-web-assets"
+    condition     = module.web_assets.s3_bucket_id == "quiz-web-assets"
+    error_message = "module.web_assets 的 s3_bucket_id 应为 quiz-web-assets"
   }
 
   assert {
-    condition     = module.web_assets.bucket_arn != null && module.web_assets.bucket_arn != ""
-    error_message = "module.web_assets 应输出 bucket_arn"
+    condition     = module.web_assets.s3_bucket_arn != null && module.web_assets.s3_bucket_arn != ""
+    error_message = "module.web_assets 应输出 s3_bucket_arn"
   }
 }
 
@@ -16,13 +16,13 @@ run "api_data_bucket" {
   command = apply
 
   assert {
-    condition     = module.api_data.bucket_id == "quiz-api-data"
-    error_message = "module.api_data 的 bucket_id 应为 quiz-api-data"
+    condition     = module.api_data.s3_bucket_id == "quiz-api-data"
+    error_message = "module.api_data 的 s3_bucket_id 应为 quiz-api-data"
   }
 
   assert {
-    condition     = module.api_data.bucket_arn != null && module.api_data.bucket_arn != ""
-    error_message = "module.api_data 应输出 bucket_arn"
+    condition     = module.api_data.s3_bucket_arn != null && module.api_data.s3_bucket_arn != ""
+    error_message = "module.api_data 应输出 s3_bucket_arn"
   }
 }
 
@@ -30,8 +30,8 @@ run "backups_bucket" {
   command = apply
 
   assert {
-    condition     = module.backups.bucket_id == "quiz-backups"
-    error_message = "module.backups 的 bucket_id 应为 quiz-backups"
+    condition     = module.backups.s3_bucket_id == "quiz-backups"
+    error_message = "module.backups 的 s3_bucket_id 应为 quiz-backups"
   }
 }
 

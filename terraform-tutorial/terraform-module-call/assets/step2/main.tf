@@ -1,9 +1,9 @@
 terraform {
-  required_version = ">= 1.0"
+  required_version = ">= 1.5.7"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = ">= 6.39"
     }
   }
 }
@@ -38,8 +38,12 @@ variable "environment" {
 
 # 将根模块的变量组合后传入子模块
 module "data_bucket" {
-  source      = "../modules/s3-bucket"
-  bucket_name = "${var.project}-${var.environment}-data"
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "5.12.0"
+
+  bucket        = "${var.project}-${var.environment}-data"
+  force_destroy = true
+
   tags = {
     Project     = var.project
     Environment = var.environment
@@ -48,8 +52,12 @@ module "data_bucket" {
 }
 
 module "logs_bucket" {
-  source      = "../modules/s3-bucket"
-  bucket_name = "${var.project}-${var.environment}-logs"
+  source  = "terraform-aws-modules/s3-bucket/aws"
+  version = "5.12.0"
+
+  bucket        = "${var.project}-${var.environment}-logs"
+  force_destroy = true
+
   tags = {
     Project     = var.project
     Environment = var.environment
@@ -60,25 +68,25 @@ module "logs_bucket" {
 # ── 输出引用 ──
 
 output "data_bucket_id" {
-  value       = module.data_bucket.bucket_id
+  value       = module.data_bucket.s3_bucket_id
   description = "数据桶 ID"
 }
 
 output "data_bucket_arn" {
-  value       = module.data_bucket.bucket_arn
+  value       = module.data_bucket.s3_bucket_arn
   description = "数据桶 ARN"
 }
 
 output "logs_bucket_id" {
-  value       = module.logs_bucket.bucket_id
+  value       = module.logs_bucket.s3_bucket_id
   description = "日志桶 ID"
 }
 
 # 将模块输出传给另一个资源或输出
 output "all_bucket_ids" {
   value = [
-    module.data_bucket.bucket_id,
-    module.logs_bucket.bucket_id,
+    module.data_bucket.s3_bucket_id,
+    module.logs_bucket.s3_bucket_id,
   ]
   description = "所有桶的 ID 列表"
 }
