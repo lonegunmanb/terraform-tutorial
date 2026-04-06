@@ -16,7 +16,7 @@ cat main.tf
 ```hcl
 module "buckets_count" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   count         = length(var.bucket_names)
   bucket        = "count-${var.bucket_names[count.index]}"
@@ -63,7 +63,7 @@ terraform output count_bucket_ids
 ```hcl
 module "env_buckets" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   for_each      = var.environments
   bucket        = "app-${each.value.suffix}"
@@ -182,7 +182,7 @@ resource "aws_s3_bucket" "config" {
 
 module "app" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   bucket        = "dep-app"
   force_destroy = true
@@ -200,7 +200,7 @@ resource "aws_s3_bucket" "finalizer" {
 # app 模块的所有资源必须全部创建完，downstream 模块的所有资源才开始
 module "downstream" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   bucket        = "dep-downstream"
   force_destroy = true

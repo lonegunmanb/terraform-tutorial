@@ -18,7 +18,7 @@ cat main.tf
 ```hcl
 module "data_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   bucket        = "${var.project}-${var.environment}-data"
   force_destroy = true

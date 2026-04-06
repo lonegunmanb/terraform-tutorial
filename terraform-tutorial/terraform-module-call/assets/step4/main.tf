@@ -1,9 +1,9 @@
 terraform {
-  required_version = ">= 1.5.7"
+  required_version = ">= 1.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 6.39"
+      version = "~> 5.0"
     }
   }
 }
@@ -28,7 +28,7 @@ provider "aws" {
 # 测验：综合模块调用
 #
 # 要求：
-# 1. 使用 terraform-aws-modules/s3-bucket/aws 模块（version = "5.12.0"），创建 3 个桶：
+# 1. 使用 terraform-aws-modules/s3-bucket/aws 模块（version = "4.11.0"），创建 3 个桶：
 #    - 模块名称: web_assets，bucket: "quiz-web-assets"，tags: { Role = "frontend" }
 #    - 模块名称: api_data，  bucket: "quiz-api-data"，  tags: { Role = "backend" }
 #    - 模块名称: backups，   bucket: "quiz-backups"，   tags: { Role = "ops" }

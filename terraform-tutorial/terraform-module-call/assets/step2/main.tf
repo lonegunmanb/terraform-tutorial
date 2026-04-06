@@ -1,9 +1,9 @@
 terraform {
-  required_version = ">= 1.5.7"
+  required_version = ">= 1.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 6.39"
+      version = "~> 5.0"
     }
   }
 }
@@ -39,7 +39,7 @@ variable "environment" {
 # 将根模块的变量组合后传入子模块
 module "data_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   bucket        = "${var.project}-${var.environment}-data"
   force_destroy = true
@@ -53,7 +53,7 @@ module "data_bucket" {
 
 module "logs_bucket" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   bucket        = "${var.project}-${var.environment}-logs"
   force_destroy = true

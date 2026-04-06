@@ -1,9 +1,9 @@
 terraform {
-  required_version = ">= 1.5.7"
+  required_version = ">= 1.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = ">= 6.39"
+      version = "~> 5.0"
     }
   }
 }
@@ -33,7 +33,7 @@ variable "bucket_names" {
 
 module "buckets_count" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   count         = length(var.bucket_names)
   bucket        = "count-${var.bucket_names[count.index]}"
@@ -73,7 +73,7 @@ variable "environments" {
 
 module "env_buckets" {
   source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "5.12.0"
+  version = "4.11.0"
 
   for_each      = var.environments
   bucket        = "app-${each.value.suffix}"
