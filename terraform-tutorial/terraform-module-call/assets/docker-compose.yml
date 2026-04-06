@@ -4,7 +4,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3,ec2
+      - SERVICES=s3,ec2,sts
       - DEFAULT_REGION=us-east-1
       - EAGER_SERVICE_LOADING=1
     deploy:
