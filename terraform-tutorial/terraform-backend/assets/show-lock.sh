@@ -2,7 +2,6 @@
 # show-lock.sh — 演示 Terraform 状态锁定
 # 后台运行 terraform apply，等待锁出现后展示锁信息
 
-set -e
 cd /root/workspace
 
 echo "========================================"
@@ -19,7 +18,7 @@ echo ""
 
 # 2. 轮询等待锁出现
 echo ">>> 等待 Terraform 获取锁 ..."
-for i in $(seq 1 15); do
+for i in $(seq 1 30); do
   LOCK_COUNT=$(awslocal dynamodb scan --table-name terraform-locks --query 'Count' --output text 2>/dev/null || echo "0")
   if [ "$LOCK_COUNT" -gt 0 ] 2>/dev/null; then
     break
@@ -32,7 +31,7 @@ echo ""
 echo "========================================"
 echo "  DynamoDB 锁表内容"
 echo "========================================"
-awslocal dynamodb scan --table-name terraform-locks --output json 2>/dev/null | python3 -m json.tool
+awslocal dynamodb scan --table-name terraform-locks --output json 2>/dev/null | python3 -m json.tool || true
 echo ""
 
 # 4. 解析并展示 Info 字段
@@ -66,21 +65,26 @@ echo ""
 echo "========================================"
 echo "  等待后台 apply 完成 ..."
 echo "========================================"
-wait $APPLY_PID
+wait $APPLY_PID || true
 EXIT_CODE=$?
 echo "  apply 完成，退出码: $EXIT_CODE"
 echo ""
 
-# 7. 确认锁已释放
+# 7. 等待锁释放（LocalStack DynamoDB 可能有短暂延迟）
 echo "========================================"
 echo "  确认锁已释放"
 echo "========================================"
-LOCK_COUNT=$(awslocal dynamodb scan --table-name terraform-locks --query 'Count' --output text 2>/dev/null)
-echo "  锁表记录数: $LOCK_COUNT"
-if [ "$LOCK_COUNT" = "0" ]; then
-  echo "  锁已自动释放！"
-else
-  echo "  警告: 锁未释放，请检查 /tmp/apply.log"
+for i in $(seq 1 10); do
+  sleep 1
+  LOCK_COUNT=$(awslocal dynamodb scan --table-name terraform-locks --query 'Count' --output text 2>/dev/null || echo "0")
+  if [ "$LOCK_COUNT" = "0" ]; then
+    echo "  锁已自动释放！"
+    break
+  fi
+done
+if [ "$LOCK_COUNT" != "0" ]; then
+  echo "  锁表记录数: $LOCK_COUNT"
+  echo "  查看 apply 日志: cat /tmp/apply.log"
 fi
 echo ""
 echo "========================================"
