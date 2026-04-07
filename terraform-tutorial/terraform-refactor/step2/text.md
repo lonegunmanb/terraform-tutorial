@@ -23,12 +23,40 @@ awslocal s3 ls
 
 假设我们想停止管理 app_logs 桶。先看看如果粗暴地删除 resource 块会发生什么——不要真的 apply，只是看 plan。
 
-用 sed 注释掉 app_logs 的 resource 块：
+写一个不包含 app_logs 的配置：
 
 ```
-sed -i 's/^resource "aws_s3_bucket" "app_logs"/# resource "aws_s3_bucket" "app_logs"/' main.tf
-sed -i 's/^  bucket = "refactor-app-logs"/  # bucket = "refactor-app-logs"/' main.tf
-sed -i 's/^}$/# }/' main.tf
+cat > main.tf << 'DELETED'
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "test"
+  secret_key = "test"
+
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  s3_use_path_style           = true
+
+  endpoints {
+    s3  = "http://localhost:4566"
+    sts = "http://localhost:4566"
+  }
+}
+
+resource "aws_s3_bucket" "app_data" {
+  bucket = "refactor-app-data"
+}
+DELETED
 ```
 
 查看计划：
@@ -39,13 +67,7 @@ terraform plan
 
 Terraform 会提示要**销毁** app_logs 桶！这不是我们想要的。
 
-恢复文件：
-
-```
-git checkout main.tf 2>/dev/null || terraform fmt main.tf
-```
-
-实际上我们直接重写文件更简单：
+恢复原始文件：
 
 ```
 cat > main.tf << 'RESTORE'
