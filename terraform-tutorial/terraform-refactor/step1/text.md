@@ -21,7 +21,7 @@ awslocal s3 ls
 terraform state list
 ```
 
-输出为空——Terraform 没有管理任何资源。
+Terraform 会提示 No state file was found——因为这个目录还从未执行过 apply，根本没有状态文件。Terraform 对这些桶一无所知。
 
 ## 编写 import 块和 resource 块
 
