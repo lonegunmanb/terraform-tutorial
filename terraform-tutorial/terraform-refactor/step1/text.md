@@ -11,7 +11,7 @@ cd /root/workspace/step1
 awslocal s3 ls
 ```
 
-你应该能看到 legacy-app-data 和 legacy-app-logs 两个桶。这些桶不在任何 Terraform 状态文件中——Terraform 并不知道它们的存在。
+你会看到很多桶——其中 legacy- 开头的是通过 awslocal 手动创建的，其余的是后续步骤预创建的。我们关注的是 legacy-app-data 和 legacy-app-logs 这两个桶。它们不在当前目录的 Terraform 状态文件中——Terraform 并不知道它们的存在。
 
 ## 确认 Terraform 不知道这些桶
 
@@ -107,7 +107,7 @@ terraform plan
 awslocal s3 ls | grep legacy-svc
 ```
 
-你应该看到 legacy-svc-orders、legacy-svc-payments 和 legacy-svc-notifications。
+你应该看到 legacy-svc-orders、legacy-svc-payments 和 legacy-svc-notifications 三个桶。
 
 用 for_each 可以一次性导入所有同类型的资源。在 main.tf 底部添加：
 
