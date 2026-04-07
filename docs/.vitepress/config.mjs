@@ -27,7 +27,8 @@ export default defineConfig({
           { text: 'Backend 配置', link: '/backend' },
           { text: 'Terraform 语法', link: '/syntax' },
           { text: 'Provider 配置', link: '/provider' },
-          { text: 'Terraform 模块', link: '/module' }
+          { text: 'Terraform 模块', link: '/module' },
+          { text: '代码重构', link: '/refactor_module' }
         ],
       },
     ],

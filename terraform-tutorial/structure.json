@@ -14,6 +14,7 @@
     { "path": "terraform-syntax-ephemeral" },
     { "path": "terraform-provider" },
     { "path": "terraform-module-basic" },
-    { "path": "terraform-module-call" }
+    { "path": "terraform-module-call" },
+    { "path": "terraform-refactor" }
   ]
 }
