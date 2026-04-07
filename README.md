@@ -44,6 +44,6 @@ scripts/
 
 ## Killercoda 场景
 
-场景定义位于 `terraform-tutorial/` 目录。将此仓库关联到 [Killercoda Creator](https://killercoda.com/creator) 账号后，场景会自动同步。
+场景定义位于 `terraform-tutorial/` 目录。将此仓库关联到 [Killercoda Creator](https://killercoda.com/creator) 账号后，需要手动在 killercoda 上同步一次内容。
 
 详细的场景结构规范和开发指南见 [.github/copilot-instructions.md](.github/copilot-instructions.md)。

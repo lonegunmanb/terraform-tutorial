@@ -33,7 +33,7 @@ module "data_bucket" {
 
 这里 bucket、force_destroy 和 tags 对应模块中的 variable 定义。
 
-社区模块的输入变量说明可以在 Terraform Registry 页面查看。这个 S3 模块有 70 多个输入变量，但大多数都有默认值，实际调用时只需传入少数几个。
+社区模块的输入变量说明可以在 Terraform Registry [页面](https://registry.tf-registry-prod-use1.terraform.io/modules/terraform-aws-modules/s3-bucket/aws/latest)查看。这个 S3 模块有 70 多个输入变量，但大多数都有默认值，实际调用时只需传入少数几个。
 
 传参规则：
 - 没有 default 值的 variable 是必填参数——调用时必须提供
