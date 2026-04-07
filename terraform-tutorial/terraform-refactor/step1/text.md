@@ -97,4 +97,67 @@ terraform plan
 
 输出应该是 No changes——import 块对已存在于状态中的资源不会重复执行。
 
+## 使用 for_each 批量导入
+
+两个桶手动写两组 import + resource 还可以接受。但如果有更多桶呢？
+
+环境中还有三个手动创建的服务桶，先确认：
+
+```
+awslocal s3 ls | grep legacy-svc
+```
+
+你应该看到 legacy-svc-orders、legacy-svc-payments 和 legacy-svc-notifications。
+
+用 for_each 可以一次性导入所有同类型的资源。在 main.tf 底部添加：
+
+```hcl
+locals {
+  service_buckets = {
+    orders        = "legacy-svc-orders"
+    payments      = "legacy-svc-payments"
+    notifications = "legacy-svc-notifications"
+  }
+}
+
+import {
+  for_each = local.service_buckets
+  to       = aws_s3_bucket.services[each.key]
+  id       = each.value
+}
+
+resource "aws_s3_bucket" "services" {
+  for_each = local.service_buckets
+  bucket   = each.value
+}
+```
+
+关键点：import 块也支持 for_each——它会遍历 map，为每个元素执行一次导入。to 地址中的 each.key 对应 map 的键（orders、payments、notifications）。
+
+## 执行批量导入
+
+```
+terraform plan
+```
+
+你应该看到三个 import 操作：
+
+```
+Plan: 3 to import, 0 to add, 0 to change, 0 to destroy.
+```
+
+执行：
+
+```
+terraform apply -auto-approve
+```
+
+验证所有五个桶都已纳入管理：
+
+```
+terraform state list
+```
+
+你应该看到五个资源：两个单独导入的（app_data、app_logs），三个通过 for_each 批量导入的（services["orders"]、services["payments"]、services["notifications"]）。
+
 > 提示：import 块只能写在根模块中。如果需要导入到子模块中的资源，可以在 to 地址中使用 module.xxx.resource_type.name 的形式。

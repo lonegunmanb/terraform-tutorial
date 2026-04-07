@@ -22,6 +22,9 @@ done
 
 awslocal s3 mb s3://legacy-app-data
 awslocal s3 mb s3://legacy-app-logs
+awslocal s3 mb s3://legacy-svc-orders
+awslocal s3 mb s3://legacy-svc-payments
+awslocal s3 mb s3://legacy-svc-notifications
 
 # ── 4. Pre-init & pre-apply step2 (removed needs existing state) ──
 cd /root/workspace/step2
