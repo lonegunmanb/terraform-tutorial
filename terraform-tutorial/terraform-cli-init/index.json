@@ -1,0 +1,41 @@
+{
+  "title": "terraform init：初始化工作目录与依赖管理",
+  "description": "通过实际操作掌握 terraform init 的三大核心能力：初始化工作目录、管理 Provider 锁文件和切换 Backend 迁移状态",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "初次初始化工作目录：.terraform/ 与 .terraform.lock.hcl",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "Provider 锁文件管理：-upgrade 与 -lockfile=readonly",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "切换 Backend 与状态迁移：-migrate-state 与 -reconfigure",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

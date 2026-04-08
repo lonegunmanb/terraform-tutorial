@@ -16,6 +16,7 @@
     { "path": "terraform-module-basic" },
     { "path": "terraform-module-call" },
     { "path": "terraform-refactor" },
-    { "path": "terraform-cli-basics" }
+    { "path": "terraform-cli-basics" },
+    { "path": "terraform-cli-init" }
   ]
 }
