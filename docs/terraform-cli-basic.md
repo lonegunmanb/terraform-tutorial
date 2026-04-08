@@ -13,6 +13,64 @@ Terraform 的所有功能通过单一可执行文件 `terraform` 暴露。输入
 `init`、`plan`、`apply`、`destroy`、`validate`、`show`、`output`、`state`、`import`、`providers`、`refresh`、`taint`、`untaint`、`workspace`、`test` 等核心子命令将在后续章节中各自单独讲解。本章重点介绍全局参数与其余常用命令。
 :::
 
+## 跨命令通用参数
+
+以下参数不属于任何特定子命令，而是 Terraform CLI 的**通用参数**，可以附加在大多数子命令后面使用，例如 `terraform init`、`terraform plan`、`terraform apply`、`terraform validate` 等。
+
+### -no-color
+
+禁用输出中的 ANSI 颜色转义码。在 CI/CD 日志系统（如 GitHub Actions、Jenkins）或将输出写入文件时，颜色码会产生乱码，使用 `-no-color` 可获得纯文本输出：
+
+```shell
+terraform init -no-color
+terraform plan -no-color
+```
+
+### -input
+
+控制 Terraform 是否在需要时提示用户交互输入。默认为 `true`。设为 `false` 时，若执行过程需要输入则直接报错退出，适合 CI/CD 等无人值守场景：
+
+```shell
+terraform init -input=false
+terraform apply -input=false
+```
+
+### -lock 与 -lock-timeout
+
+`-lock=false` 跳过状态文件的加锁步骤。仅在本地开发调试时临时使用，**生产环境请勿关闭**，否则并发执行可能导致状态文件损坏：
+
+```shell
+terraform plan -lock=false
+```
+
+`-lock-timeout` 设置等待锁释放的超时时间（默认 `0s`，即立即失败）。适合多进程短暂竞争锁的场景：
+
+```shell
+terraform apply -lock-timeout=60s
+```
+
+> `-lock` 和 `-lock-timeout` 仅对涉及状态文件读写的命令有效（`plan`、`apply`、`destroy` 等），对只读命令（`version`、`fmt`）无意义。
+
+### -json
+
+将输出切换为机器可读的 **NDJSON 格式**（Newline-Delimited JSON，每行一个 JSON 对象）。适合在脚本或 CI 流水线中解析 Terraform 的执行结果：
+
+```shell
+terraform init -json
+terraform validate -json
+```
+
+输出示例：
+
+```json
+{"@level":"info","@message":"Initializing the backend...","@module":"terraform.ui","type":"log"}
+{"@level":"info","@message":"Terraform has been successfully initialized!","@module":"terraform.ui","type":"log"}
+```
+
+::: tip
+在 CI 中同时使用 `-json` 和 `-no-color` 可以避免 JSON 字符串中混入颜色码。
+:::
+
 ## 全局参数 -chdir
 
 通常需要先 `cd` 到包含 `.tf` 文件的目录才能运行 Terraform。`-chdir` 全局参数允许不切换当前目录直接指定目标路径：

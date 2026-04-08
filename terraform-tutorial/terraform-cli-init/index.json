@@ -19,6 +19,10 @@
       {
         "title": "切换 Backend 与状态迁移：-migrate-state 与 -reconfigure",
         "text": "step3/text.md"
+      },
+      {
+        "title": "通用参数：-no-color、-json、-input 与 -lock",
+        "text": "step4/text.md"
       }
     ],
     "finish": {

@@ -39,7 +39,27 @@ terraform init [options]
 
 `.terraform.lock.hcl` 应纳入版本控制；`.terraform/` 通常通过 `.gitignore` 排除。
 
-## 常用参数
+## 通用参数
+
+以下参数适用于 `terraform init` 的全部或多个初始化步骤，同时也适用于 `plan`、`apply`、`destroy` 等其他子命令。完整说明参见 [CLI 基础命令 — 跨命令通用参数](/terraform-cli-basic#跨命令通用参数)。
+
+| 参数 | 作用 |
+|------|------|
+| `-input=false` | 禁止交互式输入，需要输入时直接报错 |
+| `-lock=false` | 跳过状态文件加锁（本地调试用，生产环境勿用） |
+| `-lock-timeout=<duration>` | 等待获取状态锁的超时时间（默认 `0s`） |
+| `-no-color` | 禁用输出中的 ANSI 颜色码 |
+| `-json` | 以 NDJSON 格式输出，适合脚本解析 |
+
+::: tip CI/CD 推荐组合
+```bash
+terraform init -input=false -lockfile=readonly -no-color
+```
+:::
+
+## 步骤专有参数
+
+以下参数仅作用于特定的初始化步骤（Backend / 模块 / Provider）。
 
 ### -upgrade
 
@@ -113,14 +133,6 @@ terraform init -lockfile=readonly
 
 ```bash
 terraform init -get=false
-```
-
-### -input=false
-
-禁止交互式输入提示，适用于自动化环境：
-
-```bash
-terraform init -input=false
 ```
 
 ## Provider 依赖锁文件
