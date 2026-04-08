@@ -38,7 +38,7 @@ cat backend.tf.example
 awslocal s3 ls
 ```
 
-## 尝试直接运行 terraform init（会报错）
+## 切换到 S3 Backend 并迁移状态
 
 先激活 backend 配置：
 
@@ -46,30 +46,33 @@ awslocal s3 ls
 cp backend.tf.example backend.tf
 ```
 
-现在运行 terraform init（不带任何迁移参数）：
+运行 terraform init，Terraform 检测到存在本地状态且新 backend 尚无状态，会交互式询问是否迁移：
 
 ```
 terraform init
 ```
 
-Terraform 检测到 backend 配置已从本地变更为 S3，会报错并提示你必须明确选择处理方式：
+你会看到类似如下提示：
 
 ```
-Error: Backend initialization required...
+Do you want to copy existing state to the new backend?
+  Pre-existing state was found while migrating the previous "local" backend to the
+  newly configured "s3" backend. No existing state was found in the newly
+  configured "s3" backend. Do you want to copy this state to the new "s3"
+  backend? Enter "yes" to copy and "no" to start with an empty state.
 
-  terraform init -migrate-state
-  terraform init -reconfigure
+  Enter a value:
 ```
 
-## 迁移状态到 S3
+输入 yes 并回车确认迁移。
 
-使用 -migrate-state -force-copy 将本地状态迁移到 S3：
+## 在自动化场景中跳过交互式确认
+
+在 CI/CD 或脚本中不方便交互时，可以用 -force-copy 跳过确认（相当于自动回答 yes）：
 
 ```
-terraform init -migrate-state -force-copy
+terraform init -force-copy
 ```
-
--force-copy 跳过交互式确认，适合脚本化使用。
 
 ## 验证状态已迁移
 

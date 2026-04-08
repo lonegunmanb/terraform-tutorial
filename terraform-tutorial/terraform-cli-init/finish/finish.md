@@ -10,8 +10,8 @@
 | 幂等性 | terraform init 可安全重复执行，不会破坏资源或状态 |
 | -upgrade | 重新检查并升级 provider 到最新兼容版本 |
 | -lockfile=readonly | CI/CD 中禁止修改锁文件，确保版本一致性 |
-| -migrate-state | 切换 backend 时将现有状态迁移到新 backend |
-| -force-copy | 配合 -migrate-state 跳过交互式确认 |
+| -migrate-state | 切换 backend 时跳过交互式询问并自动迁移状态（等同于自动回答 yes） |
+| -force-copy | 同 -migrate-state，跳过迁移确认；两者效果相同 |
 | -reconfigure | 重置 backend 配置，跳过状态迁移 |
 
 ## 下一步

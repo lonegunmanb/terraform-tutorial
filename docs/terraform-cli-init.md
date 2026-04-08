@@ -57,18 +57,24 @@ terraform init -upgrade
 terraform init -reconfigure
 ```
 
-### -migrate-state
+### -migrate-state 与 -force-copy
 
-切换 Backend 时将现有状态迁移到新的 Backend，Terraform 会交互式询问是否迁移：
+切换 Backend 时，`terraform init` 会以交互式询问的方式确认是否将现有状态复制到新 Backend：
+
+```bash
+terraform init
+```
+
+如果需要跳过交互式确认（如 CI/CD 场景），可以使用 `-force-copy`（相当于自动回答 yes）：
+
+```bash
+terraform init -force-copy
+```
+
+`-migrate-state` 是等效的别名，效果与 `-force-copy` 相同：
 
 ```bash
 terraform init -migrate-state
-```
-
-配合 `-force-copy` 可跳过交互式确认，适合脚本化使用：
-
-```bash
-terraform init -migrate-state -force-copy
 ```
 
 ### -backend-config
@@ -147,17 +153,16 @@ provider "registry.terraform.io/hashicorp/aws" {
 
 | 参数 | 行为 |
 |------|------|
-| `-migrate-state` | 将已有状态复制到新 Backend |
+| 不加参数 | 交互式询问是否将已有状态复制到新 Backend |
+| `-force-copy` / `-migrate-state` | 跳过交互式确认，自动将已有状态复制到新 Backend |
 | `-reconfigure` | 忽略已有状态，直接切换到新 Backend 配置 |
 
-不加任何参数时，若检测到 Backend 变更，Terraform 会报错并要求你明确选择处理方式：
+不加任何参数时，若检测到有已有状态可以迁移，Terraform 会交互式询问：
 
 ```
-Error: Backend initialization required, please run "terraform init"
-
-To initialize the backend, run:
-  terraform init -migrate-state
-  terraform init -reconfigure
+Do you want to copy existing state to the new backend?
+  ...
+  Enter a value: yes
 ```
 
 ## 在自动化环境中运行
