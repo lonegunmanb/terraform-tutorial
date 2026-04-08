@@ -34,7 +34,8 @@ export default defineConfig({
             collapsed: false,
             items: [
               { text: 'CLI 基础命令', link: '/terraform-cli-basic' },
-              { text: 'init', link: '/terraform-cli-init' }
+              { text: 'init', link: '/terraform-cli-init' },
+              { text: 'plan', link: '/terraform-cli-plan' }
             ]
           }
         ],
