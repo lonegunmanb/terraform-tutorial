@@ -65,14 +65,66 @@ for (const file of files) {
   const slug = basename(file, '.md')
   const title = fm.title || extractTitle(content) || slug
   const order = typeof fm.order === 'number' ? fm.order : 999
+  const group = typeof fm.group === 'string' ? fm.group : null
+  const group_order = typeof fm.group_order === 'number' ? fm.group_order : null
 
-  items.push({ text: title, link: `/${slug}`, order })
+  items.push({ text: title, link: `/${slug}`, order, group, group_order })
 }
 
 items.sort((a, b) => a.order - b.order)
 
+// --- Build group map and merged entries list ---
+// Items with the same `group` value are nested under a sidebar sub-group.
+// The group's position is determined by `group_order` (or the first item's order).
+const groupMap = new Map()
+for (const item of items) {
+  if (item.group) {
+    if (!groupMap.has(item.group)) {
+      groupMap.set(item.group, {
+        text: item.group,
+        isGroup: true,
+        order: item.group_order ?? item.order,
+        items: [],
+      })
+    }
+    groupMap.get(item.group).items.push({ text: item.text, link: item.link })
+  }
+}
+
+const seenGroups = new Set()
+const allEntries = []
+for (const item of items) {
+  if (item.group) {
+    if (!seenGroups.has(item.group)) {
+      seenGroups.add(item.group)
+      allEntries.push(groupMap.get(item.group))
+    }
+  } else {
+    allEntries.push(item)
+  }
+}
+allEntries.sort((a, b) => a.order - b.order)
+
 // --- Generate sidebar block ---
-const sidebarItems = items.map(({ text, link }) => `          { text: '${text}', link: '${link}' }`)
+const toSidebarItem = (entry, indent = '          ') => {
+  if (entry.isGroup) {
+    const subLines = entry.items
+      .map(sub => `${indent}    { text: '${sub.text}', link: '${sub.link}' }`)
+      .join(',\n')
+    return (
+      `${indent}{\n` +
+      `${indent}  text: '${entry.text}',\n` +
+      `${indent}  collapsed: false,\n` +
+      `${indent}  items: [\n` +
+      `${subLines}\n` +
+      `${indent}  ]\n` +
+      `${indent}}`
+    )
+  }
+  return `${indent}{ text: '${entry.text}', link: '${entry.link}' }`
+}
+
+const sidebarItems = allEntries.map(e => toSidebarItem(e))
 const sidebarBlock = `    // @auto-sidebar-start
     sidebar: [
       {
@@ -99,6 +151,15 @@ if (newConfig === configContent) {
   console.log('✅ 侧边栏已是最新，无需更新')
 } else {
   writeFileSync(configPath, newConfig, 'utf-8')
-  console.log(`✅ 已同步 ${items.length} 个章节到侧边栏：`)
-  items.forEach((item, i) => console.log(`   ${i + 1}. ${item.text} → ${item.link}`))
+  const total = items.length
+  const groupCount = groupMap.size
+  console.log(`✅ 已同步 ${total} 个章节（${groupCount} 个分组）到侧边栏：`)
+  allEntries.forEach((entry, i) => {
+    if (entry.isGroup) {
+      console.log(`   ${i + 1}. [${entry.text}]`)
+      entry.items.forEach(sub => console.log(`        ↳ ${sub.text} → ${sub.link}`))
+    } else {
+      console.log(`   ${i + 1}. ${entry.text} → ${entry.link}`)
+    }
+  })
 }

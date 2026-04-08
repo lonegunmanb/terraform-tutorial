@@ -28,7 +28,14 @@ export default defineConfig({
           { text: 'Terraform 语法', link: '/syntax' },
           { text: 'Provider 配置', link: '/provider' },
           { text: 'Terraform 模块', link: '/module' },
-          { text: '代码重构', link: '/refactor_module' }
+          { text: '代码重构', link: '/refactor_module' },
+          {
+            text: 'Terraform CLI',
+            collapsed: false,
+            items: [
+              { text: 'CLI 基础命令', link: '/terraform-cli-basic' }
+            ]
+          }
         ],
       },
     ],

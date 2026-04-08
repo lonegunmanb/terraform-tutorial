@@ -1,0 +1,49 @@
+{
+  "title": "Terraform CLI 基础：fmt、console、get、graph、force-unlock",
+  "description": "通过实际操作练习 terraform 命令行工具，掌握 fmt、console、get、graph、force-unlock 等非生命周期核心命令",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "terraform version、自动补全与 -chdir",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "terraform fmt：代码格式化",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "terraform console：交互式表达式计算",
+        "text": "step3/text.md"
+      },
+      {
+        "title": "terraform get 与 terraform graph",
+        "text": "step4/text.md"
+      },
+      {
+        "title": "terraform force-unlock：解除卡死的状态锁",
+        "text": "step5/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
