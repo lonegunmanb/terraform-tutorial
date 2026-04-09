@@ -1,0 +1,41 @@
+{
+  "title": "terraform validate：配置语法验证",
+  "description": "掌握 terraform validate 的验证范围、常见错误类型、JSON 输出格式和 CI 集成",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "validate 通过与失败：属性拼写、类型不匹配、引用不存在",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "常见错误类型：必填缺失、引用不存在的资源、与 plan 的区别",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "-json 机器可读输出与 CI 集成脚本",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

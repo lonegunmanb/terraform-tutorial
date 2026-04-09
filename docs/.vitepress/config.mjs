@@ -37,7 +37,8 @@ export default defineConfig({
               { text: 'init', link: '/terraform-cli-init' },
               { text: 'plan', link: '/terraform-cli-plan' },
               { text: 'apply', link: '/terraform-cli-apply' },
-              { text: 'destroy', link: '/terraform-cli-destroy' }
+              { text: 'destroy', link: '/terraform-cli-destroy' },
+              { text: 'validate', link: '/terraform-cli-validate' }
             ]
           }
         ],
