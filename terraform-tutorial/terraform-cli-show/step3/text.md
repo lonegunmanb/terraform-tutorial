@@ -39,16 +39,17 @@ sed -i 's/billing_mode = "PAY_PER_REQUEST"/billing_mode = "PROVISIONED"\n  read_
 terraform plan -out=tfplan
 ```
 
-查看计划的 JSON 表示：
+查看计划 JSON 的顶层结构：
 
 ```
-terraform show -json tfplan | python3 -m json.tool | head -50
+terraform show -json tfplan | python3 -c "import sys, json; [print(k) for k in json.load(sys.stdin)]"
 ```
 
 计划 JSON 比状态 JSON 多了几个关键字段：
 
-- resource_changes：每个资源的变更动作（create/update/delete）和前后属性差异
+- variables：输入变量及其值
 - planned_values：变更后的预期状态
+- resource_changes：每个资源的变更动作（create/update/delete）和前后属性差异
 - prior_state：变更前的状态快照
 
 ## 从计划 JSON 中提取变更摘要
