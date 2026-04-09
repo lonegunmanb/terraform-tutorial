@@ -24,7 +24,7 @@ No changes. Your infrastructure matches the configuration.
 
 ## 触发修改（update）：观察 ~ 符号
 
-向 app S3 桶的 tags 中增加一个新标签，模拟配置变更：
+向 `local.common_tags` 中增加一个新标签，三个资源都共用这个 locals，所以它们都会被标记为变更：
 
 ```
 sed -i 's/ManagedBy   = "Terraform"/ManagedBy   = "Terraform"\n    Owner       = "platform-team"/' main.tf
@@ -36,7 +36,7 @@ sed -i 's/ManagedBy   = "Terraform"/ManagedBy   = "Terraform"\n    Owner       =
 terraform plan
 ```
 
-找到 aws_s3_bucket.app 资源行，注意行首的 ~ 符号，表示该资源将被原地修改（update in place）。
+三个资源行首均显示 ~ 符号，表示将被原地修改（update in place）。
 
 仔细阅读属性变更行：
 
@@ -48,7 +48,7 @@ terraform plan
 末尾的汇总行会显示：
 
 ```
-Plan: 0 to add, 1 to change, 0 to destroy.
+Plan: 0 to add, 3 to change, 0 to destroy.
 ```
 
 ## 触发重建（replace）：观察 -/+ 与 +/- 符号
