@@ -69,16 +69,16 @@ awslocal s3 ls
 sed -i 's/ManagedBy   = "Terraform"/ManagedBy   = "Terraform"\n    Version     = "v2"/' main.tf
 ```
 
-使用 -json 执行 apply：
+使用 -json 执行 apply，同时用 tee 保存完整输出到文件：
 
 ```
-terraform apply -auto-approve -json 2>&1 | tail -10
+terraform apply -auto-approve -json | tee /tmp/apply.log | tail -5
 ```
 
-输出是一系列 JSON 对象。使用 grep 筛选关键消息——apply 完成事件：
+然后从保存的日志中筛选 apply 完成事件：
 
 ```
-terraform apply -auto-approve -json | grep '"type":"apply_complete"'
+grep '"type":"apply_complete"' /tmp/apply.log
 ```
 
 看到 apply_complete 对象，其中包含已变更的资源数量和耗时信息。
