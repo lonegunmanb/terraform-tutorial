@@ -184,6 +184,14 @@ echo "Plan exit code: $?"
 terraform plan -compact-warnings
 ```
 
+### -input=false
+
+禁用变量输入提示。存在未赋值的变量时，Terraform 会直接报错而非交互式询问。非交互式环境（如 CI）应始终传入此参数：
+
+```bash
+terraform plan -input=false
+```
+
 ### -parallelism
 
 限制 Terraform 并发操作的最大数量，默认为 `10`：
