@@ -52,51 +52,25 @@ sed -i 's/buckeet = "${var.app_name}/bucket = "${var.app_name}/' main.tf
 
 ## CI 集成脚本
 
-在 CI 中，可以结合 -json 和退出码编写验证门禁脚本：
+工作目录中已预置了一个 CI 验证脚本 ci-validate.sh，查看其内容：
 
 ```
-cat > /tmp/ci-validate.sh <<'SCRIPT'
-#!/bin/bash
-set -euo pipefail
-
-echo "=== Step 1: terraform init ==="
-terraform init -backend=false -input=false > /dev/null 2>&1
-
-echo "=== Step 2: terraform fmt -check ==="
-if ! terraform fmt -check -recursive > /dev/null 2>&1; then
-  echo "FAIL: 代码格式不符合规范，请运行 terraform fmt"
-  exit 1
-fi
-echo "PASS: 格式检查通过"
-
-echo "=== Step 3: terraform validate ==="
-RESULT=$(terraform validate -json)
-VALID=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['valid'])")
-ERRORS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['error_count'])")
-WARNINGS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['warning_count'])")
-
-if [ "$VALID" = "True" ]; then
-  echo "PASS: 验证通过 (warnings: $WARNINGS)"
-else
-  echo "FAIL: 验证失败 (errors: $ERRORS, warnings: $WARNINGS)"
-  echo "$RESULT" | python3 -m json.tool
-  exit 1
-fi
-SCRIPT
-chmod +x /tmp/ci-validate.sh
+cat ci-validate.sh
 ```
+
+脚本流程：init → fmt -check → validate -json → 解析 valid 字段判断成功/失败。
 
 先用正确配置测试：
 
 ```
-bash /tmp/ci-validate.sh
+bash ci-validate.sh
 ```
 
 全部通过。再制造一个错误测试：
 
 ```
 sed -i 's/bucket = "${var.app_name}/buckeet = "${var.app_name}/' main.tf
-bash /tmp/ci-validate.sh
+bash ci-validate.sh
 ```
 
 脚本检测到错误，打印 JSON 详情并以非零退出码退出——在 CI 中会中断流水线。
