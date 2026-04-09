@@ -110,4 +110,4 @@ terraform apply -auto-approve
 awslocal s3 ls
 ```
 
-确认三个桶全部存在后进入下一步。
+确认两个 S3 桶全部存在后进入下一步。
