@@ -9,7 +9,7 @@
     },
     "steps": [
       {
-        "title": "理解 plan 输出：+、-、~、-/+ 符号含义",
+        "title": "理解 plan 输出：+、-、~、-/+、+/- 符号含义",
         "text": "step1/text.md"
       },
       {
