@@ -24,17 +24,21 @@ sed -i 's/ManagedBy   = "Terraform"/ManagedBy   = "Terraform"\n    Version     =
 terraform plan -out=tfplan
 ```
 
-使用 terraform show 以人类可读格式查看计划内容（这是评审阶段的操作）：
-
-```
-terraform show tfplan
-```
-
 计划文件是二进制格式，直接 cat 会乱码：
 
 ```
 cat tfplan | head -3
 ```
+
+## 保存计划模式的限制
+
+在执行计划之前，先试试附加 -var 会怎样：
+
+```
+terraform apply -var 'environment=prod' tfplan
+```
+
+Terraform 会报错：规划选项只能在生成计划时指定，计划文件一旦生成就固定了所有决策，apply 时不能再修改。
 
 ## 执行保存的计划
 
@@ -51,16 +55,6 @@ terraform apply tfplan
 ```
 Apply complete! Resources: 0 added, 3 changed, 0 destroyed.
 ```
-
-## 保存计划模式的限制
-
-尝试在执行计划文件时附加 -var，看看会发生什么：
-
-```
-terraform apply -var 'environment=prod' tfplan
-```
-
-Terraform 会报错：规划选项只能在生成计划时指定，计划文件一旦生成就固定了所有决策，apply 时不能再修改。
 
 ## 清理
 
