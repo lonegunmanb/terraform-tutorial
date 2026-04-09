@@ -4,7 +4,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3,dynamodb
+      - SERVICES=s3,dynamodb,ec2
       - DEFAULT_REGION=us-east-1
       - EAGER_SERVICE_LOADING=1
     deploy:

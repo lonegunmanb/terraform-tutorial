@@ -19,6 +19,10 @@
       {
         "title": "两步销毁工作流与 destroy 后重建",
         "text": "step3/text.md"
+      },
+      {
+        "title": "依赖顺序销毁：VPC 网络资源实战",
+        "text": "step4/text.md"
       }
     ],
     "finish": {

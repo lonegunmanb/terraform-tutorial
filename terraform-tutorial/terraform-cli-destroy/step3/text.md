@@ -76,4 +76,4 @@ terraform apply -auto-approve
 awslocal s3 ls
 ```
 
-确认资源就绪后进入完成页。
+确认资源就绪后进入下一步。
