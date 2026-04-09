@@ -42,13 +42,15 @@ Apply complete! Resources: 0 added, 0 changed, 0 destroyed.
 terraform show | grep "aws_s3_bucket.app"
 ```
 
-没有输出说明 state 和远端此时保持一致（app 桶都不存在）。
+没有输出说明 state 已与远端对齐（两者都没有 app 桶）。
 
-再运行 plan，现在应该显示 No changes（因为 state 已与远端对齐）：
+但 main.tf 里仍然声明了 aws_s3_bucket.app，再运行 plan 会显示"需要创建"：
 
 ```
 terraform plan
 ```
+
+输出为 Plan: 1 to add——Terraform 看到配置里有这个资源，state/远端都没有，于是提出重新创建它。这说明 -refresh-only 只更新 state，并不会把资源块从配置中移除。若真的想停止管理某个资源，还需要手动删除 .tf 中对应的 resource 块并再次 apply。
 
 重建 app 桶以恢复环境：
 
