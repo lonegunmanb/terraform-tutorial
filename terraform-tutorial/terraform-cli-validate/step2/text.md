@@ -60,32 +60,6 @@ Error: Reference to undeclared resource
 
 配置中没有声明过 aws_s3_bucket.logs，validate 精确定位了这个引用错误。
 
-## validate 不检查远端状态
-
-恢复 extra.tf 为正确配置并 validate：
-
-```
-cat > extra.tf <<'EOF'
-resource "aws_s3_bucket_versioning" "app" {
-  bucket = aws_s3_bucket.app.id
-  versioning_configuration {
-    status = "Enabled"
-  }
-}
-EOF
-terraform validate
-```
-
-validate 通过了。但此时 S3 桶还没有创建（我们没有运行过 apply）——validate 不关心远端资源的实际状态，它只检查配置文件本身的正确性。
-
-运行 plan 对比远端状态：
-
-```
-terraform plan
-```
-
-plan 会连接远端，发现这些资源尚未创建，输出 Plan: 2 to add。这就是 validate 和 plan 的核心区别：validate 只做静态检查，plan 还会读取远端状态并计算差异。
-
 清理 extra.tf：
 
 ```
