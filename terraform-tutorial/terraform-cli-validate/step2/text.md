@@ -76,15 +76,15 @@ EOF
 terraform validate
 ```
 
-validate 通过了。但此时 S3 桶还没有创建（我们没有运行过 apply）——validate 不关心远端资源是否存在，它只检查配置文件本身的正确性。
+validate 通过了。但此时 S3 桶还没有创建（我们没有运行过 apply）——validate 不关心远端资源的实际状态，它只检查配置文件本身的正确性。
 
-要发现"远端不存在"这类运行时问题，需要 terraform plan：
+运行 plan 对比远端状态：
 
 ```
 terraform plan
 ```
 
-plan 不仅包含了 validate 的全部检查，还会连接远端验证资源状态差异。
+plan 会连接远端，发现这些资源尚未创建，输出 Plan: 2 to add。这就是 validate 和 plan 的核心区别：validate 只做静态检查，plan 还会读取远端状态并计算差异。
 
 清理 extra.tf：
 
