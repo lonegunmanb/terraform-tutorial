@@ -12,7 +12,7 @@ fi
 echo "PASS: 格式检查通过"
 
 echo "=== Step 3: terraform validate ==="
-RESULT=$(terraform validate -json)
+RESULT=$(terraform validate -json || true)
 VALID=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['valid'])")
 ERRORS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['error_count'])")
 WARNINGS=$(echo "$RESULT" | python3 -c "import sys,json; print(json.load(sys.stdin)['warning_count'])")
