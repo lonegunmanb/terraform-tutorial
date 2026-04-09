@@ -91,7 +91,7 @@ terraform validate -json
 
 | | `terraform validate` | `terraform plan` |
 |---|---|---|
-| 需要调用 provider API | 否（只需插件已安装） | 是（需要连通远端服务） |
+| 需要通过 provider 调用远端 API | 否（只需插件已安装） | 是（需要连通远端服务） |
 | 需要 state | 否 | 是 |
 | 检查语法和类型 | 是 | 是（隐含 validate） |
 | 检查运行时约束 | 否 | 是 |
