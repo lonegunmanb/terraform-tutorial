@@ -32,7 +32,8 @@ terraform plan [options]
 | `+` | 将被创建 |
 | `-` | 将被销毁 |
 | `~` | 将被原地修改（update） |
-| `-/+` | 将先销毁再重建（replace） |
+| `-/+` | 将先销毁再重建（replace，默认行为） |
+| `+/-` | 将先新建再销毁（replace，配置了 `create_before_destroy = true`） |
 | `<=` | 将被读取（data source） |
 
 计划末尾汇总行如 `Plan: 2 to add, 1 to change, 0 to destroy` 是快速了解变更规模的入口。
