@@ -16,7 +16,7 @@ services:
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3,dynamodb,ec2
+      - SERVICES=s3,dynamodb,iam
       - DEFAULT_REGION=us-east-1
       - EAGER_SERVICE_LOADING=1
     deploy:
@@ -143,12 +143,12 @@ start_localstack
 terraform init
 terraform apply -auto-approve
 
-# ── 4. Pre-init vpc-demo (rename asset and download providers) ──
-mkdir -p /root/workspace/vpc-demo
-if [ -f /root/workspace/vpc-demo/vpc-main.tf ]; then
-  mv /root/workspace/vpc-demo/vpc-main.tf /root/workspace/vpc-demo/main.tf
+# ── 4. Pre-init depends-demo (rename asset and download providers) ──
+mkdir -p /root/workspace/depends-demo
+if [ -f /root/workspace/depends-demo/vpc-main.tf ]; then
+  mv /root/workspace/depends-demo/vpc-main.tf /root/workspace/depends-demo/main.tf
 fi
-cd /root/workspace/vpc-demo
+cd /root/workspace/depends-demo
 terraform init
 cd /root/workspace
 

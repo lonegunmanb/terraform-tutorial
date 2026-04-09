@@ -1,39 +1,46 @@
-# 第四步：依赖顺序销毁——VPC 网络资源实战
+# 第四步：依赖顺序销毁——time_sleep 与 depends_on 实战
 
-## 为什么销毁顺序重要
+## 真实案例：IAM 角色的最终一致性
 
-在真实的 AWS 环境中，很多资源在被其他资源引用时无法直接删除。例如：
-
-- VPC 有子网时不能删除
-- 子网中有实例时不能删除
-- 安全组被实例引用时不能删除
-
-Terraform 通过资源间的依赖关系自动计算正确的销毁顺序，确保先删除"使用方"再删除"被使用方"。
-
-## 查看 VPC 网络资源配置
-
-进入预先准备好的 vpc-demo 目录（providers 已下载）：
+在真实的 AWS 环境中，IAM 是全球服务，角色创建后需要数秒到数十秒才能在所有区域完全生效（最终一致性）。如果另一个资源在角色未传播完成时就引用了它的 ARN，AWS API 会返回错误：
 
 ```
-cd /root/workspace/vpc-demo
+Invalid policy document. Please check the policy syntax
+and ensure that Principals are valid.
+```
+
+这是一个已知问题（参考 hashicorp/terraform-provider-aws#29392）。即使 Terraform 通过资源引用建立了隐式依赖，IAM 的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
+
+解决方案是使用 time_sleep 资源强制等待传播完成。这不仅保证了创建时的正确顺序，也确保了销毁时先删除引用方（bucket policy），再删除被引用方（IAM role）。
+
+## 查看配置
+
+进入预先准备好的 depends-demo 目录：
+
+```
+cd /root/workspace/depends-demo
 cat main.tf
 ```
 
-配置文件中包含 5 个资源，分为 3 层依赖（注释中已标出层次）：
-
-- 第 0 层：aws_vpc.main（无依赖）
-- 第 1 层：aws_subnet.web、aws_security_group.web（依赖 VPC）；aws_subnet.db（depends_on web 子网）
-- 第 2 层：aws_instance.web（依赖子网和安全组）
-
-依赖关系如下（箭头表示"依赖于"）：
+配置中有 4 个资源，依赖链如下：
 
 ```
-aws_instance.web ──→ aws_subnet.web ──→ aws_vpc.main
-       │                    ↑
-       │          aws_subnet.db (depends_on)
+aws_iam_role.app
        │
-       └──────→ aws_security_group.web ──→ aws_vpc.main
+       ▼
+time_sleep.iam_propagation (等待 10 秒)
+       │
+       ▼
+aws_s3_bucket_policy.access ──→ aws_s3_bucket.data
 ```
+
+关键设计：
+
+- time_sleep 通过 depends_on 显式依赖 IAM role
+- time_sleep.triggers 中存储 role_arn，供下游资源引用
+- bucket policy 通过 time_sleep.triggers["role_arn"] 获取角色 ARN（而非直接引用 aws_iam_role.app.arn）
+
+这样 Terraform 的依赖图就包含了 time_sleep 节点，强制在 role 创建后等待 10 秒再创建 policy。
 
 ## 观察创建顺序
 
@@ -41,52 +48,53 @@ aws_instance.web ──→ aws_subnet.web ──→ aws_vpc.main
 terraform apply -auto-approve
 ```
 
-仔细观察创建过程中的输出顺序：
+仔细观察输出中的时间线：
 
-1. aws_vpc.main 最先创建（无依赖）
-2. aws_subnet.web 和 aws_security_group.web 并行创建（都只依赖 VPC）
-3. aws_subnet.db 在 web 子网完成后才创建（depends_on）
-4. aws_instance.web 最后创建（依赖子网和安全组）
+1. aws_iam_role.app 和 aws_s3_bucket.data 并行创建（互不依赖）
+2. time_sleep.iam_propagation 开始等待——注意 Terraform 打印 "Still creating..." 每隔几秒一次，直到 10 秒过去
+3. aws_s3_bucket_policy.access 最后创建（等 time_sleep 完成后才开始）
+
+如果跳过 time_sleep 直接引用 aws_iam_role.app.arn，Terraform 会在 role 创建完成后立刻创建 policy——在真实 AWS 上大概率触发 "Invalid principal" 错误。
 
 ## 查看依赖图
-
-用 terraform graph 输出依赖关系，筛选资源间的边：
 
 ```
 terraform graph | grep '\->' | grep -v provider | grep -v '\[root\]'
 ```
 
-可以看到 Terraform 内部维护的完整依赖图，每条 -> 连线代表一个依赖关系。
+注意 time_sleep 节点同时作为 role 和 policy 之间的桥梁。
 
 ## 观察销毁顺序
-
-现在执行销毁，重点关注 Destroying... 行的输出顺序：
 
 ```
 terraform destroy -auto-approve
 ```
 
-观察输出，销毁顺序与创建顺序完全相反：
+观察 Destroying... 行的顺序：
 
-1. aws_instance.web 最先销毁（叶子节点，没有其他资源依赖它）
-2. aws_subnet.db 随后销毁（它 depends_on web 子网，必须先于 web 子网销毁）
-3. aws_subnet.web 和 aws_security_group.web 并行销毁（实例和 db 子网已清除）
-4. aws_vpc.main 最后销毁（所有子网和安全组都已清除）
+1. aws_s3_bucket_policy.access 最先销毁（叶子节点）
+2. time_sleep.iam_propagation 随后销毁
+3. aws_s3_bucket.data 和 aws_iam_role.app 并行销毁（已无其他资源依赖它们）
 
-在真实 AWS 中，如果 Terraform 尝试在实例仍在运行时删除子网，AWS API 会返回 DependencyViolation 错误。正是因为 Terraform 严格按依赖逆序操作，才避免了这类问题。
+销毁顺序严格遵循依赖链的逆序。这保证了：
 
-## depends_on 的销毁影响
+- Bucket policy 在 IAM role 之前被删除——如果反过来，policy 中就会引用一个已不存在的 principal
+- 在真实 AWS 中，如果先删 role 再删 policy，后续对 bucket 的访问控制可能处于不确定状态
 
-上面的 db 子网与 web 子网之间没有资源引用关系（它们只是在同一个 VPC 中的两个子网），但因为 depends_on 的存在，Terraform 保证了：
+## 为什么不能去掉 time_sleep
 
-- 创建时：web 子网 → db 子网（先创建 web）
-- 销毁时：db 子网 → web 子网（先销毁 db）
+你可能会想：既然 bucket policy 通过 aws_iam_role.app.arn 已经有了隐式依赖，为什么还需要 time_sleep？
 
-这在以下场景中至关重要：db 子网中运行的数据库服务通过 web 子网中的 NAT 网关访问外网。如果先删了 web 子网（NAT 网关随之消失），db 子网中的服务可能无法正常关闭连接，导致资源残留或删除失败。
+原因有两个：
+
+1. 创建时：隐式依赖只保证"role 创建完成后才创建 policy"，但不保证"role 在 AWS 内部已传播完成"。time_sleep 的 create_duration 填补了这个时间差
+2. 销毁时：time_sleep 通过 depends_on 建立的依赖链确保了严格的逆序销毁——先删使用方，等一会（虽然 destroy 不会真的等 create_duration），再删被使用方
+
+这就是 depends_on 与 time_sleep 的典型组合模式：解决云服务的最终一致性问题，同时保证创建和销毁的正确顺序。
 
 ## 清理
 
 ```
-terraform destroy -auto-approve
 cd /root/workspace
+rm -rf depends-demo
 ```

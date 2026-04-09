@@ -5,6 +5,10 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "~> 0.9"
+    }
   }
 }
 
@@ -16,57 +20,70 @@ provider "aws" {
   skip_credentials_validation = true
   skip_metadata_api_check     = true
   skip_requesting_account_id  = true
+  s3_use_path_style           = true
 
   endpoints {
-    ec2 = "http://localhost:4566"
+    iam = "http://localhost:4566"
+    s3  = "http://localhost:4566"
     sts = "http://localhost:4566"
   }
 }
 
-# ── 第 0 层：VPC（最底层，无依赖）──
-resource "aws_vpc" "main" {
-  cidr_block = "10.0.0.0/16"
-  tags       = { Name = "demo-vpc" }
+# ── Layer 0: IAM Role ──
+# 真实 AWS 中，IAM 角色创建后需要数秒到数十秒才能在所有区域生效（最终一致性）。
+resource "aws_iam_role" "app" {
+  name = "app-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "ec2.amazonaws.com" }
+      Action    = "sts:AssumeRole"
+    }]
+  })
+
+  tags = { Name = "app-role" }
 }
 
-# ── 第 1 层：子网和安全组（依赖 VPC）──
-resource "aws_subnet" "web" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.1.0/24"
-  tags       = { Name = "web-subnet" }
-}
+# ── Layer 1: time_sleep 模拟 IAM 全局传播延迟 ──
+# 参考: https://github.com/hashicorp/terraform-provider-aws/issues/29392
+# 如果在角色未完全传播时就在策略中引用其 ARN，AWS API 会返回：
+#   "Invalid policy document. Please check the policy syntax and ensure that Principals are valid."
+# time_sleep 确保等待传播完成后再继续；同时也保证 destroy 时先删除引用方再删除角色。
+resource "time_sleep" "iam_propagation" {
+  create_duration = "10s"
 
-resource "aws_security_group" "web" {
-  name        = "web-sg"
-  description = "Allow HTTP"
-  vpc_id      = aws_vpc.main.id
+  depends_on = [aws_iam_role.app]
 
-  ingress {
-    from_port   = 80
-    to_port     = 80
-    protocol    = "tcp"
-    cidr_blocks = ["0.0.0.0/0"]
+  triggers = {
+    role_arn = aws_iam_role.app.arn
   }
-
-  tags = { Name = "web-sg" }
 }
 
-# ── 第 1 层（带显式依赖）：db 子网依赖 web 子网 ──
-resource "aws_subnet" "db" {
-  vpc_id     = aws_vpc.main.id
-  cidr_block = "10.0.2.0/24"
-  tags       = { Name = "db-subnet" }
-
-  # 显式依赖：确保 db 子网在 web 子网之后创建、之前销毁
-  # 模拟场景：db 子网中的服务依赖 web 子网中的网关
-  depends_on = [aws_subnet.web]
+# ── Layer 0（独立）: S3 Bucket ──
+resource "aws_s3_bucket" "data" {
+  bucket = "demo-data-bucket"
+  tags   = { Name = "data-bucket" }
 }
 
-# ── 第 2 层：实例（依赖子网和安全组）──
-resource "aws_instance" "web" {
-  ami                    = "ami-00000000000000001"
-  instance_type          = "t2.micro"
-  subnet_id              = aws_subnet.web.id
-  vpc_security_group_ids = [aws_security_group.web.id]
-  tags                   = { Name = "web-server" }
+# ── Layer 2: Bucket Policy（通过 time_sleep 获取已传播的 role ARN）──
+# 依赖链：aws_iam_role.app → time_sleep → aws_s3_bucket_policy.access
+# 销毁时 Terraform 按逆序操作：先删 policy，再删 time_sleep，最后删 role。
+resource "aws_s3_bucket_policy" "access" {
+  bucket = aws_s3_bucket.data.id
+
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Sid       = "AllowAppRole"
+      Effect    = "Allow"
+      Principal = { AWS = time_sleep.iam_propagation.triggers["role_arn"] }
+      Action    = ["s3:GetObject", "s3:ListBucket"]
+      Resource  = [
+        aws_s3_bucket.data.arn,
+        "${aws_s3_bucket.data.arn}/*"
+      ]
+    }]
+  })
 }
