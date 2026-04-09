@@ -34,7 +34,8 @@
         {"file": "main.tf", "target": "/root/workspace"},
         {"file": "docker-compose.yml", "target": "/root/workspace"},
         {"file": "dev.tfvars", "target": "/root/workspace"},
-        {"file": "prod.tfvars", "target": "/root/workspace"}
+        {"file": "prod.tfvars", "target": "/root/workspace"},
+        {"file": "vpc-main.tf", "target": "/root/workspace/vpc-demo"}
       ]
     }
   },

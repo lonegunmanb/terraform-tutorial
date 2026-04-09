@@ -143,5 +143,14 @@ start_localstack
 terraform init
 terraform apply -auto-approve
 
+# ── 4. Pre-init vpc-demo (rename asset and download providers) ──
+mkdir -p /root/workspace/vpc-demo
+if [ -f /root/workspace/vpc-demo/vpc-main.tf ]; then
+  mv /root/workspace/vpc-demo/vpc-main.tf /root/workspace/vpc-demo/main.tf
+fi
+cd /root/workspace/vpc-demo
+terraform init
+cd /root/workspace
+
 install_theia_plugin
 finish_setup
