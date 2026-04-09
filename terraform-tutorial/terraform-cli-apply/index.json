@@ -1,0 +1,45 @@
+{
+  "title": "terraform apply：执行计划与基础设施变更",
+  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 terraform apply 的交互确认、两步工作流、定向 apply、强制重建与机器可读输出等核心能力",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "首次 apply：创建资源、理解确认流程与 -auto-approve",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "两步工作流：terraform plan -out 保存计划与 apply 执行",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "定向 apply（-target）、强制重建（-replace）与销毁模式（-destroy）",
+        "text": "step3/text.md"
+      },
+      {
+        "title": "只更新 state（-refresh-only）与机器可读输出（-json）",
+        "text": "step4/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

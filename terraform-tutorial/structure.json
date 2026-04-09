@@ -18,6 +18,7 @@
     { "path": "terraform-refactor" },
     { "path": "terraform-cli-basics" },
     { "path": "terraform-cli-init" },
-    { "path": "terraform-cli-plan" }
+    { "path": "terraform-cli-plan" },
+    { "path": "terraform-cli-apply" }
   ]
 }
