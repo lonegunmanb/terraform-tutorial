@@ -38,7 +38,7 @@ cat tfplan | head -3
 terraform apply -var 'environment=prod' tfplan
 ```
 
-Terraform 会报错：规划选项只能在生成计划时指定，计划文件一旦生成就固定了所有决策，apply 时不能再修改。
+Terraform 报错 "Value for undeclared variable"——在执行保存的计划文件时，Terraform 把计划文件当作唯一的配置来源，不再接受外部变量。计划文件一旦生成就固定了所有决策，apply 时不能再修改。
 
 ## 执行保存的计划
 
