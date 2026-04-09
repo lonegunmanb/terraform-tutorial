@@ -50,10 +50,10 @@ terraform validate
 
 ## 类型不匹配
 
-将 string 类型的变量默认值改为一个数字：
+将 string 类型的变量默认值改为一个列表，制造类型冲突：
 
 ```
-sed -i 's/default     = "dev"/default     = 123/' main.tf
+sed -i 's/default     = "dev"/default     = ["dev", "staging"]/' main.tf
 ```
 
 运行 validate：
@@ -68,12 +68,12 @@ Terraform 报错：
 Error: Invalid default value for variable
 ```
 
-default 值的类型（number）与声明的 type（string）不匹配。
+default 值的类型（list）与声明的 type（string）不匹配。注意：数字和布尔值可以隐式转换为 string，不会报错，必须使用 list 或 map 等复合类型才能触发此错误。
 
 恢复：
 
 ```
-sed -i 's/default     = 123/default     = "dev"/' main.tf
+sed -i 's/default     = \["dev", "staging"\]/default     = "dev"/' main.tf
 terraform validate
 ```
 
