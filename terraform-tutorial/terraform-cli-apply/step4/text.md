@@ -14,7 +14,15 @@ awslocal s3 rb s3://myapp-dev-app-lab --force
 awslocal s3 ls
 ```
 
-app 桶已不存在。先用普通 plan 看看 Terraform 的判断：
+app 桶已不存在。但此时 Terraform 的 state 还不知道这件事：
+
+```
+terraform show | grep "aws_s3_bucket.app"
+```
+
+state 里仍然记录着 app 桶——state 与远端已经不同步了。
+
+用普通 plan 看看 Terraform 的判断：
 
 ```
 terraform plan
