@@ -51,6 +51,14 @@ terraform apply -auto-approve
 
 当远端资源内部状态损坏，需要销毁重建恢复时，-replace 让你无需修改配置就能强制触发重建（替代了已废弃的 terraform taint 命令）。
 
+先记录 logs 桶当前的创建时间：
+
+```
+awslocal s3 ls
+```
+
+记住 logs 桶那一行的日期时间。
+
 对 logs 桶执行强制重建：
 
 ```
@@ -63,11 +71,13 @@ terraform apply -replace=aws_s3_bucket.logs -auto-approve
 - app 桶和 DynamoDB 没有任何变更
 - 汇总行：Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
 
-用 awslocal 确认 logs 桶已重建：
+再次查看桶列表，对比 logs 桶的创建时间：
 
 ```
 awslocal s3 ls
 ```
+
+logs 桶的创建时间变成了刚才 apply 的时间，说明旧桶已销毁、新桶已重建。app 桶的创建时间保持不变。
 
 ## -destroy：销毁模式
 
