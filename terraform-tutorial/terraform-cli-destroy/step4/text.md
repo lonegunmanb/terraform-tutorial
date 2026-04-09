@@ -9,7 +9,7 @@ Invalid policy document. Please check the policy syntax
 and ensure that Principals are valid.
 ```
 
-这是一个已知问题（参考 hashicorp/terraform-provider-aws#29392）。即使 Terraform 通过资源引用建立了隐式依赖，IAM 的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
+这是一个已知问题（参考 https://github.com/hashicorp/terraform-provider-aws/issues/29392 ）。即使 Terraform 通过资源引用建立了隐式依赖，IAM 的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
 
 解决方案是使用 time_sleep 资源强制等待传播完成。这不仅保证了创建时的正确顺序，也确保了销毁时先删除引用方（bucket policy），再删除被引用方（IAM role）。
 
