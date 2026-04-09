@@ -1,0 +1,42 @@
+{
+  "title": "terraform show：查看状态与计划文件",
+  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 terraform show 的状态查看、计划文件解读、JSON 机器可读输出与脚本解析等核心能力",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "查看当前状态：人类可读输出与资源属性检索",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "查看计划文件：审查已保存的执行计划",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "JSON 机器可读输出：状态与计划的 JSON 格式解析",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "updated-main.tf", "target": "/root"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

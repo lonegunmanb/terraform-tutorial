@@ -21,6 +21,7 @@
     { "path": "terraform-cli-plan" },
     { "path": "terraform-cli-apply" },
     { "path": "terraform-cli-destroy" },
-    { "path": "terraform-cli-validate" }
+    { "path": "terraform-cli-validate" },
+    { "path": "terraform-cli-show" }
   ]
 }
