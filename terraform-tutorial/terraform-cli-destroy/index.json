@@ -1,0 +1,43 @@
+{
+  "title": "terraform destroy：资源销毁与清理",
+  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 terraform destroy 的交互确认、定向销毁、两步销毁工作流等核心能力",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "预览销毁与交互确认：terraform destroy 基本流程",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "定向销毁（-target）与变量传入",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "两步销毁工作流与 destroy 后重建",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"},
+        {"file": "dev.tfvars", "target": "/root/workspace"},
+        {"file": "prod.tfvars", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

@@ -19,6 +19,7 @@
     { "path": "terraform-cli-basics" },
     { "path": "terraform-cli-init" },
     { "path": "terraform-cli-plan" },
-    { "path": "terraform-cli-apply" }
+    { "path": "terraform-cli-apply" },
+    { "path": "terraform-cli-destroy" }
   ]
 }
