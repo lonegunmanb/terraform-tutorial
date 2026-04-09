@@ -13,6 +13,7 @@ terraform validate -json
 
 ```
 {
+  "format_version": "1.0",
   "valid": true,
   "error_count": 0,
   "warning_count": 0,
