@@ -57,19 +57,12 @@ EOF
 terraform init
 ```
 
-注意 init 输出中 provider 来源的提示。从 registry 安装时显示：
+注意 init 输出中 provider 来源的关键线索：
 
-```
-- Installing hashicorp/aws v5.x.x...
-```
+- 从 registry 安装时显示 `(signed by HashiCorp)`——表示包经过了 HashiCorp 的签名验证
+- 从本地镜像安装时显示 `(unauthenticated)`——表示包未经签名验证，来自本地文件系统
 
-从本地镜像安装时显示：
-
-```
-- Installing hashicorp/aws v5.x.x, from the shared cache directory...
-```
-
-"from the shared cache directory" 或 "from the local mirror" 字样表明 provider 来自本地镜像而非远端 registry。如果你看到这条信息，说明 filesystem_mirror 配置生效了。
+看到 `(unauthenticated)` 说明 filesystem_mirror 配置生效了。Terraform 还会输出一条 Warning: Incomplete lock file information，提示你锁文件中只包含当前平台的校验和——这也是因为使用了自定义安装方式（customized provider installation methods）。
 
 验证安装成功：
 
