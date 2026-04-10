@@ -40,11 +40,11 @@ terraform state list
 # aws_dynamodb_table.locks
 ```
 
-可通过部分地址过滤：
+可通过部分地址或 `grep` 过滤：
 
 ```bash
 # 只看某种资源类型
-terraform state list aws_s3_bucket
+terraform state list | grep aws_s3_bucket
 
 # 只看某模块下的资源
 terraform state list module.network

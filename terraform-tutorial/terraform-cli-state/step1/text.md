@@ -23,12 +23,12 @@ aws_s3_bucket.data
 aws_s3_bucket.logs
 ```
 
-### 按类型过滤
+### 用 grep 过滤
 
 只查看 S3 桶：
 
 ```
-terraform state list aws_s3_bucket
+terraform state list | grep aws_s3_bucket
 ```
 
 只会显示 3 个 S3 桶，DynamoDB 表被过滤掉。
