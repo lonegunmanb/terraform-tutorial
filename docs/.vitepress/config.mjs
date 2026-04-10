@@ -5,6 +5,9 @@ export default defineConfig({
   description: '基于 Killercoda 的零成本交互式 Terraform 教程',
   base: '/terraform-tutorial/',
   lang: 'zh-CN',
+  sitemap: {
+    hostname: 'https://lonegunmanb.github.io/terraform-tutorial/'
+  },
 
   head: [
     ['link', { rel: 'icon', type: 'image/svg+xml', href: 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><text y=".9em" font-size="90">🏗️</text></svg>' }],
