@@ -126,29 +126,7 @@ shell 中使用 `for_each` 的 key 时，注意引号的转义。Linux/macOS 中
 
 ## import 块（声明式导入）
 
-从 Terraform v1.5 开始，可以在配置中使用 `import` 块声明要导入的资源：
-
-```hcl
-import {
-  to = aws_s3_bucket.existing
-  id = "my-existing-bucket"
-}
-
-resource "aws_s3_bucket" "existing" {
-  bucket = "my-existing-bucket"
-}
-```
-
-运行 `terraform plan` 时会显示导入预览，`terraform apply` 时执行导入。相比命令行 `terraform import`，声明式方式的优势：
-
-| | `terraform import` 命令 | `import` 块 |
-|---|---|---|
-| 预览 | 无（直接修改 state） | `plan` 阶段可预览 |
-| 批量导入 | 每次一个资源 | 可在一次 apply 中导入多个 |
-| 可审计 | 命令历史 | 代码提交记录 |
-| CI/CD 友好 | 需额外脚本 | 原生支持 |
-
-导入完成后删除 `import` 块即可，后续 plan 不受影响。
+从 Terraform v1.5 开始，可以在配置中使用 `import` 块声明要导入的资源，支持 `plan` 预览和批量导入。详见[代码重构 — import 块](/refactor_module#import-块)。
 
 ## 注意事项
 

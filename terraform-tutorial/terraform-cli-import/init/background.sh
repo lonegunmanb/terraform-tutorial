@@ -46,11 +46,7 @@ terraform init
 awslocal s3 mb s3://legacy-app
 awslocal s3api put-bucket-tagging --bucket legacy-app --tagging 'TagSet=[{Key=Environment,Value=production},{Key=Team,Value=backend}]'
 
-# Step 2: two buckets for import block demo
-awslocal s3 mb s3://legacy-logs
-awslocal s3 mb s3://legacy-archive
-
-# Step 3: per-env buckets for for_each import
+# Step 2: per-env buckets for for_each import
 awslocal s3 mb s3://app-dev
 awslocal s3 mb s3://app-staging
 

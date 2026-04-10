@@ -129,4 +129,4 @@ awslocal s3api get-bucket-tagging --bucket legacy-app
 
 Terraform 已完全接管了这个桶的管理。
 
-进入下一步学习 import 块的声明式导入。
+进入下一步学习导入到 for_each 资源。

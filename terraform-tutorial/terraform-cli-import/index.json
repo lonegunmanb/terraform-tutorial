@@ -1,6 +1,6 @@
 {
   "title": "terraform import：导入已有基础设施",
-  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 terraform import 命令导入、import 块声明式导入、for_each 资源导入与配置补全等核心能力",
+  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 terraform import 命令导入单个资源、补全配置、导入到 for_each 资源等核心能力",
   "details": {
     "intro": {
       "text": "init/init.md",
@@ -13,12 +13,8 @@
         "text": "step1/text.md"
       },
       {
-        "title": "import 块：声明式批量导入",
-        "text": "step2/text.md"
-      },
-      {
         "title": "导入到 for_each 资源",
-        "text": "step3/text.md"
+        "text": "step2/text.md"
       }
     ],
     "finish": {
@@ -29,7 +25,6 @@
         {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
         {"file": "main.tf", "target": "/root/workspace"},
         {"file": "docker-compose.yml", "target": "/root/workspace"},
-        {"file": "import-block.tf", "target": "/root"},
         {"file": "foreach.tf", "target": "/root"}
       ]
     }
