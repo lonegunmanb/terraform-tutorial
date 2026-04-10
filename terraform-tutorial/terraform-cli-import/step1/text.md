@@ -15,13 +15,13 @@ awslocal s3 ls
 awslocal s3api get-bucket-tagging --bucket legacy-app
 ```
 
-此时 Terraform 状态是空的：
+此时 Terraform 状态为空（从未执行过 apply）：
 
 ```
-terraform state list
+terraform show
 ```
 
-没有任何输出——Terraform 还不知道这些资源的存在。
+输出为空——Terraform 还不知道这些资源的存在。
 
 ## 声明资源块
 
