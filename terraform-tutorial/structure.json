@@ -26,6 +26,7 @@
     { "path": "terraform-cli-output" },
     { "path": "terraform-cli-import" },
     { "path": "terraform-cli-providers" },
-    { "path": "terraform-cli-state" }
+    { "path": "terraform-cli-state" },
+    { "path": "terraform-cli-workspace" }
   ]
 }

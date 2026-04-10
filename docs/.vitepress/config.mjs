@@ -46,7 +46,8 @@ export default defineConfig({
               { text: 'output', link: '/terraform-cli-output' },
               { text: 'import', link: '/terraform-cli-import' },
               { text: 'providers', link: '/terraform-cli-providers' },
-              { text: 'state', link: '/terraform-cli-state' }
+              { text: 'state', link: '/terraform-cli-state' },
+              { text: 'workspace', link: '/terraform-cli-workspace' }
             ]
           }
         ],

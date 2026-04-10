@@ -1,0 +1,45 @@
+{
+  "title": "terraform workspace：多环境状态管理",
+  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 terraform workspace 的创建、切换、状态隔离与清理，理解 CLI workspace 与 HCP Terraform workspace 的区别",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "默认 workspace 与基础命令（show / list / new）",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "在不同 workspace 中部署独立资源",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "Workspace 切换与状态隔离原理",
+        "text": "step3/text.md"
+      },
+      {
+        "title": "清理 workspace：销毁资源与删除 workspace",
+        "text": "step4/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
