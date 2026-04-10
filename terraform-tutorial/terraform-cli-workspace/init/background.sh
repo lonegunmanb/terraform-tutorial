@@ -4,6 +4,8 @@ set -x
 
 source /root/setup-common.sh
 
+apt-get install -y tree
+
 # ── 1. Seed workspace files ──
 mkdir -p /root/workspace
 cd /root/workspace

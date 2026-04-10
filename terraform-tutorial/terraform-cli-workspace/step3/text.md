@@ -7,21 +7,21 @@
 ```
 cd /root/workspace
 terraform workspace select default
-terraform show | grep "bucket ="
+terraform output bucket_name
 ```
 
 输出 myapp-default-data——default workspace 只知道自己的资源。
 
 ```
 terraform workspace select dev
-terraform show | grep "bucket ="
+terraform output bucket_name
 ```
 
 输出 myapp-dev-data——dev workspace 只看到 dev 的资源。
 
 ```
 terraform workspace select staging
-terraform show | grep "bucket ="
+terraform output bucket_name
 ```
 
 输出 myapp-staging-data。每个 workspace 的 state 完全独立，互不可见。
@@ -31,14 +31,13 @@ terraform show | grep "bucket ="
 Terraform 在本地以目录结构存储不同 workspace 的 state：
 
 ```
-find /root/workspace -name "terraform.tfstate" -o -name "terraform.tfstate.d" | head -20
+find /root/workspace -name "terraform.tfstate" -o -name "terraform.tfstate.d" | sort
 ```
 
+用 tree 更直观地查看结构：
+
 ```
-ls -la terraform.tfstate
-ls -la terraform.tfstate.d/
-ls -la terraform.tfstate.d/dev/
-ls -la terraform.tfstate.d/staging/
+tree -I '.terraform' --prune -P 'terraform.tfstate' /root/workspace
 ```
 
 存储结构为：
