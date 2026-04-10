@@ -1,0 +1,37 @@
+{
+  "title": "terraform output：提取与查询输出值",
+  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 terraform output 的值查询、sensitive 行为、-json 和 -raw 格式输出与脚本集成等核心能力",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "查看 output 值与 sensitive 行为",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "-json、-raw 与脚本集成",
+        "text": "step2/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

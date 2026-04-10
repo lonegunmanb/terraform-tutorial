@@ -39,7 +39,8 @@ export default defineConfig({
               { text: 'apply', link: '/terraform-cli-apply' },
               { text: 'destroy', link: '/terraform-cli-destroy' },
               { text: 'validate', link: '/terraform-cli-validate' },
-              { text: 'show', link: '/terraform-cli-show' }
+              { text: 'show', link: '/terraform-cli-show' },
+              { text: 'output', link: '/terraform-cli-output' }
             ]
           }
         ],
