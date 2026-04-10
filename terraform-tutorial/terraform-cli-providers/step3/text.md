@@ -57,6 +57,20 @@ EOF
 terraform init
 ```
 
+注意 init 输出中 provider 来源的提示。从 registry 安装时显示：
+
+```
+- Installing hashicorp/aws v5.x.x...
+```
+
+从本地镜像安装时显示：
+
+```
+- Installing hashicorp/aws v5.x.x, from the shared cache directory...
+```
+
+"from the shared cache directory" 或 "from the local mirror" 字样表明 provider 来自本地镜像而非远端 registry。如果你看到这条信息，说明 filesystem_mirror 配置生效了。
+
 验证安装成功：
 
 ```
