@@ -21,7 +21,7 @@ terraform output app_bucket
 ```
 BUCKET=$(terraform output -raw app_bucket)
 echo "桶名: $BUCKET"
-awslocal s3 ls "s3://$BUCKET"
+awslocal s3api head-bucket --bucket "$BUCKET" && echo "桶存在"
 ```
 
 -raw 只支持 string、number、bool 类型。对复合类型使用 -raw 会报错：
