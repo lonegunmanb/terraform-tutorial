@@ -41,7 +41,8 @@ export default defineConfig({
               { text: 'validate', link: '/terraform-cli-validate' },
               { text: 'show', link: '/terraform-cli-show' },
               { text: 'output', link: '/terraform-cli-output' },
-              { text: 'import', link: '/terraform-cli-import' }
+              { text: 'import', link: '/terraform-cli-import' },
+              { text: 'providers', link: '/terraform-cli-providers' }
             ]
           }
         ],
