@@ -1,0 +1,43 @@
+{
+  "title": "terraform state：状态管理子命令",
+  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 terraform state list/show/mv/rm/pull 等子命令的使用方法",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "state list / state show / state pull：读取状态",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "state mv：移动/重命名资源",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "state rm：移除资源",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"},
+        {"file": "main-step2.tf", "target": "/root"},
+        {"file": "main-step3.tf", "target": "/root"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
