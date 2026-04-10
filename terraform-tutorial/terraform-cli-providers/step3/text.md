@@ -28,7 +28,7 @@ ls /root/mirror/registry.terraform.io/hashicorp/aws/
 
 ## 使用镜像目录进行离线安装
 
-模拟无互联网的隔离环境——在新目录中使用镜像安装 provider，不访问 registry：
+模拟无互联网的隔离环境——在新目录中使用镜像安装 provider，不访问 registry(假设我们前面通过 `providers mirror` 命令下载的 Provider 文件都被拷贝到新环境里了)：
 
 ```
 mkdir -p /root/offline-demo
