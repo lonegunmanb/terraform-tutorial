@@ -126,7 +126,7 @@ terraform providers mirror \
 
 | 场景 | 做法 |
 |------|------|
-| 气隙环境（无互联网） | 在有网络的机器上 `providers mirror`，将目录拷贝到隔离环境 |
+| 无互联网的隔离网络（air-gapped） | 在有网络的机器上 `providers mirror`，将目录拷贝到隔离环境 |
 | CI 缓存加速 | 在 CI 中预先 mirror 到共享缓存目录 |
 | 团队统一版本 | mirror + lock 确保所有人使用相同版本和校验和 |
 

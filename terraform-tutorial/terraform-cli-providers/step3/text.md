@@ -28,7 +28,7 @@ ls /root/mirror/registry.terraform.io/hashicorp/aws/
 
 ## 使用镜像目录进行离线安装
 
-模拟气隙环境——在新目录中使用镜像安装 provider，不访问 registry：
+模拟无互联网的隔离环境——在新目录中使用镜像安装 provider，不访问 registry：
 
 ```
 mkdir -p /root/offline-demo
@@ -80,7 +80,7 @@ rm -f ~/.terraformrc
 
 providers mirror 在以下场景中特别有价值：
 
-- 气隙/隔离网络环境：先在有网络的机器上 mirror，再将目录拷贝到隔离环境
+- 无互联网的隔离网络环境（air-gapped）：先在有网络的机器上 mirror，再将目录拷贝到隔离环境
 - CI 缓存加速：在 CI 中预先 mirror 到共享存储，避免每次 init 都从 registry 下载
 - 版本合规审计：mirror 目录作为唯一的 provider 来源，确保所有人使用已审批的版本
 
