@@ -11,11 +11,21 @@ group_order: 17
 
 ## 解决什么问题
 
-Terraform 有一个长期存在的限制：`lifecycle` 块中的 `ignore_changes` 不支持变量。这意味着第三方模块无法通过参数让用户定制哪些属性应被忽略。
+`mapotf` 的应用场景很广，核心价值在于**对 Terraform 配置的声明式批量变更**。以下是几个典型痛点：
 
-考虑这样的场景：你使用社区 VPC 模块部署基础设施，但 AWS 运维策略会自动给所有 VPC 打上合规标签。每次 `terraform plan` 都会报告这些标签的 drift，因为模块内部的 `aws_vpc` 资源没有 `ignore_changes = [tags]`。你无法修改模块源码（那样会失去升级能力），Terraform 也不支持从外部传入 `ignore_changes`。
+### ignore_changes 无法参数化
 
-`mapotf` 正是为解决这类问题而生——在不修改模块源码的前提下，动态修改 Terraform 配置。
+Terraform 的 `lifecycle` 块中 `ignore_changes` 不支持变量。这意味着第三方模块无法通过参数让用户定制哪些属性应被忽略。
+
+考虑这样的场景：你使用社区 VPC 模块部署基础设施，但 AWS 运维策略会自动给所有 VPC 打上合规标签。每次 `terraform plan` 都会报告这些标签的 drift，因为模块内部的 `aws_vpc` 资源没有 `ignore_changes = [tags]`。你无法修改模块源码（那样会失去升级能力），Terraform 也不支持从外部传入 `ignore_changes`。`mapotf` 可以在不修改模块源码的前提下，动态为资源注入所需的 `ignore_changes`。
+
+### Provider 大版本升级的自动化迁移
+
+当 Provider 发布大版本更新（如 AzureRM 3.x → 4.x）时，往往引入大量破坏性变更——资源类型重命名、属性移除或拆分、默认值变化等。对于拥有几十甚至上百个模块的组织，手动逐个修改代码工作量巨大且容易遗漏。通过 `mapotf`，平台团队可以提前针对这些破坏性变更编写代码变换规则，用户只需运行一条命令即可自动完成迁移，无需手动逐一修改。
+
+### 集中式治理
+
+对于大规模使用 Terraform 模块的组织，平台团队需要统一执行某些策略——例如为所有模块注入遥测代码、统一 Provider 版本约束、为所有资源添加审计标签等。`mapotf` 允许将这些治理规则维护在中央 Git 仓库中，所有模块通过引用远程规则集一键应用，实现"一处更改，处处生效"。
 
 ## 安装
 
