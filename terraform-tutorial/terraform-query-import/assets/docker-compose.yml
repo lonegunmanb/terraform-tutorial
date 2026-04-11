@@ -1,13 +1,11 @@
 services:
-  localstack:
-    image: localstack/localstack:3
+  ministack:
+    image: nahuelnucera/ministack
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3,dynamodb
-      - DEFAULT_REGION=us-east-1
-      - EAGER_SERVICE_LOADING=1
+      - MINISTACK_REGION=us-east-1
     deploy:
       resources:
         limits:
-          memory: 1536M
+          memory: 512M

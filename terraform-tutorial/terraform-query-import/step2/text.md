@@ -139,12 +139,12 @@ terraform query 的优势是**自动发现**——你不需要一个个去查 AW
 terraform query 功能需要：
 
 - Terraform v1.12 或更高版本
-- Provider 必须支持资源查询（resource identity 接口），对于 AWS Provider 需要 v6.x（~> 6.0）
+- Provider 必须实现 resource identity 接口，对于 AWS Provider 需要 v6.x（~> 6.0）
 - 查询配置文件必须使用 .tfquery.hcl 扩展名
 
-本实验环境使用的是 LocalStack + AWS Provider v5.x，不支持 terraform query 命令。因此本步骤为概念讲解，不实际运行 terraform query。在真实 AWS 环境中使用 v6.x Provider 时，可以完整执行上述工作流。
+本实验环境使用 MiniStack + AWS Provider v6.x，满足版本要求。但 terraform query 的实际查询能力取决于 MiniStack 对 resource identity API 的模拟程度——如果某些查询返回错误，属于模拟环境的正常限制。
 
-如果你的 Terraform 版本低于 v1.12 或 Provider 不支持 query，可以退而求其次，使用 AWS CLI 列出资源，结合 import + for_each 实现类似效果（这正是第一步和第三步演示的方式）：
+在没有 terraform query 支持的环境中，可以使用 AWS CLI 列出资源，结合 import + for_each 实现类似效果（这正是第一步和第三步演示的方式）：
 
 ```
 # 用 AWS CLI 列出所有桶名

@@ -11,29 +11,27 @@ cd /root/workspace
 if [ ! -f docker-compose.yml ]; then
 cat > docker-compose.yml <<'EOF'
 services:
-  localstack:
-    image: localstack/localstack:3
+  ministack:
+    image: nahuelnucera/ministack
     ports:
       - "4566:4566"
     environment:
-      - SERVICES=s3,dynamodb
-      - DEFAULT_REGION=us-east-1
-      - EAGER_SERVICE_LOADING=1
+      - MINISTACK_REGION=us-east-1
     deploy:
       resources:
         limits:
-          memory: 1536M
+          memory: 512M
 EOF
 fi
 
 if [ ! -f main.tf ]; then
 cat > main.tf <<'EOTF'
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.12"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
-      version = "~> 5.0"
+      version = "~> 6.0"
     }
   }
 }
@@ -62,10 +60,10 @@ install_terraform
 install_awscli
 start_localstack
 
-# ── 3. Wait for LocalStack, then create "existing" resources ──
-echo "等待 LocalStack 就绪..."
+# ── 3. Wait for MiniStack, then create "existing" resources ──
+echo "等待 MiniStack 就绪..."
 for i in $(seq 1 30); do
-  if awslocal s3 ls >/dev/null 2>&1; then
+  if curl -s http://localhost:4566/_ministack/health >/dev/null 2>&1; then
     break
   fi
   sleep 2

@@ -2,7 +2,7 @@
 
 ## 查看已有资源
 
-进入工作目录，先看看 LocalStack 中已经存在哪些资源：
+进入工作目录，先看看 MiniStack 中已经存在哪些资源：
 
 ```
 cd /root/workspace
