@@ -148,8 +148,6 @@ terraform apply -auto-approve
 terraform plan
 ```
 
-如果显示有 change（例如 timeouts 块），这是因为 generated.tf 中包含了冗余的 null 值。这正好说明为什么生成的配置需要手动清理。
-
 ## 与 import for_each 的对比
 
 上一步用的 import + for_each 方式需要你事先知道每个桶的名字，手动维护映射表。terraform query 的优势是**自动发现**——Provider 帮你列出所有匹配的资源。但生成的配置通常需要手动整理（统一命名、提取变量、组织模块结构）。
