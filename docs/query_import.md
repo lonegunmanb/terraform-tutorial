@@ -272,8 +272,17 @@ terraform query -var 'environment=staging'
 6. 执行 `terraform apply` 完成导入
 :::
 
-::: warning 注意事项
-- `terraform query` 需要 Provider 支持查询功能，并非所有资源类型都可查询
+::: warning 版本要求
+`terraform query` 对版本有严格要求：
+
+- **Terraform CLI v1.12 或更高版本**
+- **Provider 必须实现 resource identity 接口** — 这是 query 功能依赖的底层 API，并非所有 Provider 或资源类型都支持
+- 对于 AWS Provider，需要 **v6.x**（`~> 6.0`）；v5.x 不支持 query 功能
+
+如果你的环境尚未升级到 Terraform v1.12+ 或 AWS Provider v6.x，可以使用 `import` 块的 `for_each` 搭配 AWS CLI 手动收集资源 ID 来实现类似效果（参见动手实验第一步）。
+:::
+
+::: warning 其他注意事项
 - `include_resource = true` 会返回完整属性，可能影响大批量查询的性能
 - 生成的配置可能包含只读属性或由 Provider 计算的值，需要手动清理
 - 导入操作不会影响实际基础设施——只是将状态信息写入 Terraform 状态文件
