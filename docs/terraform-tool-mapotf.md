@@ -62,11 +62,13 @@ transform "update_in_place" "add_ignore_changes" {
 
   asstring {
     lifecycle {
-      ignore_changes = "[tags]"
+      ignore_changes = "[\ntags, ${trimprefix(try(each.value.lifecycle.0.ignore_changes, "[\n]"), "[")}"
     }
   }
 }
 ```
+
+这段代码的关键在于**合并而非覆盖**：`try(each.value.lifecycle.0.ignore_changes, "[\n]")` 读取资源现有的 `ignore_changes` 列表，`trimprefix(..., "[")` 去掉开头的 `[`，然后在前面追加 `tags,`。如果资源没有 `ignore_changes`，`try` 回退到 `"[\n]"`，去掉 `[` 后只剩 `\n]`，最终结果为 `[\ntags, \n]` 即 `[tags]`。
 
 ### asstring 块
 
@@ -132,30 +134,13 @@ transform "update_in_place" "ignore_vpc_tags" {
 
   asstring {
     lifecycle {
-      ignore_changes = "[tags, tags_all]"
-    }
-  }
-}
-```
-
-### 保留已有的 ignore_changes
-
-如果资源已经有 `ignore_changes`，需要合并而非覆盖：
-
-```hcl
-transform "update_in_place" "merge_ignore_changes" {
-  for_each             = try(data.resource.vpc.result.aws_vpc, {})
-  target_block_address = each.value.mptf.block_address
-
-  asstring {
-    lifecycle {
       ignore_changes = "[\ntags, tags_all, ${trimprefix(try(each.value.lifecycle.0.ignore_changes, "[\n]"), "[")}"
     }
   }
 }
 ```
 
-这段代码先读取资源现有的 `ignore_changes` 列表，去掉开头的 `[`，然后在前面追加 `tags, tags_all`。
+注意这里使用了合并写法（和前面核心概念中介绍的一样），不会覆盖资源已有的 `ignore_changes`。
 
 ### 集中式治理
 
