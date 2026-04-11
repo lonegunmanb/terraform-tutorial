@@ -29,6 +29,7 @@
     { "path": "terraform-cli-state" },
     { "path": "terraform-cli-workspace" },
     { "path": "terraform-cli-config-file" },
+    { "path": "terraform-query-import" },
     { "path": "terraform-test" },
     { "path": "terraform-tool-hcledit" }
   ]

@@ -51,6 +51,7 @@ export default defineConfig({
               { text: 'workspace', link: '/terraform-cli-workspace' }
             ]
           },
+          { text: '批量导入资源', link: '/query_import' },
           { text: 'Terraform 测试', link: '/test' },
           {
             text: '周边工具',

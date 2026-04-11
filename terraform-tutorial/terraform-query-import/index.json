@@ -1,0 +1,41 @@
+{
+  "title": "terraform query：批量查询与导入已有资源",
+  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 .tfquery.hcl 查询配置、terraform query 命令，以及 import + for_each 批量导入工作流",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "手动创建资源并用 import + for_each 批量导入",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "编写 .tfquery.hcl 查询配置与 terraform query 命令",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "练习：自己完成一次批量导入",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

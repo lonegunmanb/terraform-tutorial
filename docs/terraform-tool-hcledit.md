@@ -22,6 +22,9 @@ group_order: 17
 # macOS (Homebrew)
 brew install minamijoyo/hcledit/hcledit
 
+# Go install（需要 Go 1.23+）
+go install github.com/minamijoyo/hcledit@latest
+
 # Linux（下载预编译二进制）
 VERSION=0.2.17
 curl -sSL "https://github.com/minamijoyo/hcledit/releases/download/v${VERSION}/hcledit_${VERSION}_linux_amd64.tar.gz" \
