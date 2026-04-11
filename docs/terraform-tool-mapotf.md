@@ -34,7 +34,7 @@ Terraform 的 `lifecycle` 块中 `ignore_changes` 不支持变量。这意味着
 go install github.com/Azure/mapotf@latest
 
 # 验证
-mapotf version
+mapotf -h
 ```
 
 ## 核心概念
@@ -159,11 +159,19 @@ transform "update_in_place" "merge_ignore_changes" {
 
 ### 集中式治理
 
-平台团队可以维护远程 Git 仓库中的规则，所有项目通过 URL 引用：
+对于大规模使用 Terraform 模块的组织，平台团队需要统一执行某些策略——例如为所有模块注入遥测代码、统一 Provider 版本约束、为所有资源添加审计标签等。`mapotf` 允许将这些治理规则维护在中央 Git 仓库中，所有模块通过引用远程规则集一键应用，实现"一处更改，处处生效"。
+
+Azure Verified Modules (AVM) 项目就是一个真实的大规模治理案例。AVM 团队在 [avm-terraform-governance](https://github.com/Azure/avm-terraform-governance) 仓库中维护了一组 `mapotf` 规则，通过 pre-commit 钩子自动应用到数百个模块仓库：
+
+- [**required_provider_versions.mptf.hcl**](https://github.com/Azure/avm-terraform-governance/blob/main/mapotf-configs/pre-commit/required_provider_versions.mptf.hcl) — 统一规定 AzAPI Provider 最低版本为 `~> 2.4`、Random Provider 为 `~> 3.0`，使用 `semvercheck` 函数检测当前版本约束是否满足，不满足则自动更新 `required_providers` 块
+- [**main_telemetry_tf.mptf.hcl**](https://github.com/Azure/avm-terraform-governance/blob/main/mapotf-configs/pre-commit/main_telemetry_tf.mptf.hcl) — 为每个模块自动注入遥测代码（`modtm_telemetry` 资源、`random_uuid`、`modtm_module_source` 数据源等），让微软可以匿名统计模块使用情况。当遥测机制需要调整时，只需更新这一个规则文件，所有模块在下次 pre-commit 时自动获取最新逻辑
+- [**avm_headers_for_azapi.mptf.hcl**](https://github.com/Azure/avm-terraform-governance/blob/main/mapotf-configs/pre-commit/avm_headers_for_azapi.mptf.hcl) — 为所有 `azapi_resource` 和 `azapi_update_resource` 的 `create_headers`/`read_headers`/`update_headers`/`delete_headers` 注入 AVM 标识头，让 Azure API 知道请求来自哪个 AVM 模块
+
+这些规则集中维护在一个 Git 仓库，各模块在 pre-commit 时通过远程 URL 引用：
 
 ```bash
 mapotf transform \
-  --mptf-dir git::https://github.com/your-org/terraform-rules.git//vpc-tags \
+  --mptf-dir git::https://github.com/Azure/avm-terraform-governance.git//mapotf-configs/pre-commit \
   --tf-dir .
 ```
 
