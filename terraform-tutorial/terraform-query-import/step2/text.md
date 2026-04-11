@@ -65,34 +65,58 @@ list.aws_s3_bucket.filtered:
 
 terraform query 真正强大的地方在于自动生成配置：
 
+现在运行命令生成配置：
+
 ```
 terraform query -generate-config-out=generated.tf
 ```
 
-这会创建 generated.tf 文件，包含每个发现的资源的 import 块和 resource 块。
+查看生成的文件：
+
+```
+cat generated.tf
+```
+
+这会创建 generated.tf 文件，包含每个发现的资源的 resource 块和 import 块。
+
+注意生成的配置有几个特点：
+
+- 资源使用数字后缀命名（filtered_0、filtered_1...），而非以桶名为 key
+- import 块使用 identity 块（而非旧版的 id 参数）来标识资源，这是 Terraform v1.12+ 的新格式
+- resource 块包含了所有属性（包括 null 值和空 tags），需要手动清理
 
 生成的配置类似：
 
 ```hcl
+resource "aws_s3_bucket" "filtered_0" {
+  bucket        = "app-prod-assets"
+  force_destroy = null
+  region        = "us-east-1"
+  tags          = {}
+  tags_all      = {}
+}
+
 import {
-  to = aws_s3_bucket.filtered["app-staging-data"]
-  id = "app-staging-data"
+  to       = aws_s3_bucket.filtered_0
+  provider = aws
+  identity = {
+    account_id = ""
+    bucket     = "app-prod-assets"
+    region     = "us-east-1"
+  }
 }
 
-resource "aws_s3_bucket" "filtered" {
-  bucket = "app-staging-data"
-}
-
-# ... 更多 S3 桶的 import + resource 块
+# ... 每个桶各有一组 resource + import 块
 ```
 
 ## 从生成到导入的完整流程
 
-1. 检查生成的 generated.tf，移除不需要的资源或只读属性
-2. 将 import 和 resource 块合并到你的主配置中
-3. 运行 terraform plan 确认只有 import 操作
-4. 运行 terraform apply 完成导入
-5. 删除 generated.tf 和不再需要的 import 块
+1. 检查生成的 generated.tf，**清理冗余属性**（移除 null 值、空 tags、timeouts 块等）
+2. 根据需要重命名资源（生成的 filtered_0、filtered_1 不够直观）
+3. 将 import 和 resource 块合并到你的主配置中
+4. 运行 terraform plan 确认只有 import 操作
+5. 运行 terraform apply 完成导入
+6. 删除 generated.tf 和不再需要的 import 块
 
 ## 与 import for_each 的对比
 

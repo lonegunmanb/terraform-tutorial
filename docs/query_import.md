@@ -159,30 +159,52 @@ Terraform 会：
 ```hcl
 # generated.tf
 
-import {
-  to = aws_s3_bucket.all_buckets["my-data-bucket"]
-  id = "my-data-bucket"
-}
-
-resource "aws_s3_bucket" "all_buckets" {
-  bucket = "my-data-bucket"
-  # ... 其他从远端读取的属性
+resource "aws_s3_bucket" "all_buckets_0" {
+  bucket        = "my-data-bucket"
+  force_destroy = null
+  region        = "us-east-1"
+  tags          = {}
+  tags_all      = {}
 }
 
 import {
-  to = aws_s3_bucket.all_buckets["my-logs-bucket"]
-  id = "my-logs-bucket"
+  to       = aws_s3_bucket.all_buckets_0
+  provider = aws
+  identity = {
+    account_id = ""
+    bucket     = "my-data-bucket"
+    region     = "us-east-1"
+  }
 }
 
-# ... 更多资源
+resource "aws_s3_bucket" "all_buckets_1" {
+  bucket        = "my-logs-bucket"
+  # ...
+}
+
+import {
+  to       = aws_s3_bucket.all_buckets_1
+  provider = aws
+  identity = {
+    bucket     = "my-logs-bucket"
+    region     = "us-east-1"
+  }
+}
 ```
+
+注意几个特点：
+
+- 资源使用**数字后缀**命名（`all_buckets_0`、`all_buckets_1`...），而非以资源名为 key
+- `import` 块使用 **`identity` 块**（而非旧版的 `id` 参数），这是 Terraform v1.12+ 的新格式
+- `resource` 块包含所有属性（包括 `null` 值和空集合），需要手动清理冗余内容
 
 ## 导入资源
 
 将生成的配置合并到主配置中（通常需要手动调整）：
 
-1. **检查生成的配置** — 移除只读属性、调整命名、添加变量引用
-2. **将 `import` 和 `resource` 块复制到主配置**
+1. **检查生成的配置** — 移除 `null` 值、空 `tags`、`timeouts` 块等冗余属性
+2. **重命名资源** — 生成的 `_0`、`_1` 后缀不够直观，按需重命名
+3. **将 `import` 和 `resource` 块复制到主配置**
 3. **执行导入**：
 
 ```bash
