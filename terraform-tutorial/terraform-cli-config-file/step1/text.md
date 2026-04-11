@@ -73,7 +73,13 @@ cd /root/workspace2
 terraform init
 ```
 
-注意初始化速度明显更快——Terraform 直接从缓存复制，不需要再次下载。
+输出看起来和普通初始化一样（仍然显示 "Installing"），但实际上 Terraform 是从缓存复制的。验证方法——检查工作目录中的 Provider 是否是指向缓存的符号链接：
+
+```
+find .terraform/providers -type l -ls
+```
+
+如果输出显示符号链接指向 ~/.terraform.d/plugin-cache/ 中的文件，说明 Terraform 确实使用了缓存而非重新下载。
 
 查看两个工作目录共享同一份缓存：
 
