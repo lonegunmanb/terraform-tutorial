@@ -47,8 +47,27 @@ terraform init
 
 现在创建一个使用辅助模块的测试：
 
+辅助模块运行时会独立初始化 Provider。由于主配置的 provider 块不会自动传递给辅助模块的 run 块，我们需要在测试文件中显式配置 Provider，让所有 run 块都能连接 LocalStack：
+
 ```
 cat > tests/with_helper.tftest.hcl <<'EOF'
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "test"
+  secret_key = "test"
+
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  s3_use_path_style           = true
+
+  endpoints {
+    s3       = "http://localhost:4566"
+    dynamodb = "http://localhost:4566"
+    sts      = "http://localhost:4566"
+  }
+}
+
 variables {
   app_name    = "helpertest"
   environment = "dev"
