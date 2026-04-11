@@ -2,7 +2,13 @@
 
 ## 当前状态
 
-经过第一步，我们已经导入了 3 个 prod S3 桶。但还有这些资源未纳入管理：
+经过第一步，我们已经导入了 3 个 prod S3 桶。确认上一步生成的 generated.tf 已删除（否则会与手动导入冲突）：
+
+```
+rm -f generated.tf
+```
+
+还有这些资源未纳入管理：
 
 - S3 桶：app-staging-data、app-staging-logs
 - DynamoDB 表：app-prod-sessions、app-prod-cache

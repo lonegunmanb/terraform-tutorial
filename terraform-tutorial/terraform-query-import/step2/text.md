@@ -136,6 +136,16 @@ terraform query 的优势是**自动发现**——你不需要一个个去查 AW
 
 最佳实践是：先用 terraform query 发现和生成初始配置，然后重构为 for_each 模式，让代码更整洁。
 
+## 清理生成的文件
+
+在实际工作中，你会把 generated.tf 中有用的部分整理后合并到主配置，然后删除生成文件。本实验中，第一步已经用 import + for_each 导入了 prod 桶，下一步你将手动导入剩余资源，所以现在先删掉 generated.tf，避免与已有配置冲突：
+
+```
+rm -f generated.tf
+```
+
+确认删除后再继续下一步。
+
 ## 注意事项
 
 terraform query 功能需要：
