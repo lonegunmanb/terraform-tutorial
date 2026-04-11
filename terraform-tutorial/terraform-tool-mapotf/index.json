@@ -1,0 +1,38 @@
+{
+  "title": "mapotf：用元编程定制第三方模块的 ignore_changes",
+  "description": "通过 LocalStack 模拟的 AWS VPC，演示如何用 mapotf 为第三方 terraform-aws-modules/vpc 模块动态添加 ignore_changes 消除标签漂移",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "部署 VPC 模块并观察标签漂移",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "用 mapotf 消除漂移",
+        "text": "step2/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"},
+        {"file": "auto-tag-vpc.sh", "target": "/root", "chmod": "+x"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

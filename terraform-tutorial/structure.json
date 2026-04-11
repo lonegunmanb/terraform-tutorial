@@ -31,6 +31,7 @@
     { "path": "terraform-cli-config-file" },
     { "path": "terraform-query-import" },
     { "path": "terraform-test" },
-    { "path": "terraform-tool-hcledit" }
+    { "path": "terraform-tool-hcledit" },
+    { "path": "terraform-tool-mapotf" }
   ]
 }

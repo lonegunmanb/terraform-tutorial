@@ -57,7 +57,8 @@ export default defineConfig({
             text: '周边工具',
             collapsed: false,
             items: [
-              { text: 'hcledit', link: '/terraform-tool-hcledit' }
+              { text: 'hcledit', link: '/terraform-tool-hcledit' },
+              { text: 'mapotf', link: '/terraform-tool-mapotf' }
             ]
           }
         ],
