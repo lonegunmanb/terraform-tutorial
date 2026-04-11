@@ -1,4 +1,4 @@
-# 第二步：编写 .tfquery.hcl 查询配置
+# 第二步：terraform query 查询与导入
 
 ## terraform query 简介
 
@@ -6,9 +6,18 @@
 
 Terraform v1.12 引入了 terraform query 命令和 .tfquery.hcl 查询文件：你只需声明"我要查询哪种类型的资源"，Terraform 借助 Provider 自动发现它们并生成 import 配置。
 
+## 准备工作
+
+先确认上一步导入的 prod 桶仍在状态中：
+
+```
+cd /root/workspace
+terraform state list
+```
+
 ## 编写查询文件
 
-创建一个 .tfquery.hcl 文件，查询 S3 桶：
+创建一个 .tfquery.hcl 文件，查询所有 S3 桶：
 
 ```
 cat > discover.tfquery.hcl <<'EOF'
@@ -22,50 +31,19 @@ EOF
 
 这个查询会让 AWS Provider 列出最多 50 个 S3 桶。include_resource = true 表示返回完整的资源属性（不仅是标识）。
 
-## 参数化查询
+## 运行查询
 
-让查询更灵活——使用变量参数化：
-
-```
-cat > discover.tfquery.hcl <<'EOF'
-variable "prefix" {
-  type    = string
-  default = "app-"
-}
-
-list "aws_s3_bucket" "filtered" {
-  provider         = aws
-  include_resource = true
-  limit            = 100
-}
-EOF
-```
-
-## 理解 terraform query 的输出
-
-运行 terraform query 时，Terraform 会：
-
-1. 读取当前目录的 .tf 文件获取 Provider 配置
-2. 读取 .tfquery.hcl 文件中的 list 块
-3. 通过 Provider 查询远端基础设施
-4. 打印发现的资源列表
-
-输出格式类似：
+先预览发现哪些资源：
 
 ```
-list.aws_s3_bucket.filtered:
-  - app-prod-data
-  - app-prod-logs
-  - app-prod-assets
-  - app-staging-data
-  - app-staging-logs
+terraform query
 ```
+
+Terraform 会读取 .tf 文件中的 Provider 配置和 .tfquery.hcl 中的 list 块，通过 Provider 查询远端基础设施，打印发现的资源列表。
 
 ## 生成导入配置
 
 terraform query 真正强大的地方在于自动生成配置：
-
-现在运行命令生成配置：
 
 ```
 terraform query -generate-config-out=generated.tf
@@ -77,18 +55,16 @@ terraform query -generate-config-out=generated.tf
 cat generated.tf
 ```
 
-这会创建 generated.tf 文件，包含每个发现的资源的 resource 块和 import 块。
-
 注意生成的配置有几个特点：
 
-- 资源使用数字后缀命名（filtered_0、filtered_1...），而非以桶名为 key
+- 资源使用数字后缀命名（all_0、all_1...），而非以桶名为 key
 - import 块使用 identity 块（而非旧版的 id 参数）来标识资源，这是 Terraform v1.12+ 的新格式
 - resource 块包含了所有属性（包括 null 值和空 tags），需要手动清理
 
 生成的配置类似：
 
 ```hcl
-resource "aws_s3_bucket" "filtered_0" {
+resource "aws_s3_bucket" "all_0" {
   bucket        = "app-prod-assets"
   force_destroy = null
   region        = "us-east-1"
@@ -97,7 +73,7 @@ resource "aws_s3_bucket" "filtered_0" {
 }
 
 import {
-  to       = aws_s3_bucket.filtered_0
+  to       = aws_s3_bucket.all_0
   provider = aws
   identity = {
     account_id = ""
@@ -109,42 +85,76 @@ import {
 # ... 每个桶各有一组 resource + import 块
 ```
 
-## 从生成到导入的完整流程
+## 执行导入
 
-1. 检查生成的 generated.tf，**清理冗余属性**（移除 null 值、空 tags、timeouts 块等）
-2. 根据需要重命名资源（生成的 filtered_0、filtered_1 不够直观）
-3. 将 import 和 resource 块合并到你的主配置中
-4. 运行 terraform plan 确认只有 import 操作
-5. 运行 terraform apply 完成导入
-6. 删除 generated.tf 和不再需要的 import 块
+先删除上一步手动写的 import 和 resource 块，避免与 generated.tf 冲突——只保留 provider 配置：
+
+```
+cat > main.tf <<'EOTF'
+terraform {
+  required_version = ">= 1.12"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 6.0"
+    }
+  }
+}
+
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "test"
+  secret_key = "test"
+
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  s3_use_path_style           = true
+
+  endpoints {
+    s3       = "http://localhost:4566"
+    dynamodb = "http://localhost:4566"
+    sts      = "http://localhost:4566"
+  }
+}
+EOTF
+```
+
+清空旧的状态（上一步导入的 prod 桶），让 generated.tf 重新导入所有桶：
+
+```
+rm -f terraform.tfstate terraform.tfstate.backup
+```
+
+预览计划：
+
+```
+terraform plan
+```
+
+应该看到所有桶都计划导入。执行导入：
+
+```
+terraform apply -auto-approve
+```
+
+确认输出包含 import 操作。
+
+## 验证幂等性
+
+导入完成后，再次 plan 验证配置与远端一致：
+
+```
+terraform plan
+```
+
+如果显示有 change（例如 timeouts 块），这是因为 generated.tf 中包含了冗余的 null 值。这正好说明为什么生成的配置需要手动清理。
 
 ## 与 import for_each 的对比
 
-上一步用的 import + for_each 方式需要你事先知道每个桶的名字，手动维护映射表：
-
-```hcl
-locals {
-  prod_buckets = {
-    data   = "app-prod-data"    # 手动填写
-    logs   = "app-prod-logs"    # 手动填写
-    assets = "app-prod-assets"  # 手动填写
-  }
-}
-```
-
-terraform query 的优势是**自动发现**——你不需要一个个去查 AWS 控制台或 CLI，Provider 帮你列出所有匹配的资源。但生成的配置通常需要手动整理（统一命名、提取变量、组织模块结构）。
+上一步用的 import + for_each 方式需要你事先知道每个桶的名字，手动维护映射表。terraform query 的优势是**自动发现**——Provider 帮你列出所有匹配的资源。但生成的配置通常需要手动整理（统一命名、提取变量、组织模块结构）。
 
 最佳实践是：先用 terraform query 发现和生成初始配置，然后重构为 for_each 模式，让代码更整洁。
-
-## 清理生成的文件
-
-在实际工作中，你会把 generated.tf 中有用的部分整理后合并到主配置，然后删除生成文件。本实验中，第一步已经用 import + for_each 导入了 prod 桶，下一步你将手动导入剩余资源，所以现在先删掉 generated.tf，避免与已有配置冲突：
-
-```
-rm -f generated.tf
-```
-
-确认删除后再继续下一步。
 
 ## 注意事项
 
@@ -153,10 +163,9 @@ terraform query 功能需要：
 - Terraform v1.12 或更高版本
 - Provider 必须实现 resource identity 接口，对于 AWS Provider 需要 v6.x（~> 6.0）
 - 查询配置文件必须使用 .tfquery.hcl 扩展名
+- 并非所有资源类型都支持 list 查询——例如 aws_dynamodb_table 目前不支持
 
-本实验环境使用 MiniStack + AWS Provider v6.x，满足版本要求。但并非所有资源类型都支持 list 查询——例如 aws_dynamodb_table 目前不支持，所以本步只查询 S3 桶。对于不支持 query 的资源类型，仍需使用第一步和第三步演示的 import + for_each 方式。
-
-在没有 terraform query 支持的环境中，可以使用 AWS CLI 列出资源，结合 import + for_each 实现类似效果（这正是第一步和第三步演示的方式）：
+在没有 terraform query 支持的环境中，可以使用 AWS CLI 列出资源，结合 import + for_each 实现类似效果（正是第一步演示的方式）：
 
 ```
 # 用 AWS CLI 列出所有桶名

@@ -1,6 +1,6 @@
 {
   "title": "terraform query：批量查询与导入已有资源",
-  "description": "通过 LocalStack 模拟的 AWS 资源，掌握 .tfquery.hcl 查询配置、terraform query 命令，以及 import + for_each 批量导入工作流",
+  "description": "通过 MiniStack 模拟的 AWS 资源，掌握 .tfquery.hcl 查询配置、terraform query 命令，以及 import + for_each 批量导入工作流",
   "details": {
     "intro": {
       "text": "init/init.md",
@@ -9,16 +9,12 @@
     },
     "steps": [
       {
-        "title": "手动创建资源并用 import + for_each 批量导入",
+        "title": "import + for_each 手动批量导入",
         "text": "step1/text.md"
       },
       {
-        "title": "编写 .tfquery.hcl 查询配置与 terraform query 命令",
+        "title": "terraform query 查询与导入",
         "text": "step2/text.md"
-      },
-      {
-        "title": "练习：自己完成一次批量导入",
-        "text": "step3/text.md"
       }
     ],
     "finish": {
