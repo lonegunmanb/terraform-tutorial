@@ -39,6 +39,12 @@ output "setup_bucket_name" {
 EOF
 ```
 
+新增模块后需要重新初始化，让 Terraform 发现它：
+
+```
+terraform init
+```
+
 现在创建一个使用辅助模块的测试：
 
 ```
