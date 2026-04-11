@@ -74,26 +74,32 @@ list "aws_instance" "prod_servers" {
 
 ### 使用 for_each 多维查询
 
-在[代码重构](/refactor_module#批量导入)中我们介绍过 `import` 块的 `for_each`，`list` 块同样支持。例如，在多个区域查询 S3 桶：
+在[代码重构](/refactor_module#批量导入)中我们介绍过 `import` 块的 `for_each`，`list` 块同样支持 `for_each` 和 `count`。例如，用 `count` 创建多个查询实例：
 
 ```hcl
-variable "regions" {
-  type    = set(string)
-  default = ["us-east-1", "eu-west-1", "ap-northeast-1"]
+variable "subnet_ids" {
+  type = list(string)
 }
 
-provider "aws" {
-  alias  = "multi"
-  region = each.value
-}
-
-list "aws_s3_bucket" "regional" {
-  for_each = var.regions
+list "aws_instance" "server" {
   provider = aws
+  count    = length(var.subnet_ids)
 }
 ```
 
-也可以用 `count` 创建多个相同配置的查询实例。
+也可以用 `for_each` 基于集合创建多个查询：
+
+```hcl
+variable "environments" {
+  type    = set(string)
+  default = ["prod", "staging"]
+}
+
+list "aws_s3_bucket" "by_env" {
+  for_each = var.environments
+  provider = aws
+}
+```
 
 ## terraform query 命令
 
