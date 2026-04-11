@@ -10,7 +10,7 @@ group_order: 9
 Terraform 的所有功能通过单一可执行文件 `terraform` 暴露。输入 `terraform` 可查看所有可用子命令，输入 `terraform <subcommand> -help` 可查看单个子命令的详细用法。
 
 ::: info
-`init`、`plan`、`apply`、`destroy`、`validate`、`show`、`output`、`state`、`import`、`providers`、`refresh`、`taint`、`untaint`、`workspace`、`test` 等核心子命令将在后续章节中各自单独讲解。本章重点介绍全局参数与其余常用命令。
+`init`、`plan`、`apply`、`destroy`、`validate`、`show`、`output`、`state`、`import`、`providers`、`workspace`、`test` 等核心子命令将在后续章节中各自单独讲解。本章重点介绍全局参数与其余常用命令。
 :::
 
 ## 跨命令通用参数

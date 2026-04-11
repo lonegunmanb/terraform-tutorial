@@ -49,7 +49,8 @@ export default defineConfig({
               { text: 'state', link: '/terraform-cli-state' },
               { text: 'workspace', link: '/terraform-cli-workspace' }
             ]
-          }
+          },
+          { text: 'Terraform 测试', link: '/test' }
         ],
       },
     ],
