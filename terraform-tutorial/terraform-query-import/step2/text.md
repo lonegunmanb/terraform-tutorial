@@ -38,16 +38,8 @@ list "aws_s3_bucket" "filtered" {
   include_resource = true
   limit            = 100
 }
-
-list "aws_dynamodb_table" "all_tables" {
-  provider         = aws
-  include_resource = true
-  limit            = 50
-}
 EOF
 ```
-
-这样一次查询就能同时发现 S3 桶和 DynamoDB 表。
 
 ## 理解 terraform query 的输出
 
@@ -67,10 +59,6 @@ list.aws_s3_bucket.filtered:
   - app-prod-assets
   - app-staging-data
   - app-staging-logs
-
-list.aws_dynamodb_table.all_tables:
-  - app-prod-sessions
-  - app-prod-cache
 ```
 
 ## 生成导入配置
@@ -95,17 +83,7 @@ resource "aws_s3_bucket" "filtered" {
   bucket = "app-staging-data"
 }
 
-import {
-  to = aws_dynamodb_table.all_tables["app-prod-sessions"]
-  id = "app-prod-sessions"
-}
-
-resource "aws_dynamodb_table" "all_tables" {
-  name         = "app-prod-sessions"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "SessionID"
-  # ... 更多属性
-}
+# ... 更多 S3 桶的 import + resource 块
 ```
 
 ## 从生成到导入的完整流程
@@ -142,7 +120,7 @@ terraform query 功能需要：
 - Provider 必须实现 resource identity 接口，对于 AWS Provider 需要 v6.x（~> 6.0）
 - 查询配置文件必须使用 .tfquery.hcl 扩展名
 
-本实验环境使用 MiniStack + AWS Provider v6.x，满足版本要求。但 terraform query 的实际查询能力取决于 MiniStack 对 resource identity API 的模拟程度——如果某些查询返回错误，属于模拟环境的正常限制。
+本实验环境使用 MiniStack + AWS Provider v6.x，满足版本要求。但并非所有资源类型都支持 list 查询——例如 aws_dynamodb_table 目前不支持，所以本步只查询 S3 桶。对于不支持 query 的资源类型，仍需使用第一步和第三步演示的 import + for_each 方式。
 
 在没有 terraform query 支持的环境中，可以使用 AWS CLI 列出资源，结合 import + for_each 实现类似效果（这正是第一步和第三步演示的方式）：
 
