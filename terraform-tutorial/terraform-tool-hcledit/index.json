@@ -1,0 +1,34 @@
+{
+  "title": "hcledit：HCL 命令行编辑器",
+  "description": "掌握 hcledit 的 attribute、block、body 子命令，程序化地读取和修改 Terraform 配置",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "attribute 与 block 操作：读取、修改、删除 HCL 配置",
+        "text": "step1/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "variables.tf", "target": "/root/workspace"},
+        {"file": "outputs.tf", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

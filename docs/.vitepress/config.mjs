@@ -51,7 +51,14 @@ export default defineConfig({
               { text: 'workspace', link: '/terraform-cli-workspace' }
             ]
           },
-          { text: 'Terraform 测试', link: '/test' }
+          { text: 'Terraform 测试', link: '/test' },
+          {
+            text: '周边工具',
+            collapsed: false,
+            items: [
+              { text: 'hcledit', link: '/terraform-tool-hcledit' }
+            ]
+          }
         ],
       },
     ],
