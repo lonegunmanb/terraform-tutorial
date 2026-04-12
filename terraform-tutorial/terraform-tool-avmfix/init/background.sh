@@ -122,13 +122,20 @@ EOTF
 install_terraform
 
 # Install Go
-GO_VERSION="1.23.0"
-curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar xz -C /usr/local
+echo "安装 Go..."
+if ! command -v go &>/dev/null; then
+  curl -sSL "https://go.dev/dl/go1.23.8.linux-amd64.tar.gz" -o /tmp/go.tar.gz
+  tar xzf /tmp/go.tar.gz -C /usr/local
+  rm -f /tmp/go.tar.gz
+fi
 export PATH=$PATH:/usr/local/go/bin:/root/go/bin
 echo 'export PATH=$PATH:/usr/local/go/bin:/root/go/bin' >> /root/.bashrc
+go version
 
 # Install avmfix
+echo "安装 avmfix..."
 GOBIN=/usr/local/bin go install github.com/lonegunmanb/avmfix@latest
+which avmfix && echo "avmfix 安装成功" || echo "avmfix 安装失败"
 
 # Initialize terraform (for schema)
 cd /root/workspace
