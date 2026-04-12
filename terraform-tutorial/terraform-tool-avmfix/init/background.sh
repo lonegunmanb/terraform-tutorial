@@ -134,7 +134,12 @@ go version
 
 # Install avmfix
 echo "安装 avmfix..."
-GOBIN=/usr/local/bin go install github.com/lonegunmanb/avmfix@latest
+export GOBIN=/usr/local/bin
+go install github.com/lonegunmanb/avmfix@latest
+# Fallback: if GOBIN didn't work, copy from default location
+if ! command -v avmfix &>/dev/null; then
+  cp /root/go/bin/avmfix /usr/local/bin/avmfix 2>/dev/null || true
+fi
 which avmfix && echo "avmfix 安装成功" || echo "avmfix 安装失败"
 
 # Initialize terraform (for schema)

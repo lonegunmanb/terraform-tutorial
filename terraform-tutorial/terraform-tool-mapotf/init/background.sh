@@ -90,7 +90,12 @@ export PATH=$PATH:/usr/local/go/bin:/root/go/bin
 echo 'export PATH=$PATH:/usr/local/go/bin:/root/go/bin' >> /root/.bashrc
 
 echo "安装 mapotf..."
-GOBIN=/usr/local/bin go install github.com/Azure/mapotf@latest
+export GOBIN=/usr/local/bin
+go install github.com/Azure/mapotf@latest
+# Fallback: if GOBIN didn't work, copy from default location
+if ! command -v mapotf &>/dev/null; then
+  cp /root/go/bin/mapotf /usr/local/bin/mapotf 2>/dev/null || true
+fi
 
 # ── 4. Initialize Terraform (download VPC module + providers) ──
 cd /root/workspace
