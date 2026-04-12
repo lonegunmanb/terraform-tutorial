@@ -64,6 +64,11 @@ module "vpc" {
   private_subnets = ["10.0.1.0/24"]
   public_subnets  = ["10.0.101.0/24"]
 
+  # 关闭 LocalStack 模拟不准确的默认资源管理
+  manage_default_network_acl    = false
+  manage_default_route_table    = false
+  manage_default_security_group = false
+
   tags = {
     Project   = "mapotf-demo"
     ManagedBy = "Terraform"
