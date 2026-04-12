@@ -2,16 +2,8 @@
 
 ## 验证安装
 
-先进入工作目录（所有 .tf 文件在这里）：
-
 ```
 cd /root/workspace
-ls *.tf
-```
-
-确认看到 main.tf、variables.tf、outputs.tf 三个文件后，验证 terraform-docs 已安装：
-
-```
 terraform-docs version
 ```
 
@@ -27,21 +19,21 @@ cat outputs.tf
 
 ## 生成 Markdown 文档
 
-最基本的用法——在终端打印 Markdown 格式文档：
-
-```
-terraform-docs markdown .
-```
-
-输出包含 Requirements、Providers、Resources、Inputs、Outputs 等区块。
-
-换成表格格式——更紧凑：
+最基本的用法——在终端打印 Markdown 表格格式文档：
 
 ```
 terraform-docs markdown table .
 ```
 
-注意 Inputs 表格中包含了每个变量的 Name、Description、Type、Default 和 Required 信息——全部从 variables.tf 自动提取。
+输出包含 Requirements、Providers、Resources、Inputs、Outputs 等区块，每个区块以 Markdown 表格呈现。注意 Inputs 表格中包含了每个变量的 Name、Description、Type、Default 和 Required 信息——全部从 variables.tf 自动提取。
+
+换成文档格式（非表格，用列表和段落展示）：
+
+```
+terraform-docs markdown document .
+```
+
+对比两种输出，table 更紧凑适合 README，document 更详细适合长文档。
 
 ## 其他输出格式
 
