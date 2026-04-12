@@ -5,6 +5,9 @@ set -x
 source /root/setup-common.sh
 
 # ── 1. Create a messy Terraform module for avmfix to fix ──
+git config --global user.email "lab@example.com"
+git config --global user.name "Lab User"
+git config --global init.defaultBranch main
 mkdir -p /root/workspace
 cd /root/workspace
 
