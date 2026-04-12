@@ -2,8 +2,16 @@
 
 ## 验证安装
 
+先进入工作目录（所有 .tf 文件在这里）：
+
 ```
 cd /root/workspace
+ls *.tf
+```
+
+确认看到 main.tf、variables.tf、outputs.tf 三个文件后，验证 terraform-docs 已安装：
+
+```
 terraform-docs version
 ```
 
