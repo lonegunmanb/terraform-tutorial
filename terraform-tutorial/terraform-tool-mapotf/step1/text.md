@@ -22,7 +22,7 @@ Terraform 通过 VPC 模块创建了一组 EC2 网络资源（VPC、子网、路
 查看创建的 VPC 及其标签：
 
 ```
-awslocal ec2 describe-vpcs --query 'Vpcs[?Tags[?Key==`Name` && Value==`demo-vpc`]].[VpcId,Tags]' --output table
+awslocal ec2 describe-vpcs --output json | head -30
 ```
 
 此时 VPC 只有我们在配置中声明的标签。
@@ -38,7 +38,7 @@ sleep 10
 再次查看 VPC 标签：
 
 ```
-awslocal ec2 describe-vpcs --query 'Vpcs[?Tags[?Key==`Name` && Value==`demo-vpc`]].Tags[]' --output table
+awslocal ec2 describe-vpcs --output json | head -50
 ```
 
 现在多了两个标签：compliance-team = security 和 auto-tagged-at = ... 这些是外部策略自动添加的，不在 Terraform 配置中。
