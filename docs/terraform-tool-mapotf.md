@@ -90,8 +90,8 @@ mapotf plan --mptf-dir ./mptf-rules --tf-dir .
 # 先转换 → terraform apply → 自动还原
 mapotf apply --mptf-dir ./mptf-rules --tf-dir .
 
-# -- 后面的参数透传给 terraform
-mapotf apply --mptf-dir ./mptf-rules --tf-dir . -- -auto-approve
+# 不认识的参数自动透传给 terraform
+mapotf apply --mptf-dir ./mptf-rules --tf-dir . -auto-approve
 ```
 
 不同子命令的处理方式：

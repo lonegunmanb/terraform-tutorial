@@ -85,7 +85,7 @@ diff .terraform/modules/vpc/main.tf .terraform/modules/vpc/main.tf.mptfbackup 2>
 在实际 CI/CD 中，推荐使用 mapotf apply——它会自动完成"转换 → terraform apply → 还原"的完整流程：
 
 ```
-mapotf apply --mptf-dir ./mptf-rules --tf-dir . -- -auto-approve
+mapotf apply --mptf-dir ./mptf-rules --tf-dir . -auto-approve
 ```
 
 注意 -- 后面的参数会传递给 terraform apply。mapotf apply 结束后，模块代码自动恢复原状，但 Terraform 状态已经更新。
