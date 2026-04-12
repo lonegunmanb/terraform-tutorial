@@ -66,6 +66,8 @@ terraform plan
 
 标签相关的 drift 应该消失了——Terraform 不再试图移除 compliance-team 和 auto-tagged-at 标签。
 
+你可能仍然看到一个关于 aws_default_network_acl 的 change（egress/ingress 规则差异），这是 LocalStack 对 IPv6 CIDR 模拟不准确导致的，与标签无关，不影响本实验的结论。
+
 ## 还原模块代码
 
 确认效果后，还原被修改的文件：
