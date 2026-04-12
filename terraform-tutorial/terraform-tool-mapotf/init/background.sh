@@ -84,18 +84,20 @@ start_localstack
 
 # ── 3. Install Go and mapotf ──
 echo "安装 Go..."
-GO_VERSION="1.23.0"
-curl -sSL "https://go.dev/dl/go${GO_VERSION}.linux-amd64.tar.gz" | tar xz -C /usr/local
-export PATH=$PATH:/usr/local/go/bin:/root/go/bin
-echo 'export PATH=$PATH:/usr/local/go/bin:/root/go/bin' >> /root/.bashrc
+if ! command -v go &>/dev/null; then
+  curl -sSL "https://go.dev/dl/go1.23.8.linux-amd64.tar.gz" -o /tmp/go.tar.gz
+  tar xzf /tmp/go.tar.gz -C /usr/local
+  rm -f /tmp/go.tar.gz
+fi
+export GOPATH=/root/go
+export PATH=/usr/local/go/bin:/root/go/bin:$PATH
+echo 'export GOPATH=/root/go' >> /root/.bashrc
+echo 'export PATH=/usr/local/go/bin:/root/go/bin:$PATH' >> /root/.bashrc
+go version
 
 echo "安装 mapotf..."
-export GOBIN=/usr/local/bin
 go install github.com/Azure/mapotf@latest
-# Fallback: if GOBIN didn't work, copy from default location
-if ! command -v mapotf &>/dev/null; then
-  cp /root/go/bin/mapotf /usr/local/bin/mapotf 2>/dev/null || true
-fi
+mapotf version >/dev/null 2>&1 && echo "mapotf 安装成功" || echo "mapotf 安装失败"
 
 # ── 4. Initialize Terraform (download VPC module + providers) ──
 cd /root/workspace

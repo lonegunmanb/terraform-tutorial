@@ -128,19 +128,16 @@ if ! command -v go &>/dev/null; then
   tar xzf /tmp/go.tar.gz -C /usr/local
   rm -f /tmp/go.tar.gz
 fi
-export PATH=$PATH:/usr/local/go/bin:/root/go/bin
-echo 'export PATH=$PATH:/usr/local/go/bin:/root/go/bin' >> /root/.bashrc
+export GOPATH=/root/go
+export PATH=/usr/local/go/bin:/root/go/bin:$PATH
+echo 'export GOPATH=/root/go' >> /root/.bashrc
+echo 'export PATH=/usr/local/go/bin:/root/go/bin:$PATH' >> /root/.bashrc
 go version
 
 # Install avmfix
 echo "安装 avmfix..."
-export GOBIN=/usr/local/bin
 go install github.com/lonegunmanb/avmfix@latest
-# Fallback: if GOBIN didn't work, copy from default location
-if ! command -v avmfix &>/dev/null; then
-  cp /root/go/bin/avmfix /usr/local/bin/avmfix 2>/dev/null || true
-fi
-which avmfix && echo "avmfix 安装成功" || echo "avmfix 安装失败"
+avmfix -h >/dev/null 2>&1 && echo "avmfix 安装成功" || echo "avmfix 安装失败"
 
 # Initialize terraform (for schema)
 cd /root/workspace
