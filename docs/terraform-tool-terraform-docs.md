@@ -100,7 +100,7 @@ output:
   mode: inject
   template: |-
     <!-- BEGIN_TF_DOCS -->
-    {{ .Content }}
+    &#123;&#123; .Content &#125;&#125;
     <!-- END_TF_DOCS -->
 
 sort:
@@ -142,36 +142,36 @@ sections:
 
 ```yaml
 content: |-
-  {{ .Header }}
+  &#123;&#123; .Header &#125;&#125;
 
   ## 使用方法
 
   ```hcl
-  {{ include "examples/basic/main.tf" }}
+  &#123;&#123; include "examples/basic/main.tf" &#125;&#125;
   ```
 
-  {{ .Requirements }}
+  &#123;&#123; .Requirements &#125;&#125;
 
-  {{ .Inputs }}
+  &#123;&#123; .Inputs &#125;&#125;
 
-  {{ .Outputs }}
+  &#123;&#123; .Outputs &#125;&#125;
 
-  {{ .Resources }}
+  &#123;&#123; .Resources &#125;&#125;
 ```
 
 可用的模板变量：
 
 | 变量 | 说明 |
 |------|------|
-| `{{ .Header }}` | 从 `header-from` 文件提取的描述 |
-| `{{ .Footer }}` | 从 `footer-from` 文件提取的内容 |
-| `{{ .Inputs }}` | 输入变量表 |
-| `{{ .Outputs }}` | 输出值表 |
-| `{{ .Providers }}` | Provider 列表 |
-| `{{ .Requirements }}` | 版本约束 |
-| `{{ .Resources }}` | 资源列表 |
-| `{{ .Modules }}` | 子模块引用 |
-| `{{ include "path" }}` | 包含外部文件内容 |
+| `&#123;&#123; .Header &#125;&#125;` | 从 `header-from` 文件提取的描述 |
+| `&#123;&#123; .Footer &#125;&#125;` | 从 `footer-from` 文件提取的内容 |
+| `&#123;&#123; .Inputs &#125;&#125;` | 输入变量表 |
+| `&#123;&#123; .Outputs &#125;&#125;` | 输出值表 |
+| `&#123;&#123; .Providers &#125;&#125;` | Provider 列表 |
+| `&#123;&#123; .Requirements &#125;&#125;` | 版本约束 |
+| `&#123;&#123; .Resources &#125;&#125;` | 资源列表 |
+| `&#123;&#123; .Modules &#125;&#125;` | 子模块引用 |
+| `&#123;&#123; include "path" &#125;&#125;` | 包含外部文件内容 |
 
 ## CI/CD 集成
 
