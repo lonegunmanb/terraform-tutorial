@@ -1,0 +1,34 @@
+{
+  "title": "terraform-docs：模块文档自动生成",
+  "description": "体验 terraform-docs 从 Terraform 模块自动生成 Markdown 文档，配置 .terraform-docs.yml，将文档注入 README.md",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "生成文档、配置注入与自定义模板",
+        "text": "step1/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "variables.tf", "target": "/root/workspace"},
+        {"file": "outputs.tf", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

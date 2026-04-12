@@ -33,6 +33,7 @@
     { "path": "terraform-test" },
     { "path": "terraform-tool-hcledit" },
     { "path": "terraform-tool-mapotf" },
-    { "path": "terraform-tool-avmfix" }
+    { "path": "terraform-tool-avmfix" },
+    { "path": "terraform-tool-terraform-docs" }
   ]
 }
