@@ -76,9 +76,36 @@ transform "update_in_place" "add_ignore_changes" {
 
 ## 工作流
 
-`mapotf` 提供两种执行模式：
+`mapotf` 本质上是一个 **Terraform 的包装器（wrapper）**——你可以直接用 `mapotf` 替代 `terraform` 来执行所有常用子命令。它会在执行 Terraform 命令前自动应用转换规则，执行完成后自动还原，对原始代码零侵入。
+
+### 作为 Terraform wrapper 使用
+
+```bash
+# 等同于 terraform init（直接透传，不执行转换）
+mapotf init --mptf-dir ./mptf-rules --tf-dir .
+
+# 先转换 → terraform plan → 自动还原
+mapotf plan --mptf-dir ./mptf-rules --tf-dir .
+
+# 先转换 → terraform apply → 自动还原
+mapotf apply --mptf-dir ./mptf-rules --tf-dir .
+
+# -- 后面的参数透传给 terraform
+mapotf apply --mptf-dir ./mptf-rules --tf-dir . -- -auto-approve
+```
+
+不同子命令的处理方式：
+
+| 子命令 | 是否先执行转换 | 说明 |
+|--------|:---:|------|
+| `plan` / `apply` / `destroy` | ✅ | 转换 → 执行 → 还原 |
+| `validate` / `console` / `import` | ✅ | 转换 → 执行 → 还原 |
+| `refresh` / `show` / `state` / `test` / `graph` | ✅ | 转换 → 执行 → 还原 |
+| `init` / `fmt` / `get` / `version` / `workspace` | ❌ | 直接透传，不转换 |
 
 ### transform 模式——仅修改文件
+
+如果只想查看转换效果而不执行 Terraform，使用 `transform` 子命令：
 
 ```bash
 mapotf transform --mptf-dir ./mptf-rules --tf-dir .
@@ -90,30 +117,17 @@ mapotf transform --mptf-dir ./mptf-rules --tf-dir .
 4. 应用 `transform` 块定义的变更
 5. 修改 `.tf` 文件，并生成 `.tf.mptfbackup` 备份
 
-之后可以用 `diff` 审查变更，确认无误后手动 `terraform plan/apply`。
-
-### apply 模式——修改 + 执行 + 还原
-
-```bash
-mapotf apply --mptf-dir ./mptf-rules --tf-dir .
-```
-
-1. 备份 `.tf` 文件
-2. 应用转换规则
-3. 自动执行 `terraform apply`
-4. **还原** `.tf` 文件到原始状态
-
-这种模式适合 CI/CD，修改是临时的——只在 apply 期间生效，执行完自动恢复。
+之后可以用 `diff` 审查变更，确认无误后手动 `terraform plan/apply`。使用 `mapotf reset` 可还原文件，`mapotf clean-backup` 清理备份。
 
 ### 其他命令
 
 | 命令 | 说明 |
 |------|------|
-| `mapotf transform` | 仅转换，不执行 Terraform |
-| `mapotf apply` | 转换 + apply + 还原 |
-| `mapotf plan` | 转换 + plan + 还原 |
+| `mapotf transform` | 仅转换，不执行 Terraform，生成 `.mptfbackup` 备份 |
+| `mapotf plan` | 转换 → `terraform plan` → 还原 |
+| `mapotf apply` | 转换 → `terraform apply` → 还原 |
 | `mapotf reset` | 从备份还原所有文件 |
-| `mapotf clean-backup` | 清理备份文件 |
+| `mapotf clean-backup` | 清理 `.mptfbackup` 备份文件 |
 
 ## 实际应用场景
 
