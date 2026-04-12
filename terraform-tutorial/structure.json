@@ -32,6 +32,7 @@
     { "path": "terraform-query-import" },
     { "path": "terraform-test" },
     { "path": "terraform-tool-hcledit" },
-    { "path": "terraform-tool-mapotf" }
+    { "path": "terraform-tool-mapotf" },
+    { "path": "terraform-tool-avmfix" }
   ]
 }

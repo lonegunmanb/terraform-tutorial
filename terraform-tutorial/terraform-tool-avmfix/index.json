@@ -1,0 +1,31 @@
+{
+  "title": "avmfix：Terraform 模块代码规范化",
+  "description": "体验 avmfix 自动修复 Terraform 代码规范问题——属性排序、块排列、文件归位、冗余声明清理",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "体验 avmfix 自动修复代码规范",
+        "text": "step1/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}

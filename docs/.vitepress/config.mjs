@@ -58,7 +58,8 @@ export default defineConfig({
             collapsed: false,
             items: [
               { text: 'hcledit', link: '/terraform-tool-hcledit' },
-              { text: 'mapotf', link: '/terraform-tool-mapotf' }
+              { text: 'mapotf', link: '/terraform-tool-mapotf' },
+              { text: 'avmfix', link: '/terraform-tool-avmfix' }
             ]
           }
         ],
