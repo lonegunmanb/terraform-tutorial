@@ -62,16 +62,12 @@ Terraform 检测到标签漂移——plan 显示要移除 compliance-team 和 au
 
 ## 查看模块内部代码
 
-看看 VPC 模块中 aws_vpc 资源是否有 lifecycle 块：
+看看 VPC 模块中 aws_vpc 资源的完整定义：
 
 ```
-grep -A 5 'resource "aws_vpc"' .terraform/modules/vpc/main.tf
+sed -n '/^resource "aws_vpc"/,/^}/p' .terraform/modules/vpc/main.tf
 ```
 
-```
-grep 'ignore_changes' .terraform/modules/vpc/main.tf || echo "模块中没有 ignore_changes"
-```
-
-可以看到模块内部的 aws_vpc 资源没有 lifecycle 块——这是正常的，模块作者无法预知每个用户需要忽略哪些属性。
+可以看到 aws_vpc 资源没有 lifecycle 块。虽然模块中其他资源（如 network ACL）可能有 ignore_changes，但 aws_vpc 本身没有——模块作者无法预知每个用户需要忽略哪些属性。
 
 下一步我们用 mapotf 来解决这个问题。
