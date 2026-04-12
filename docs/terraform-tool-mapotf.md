@@ -94,6 +94,20 @@ mapotf apply --mptf-dir ./mptf-rules --tf-dir .
 mapotf apply --mptf-dir ./mptf-rules --tf-dir . -auto-approve
 ```
 
+### -r 参数：递归转换第三方模块
+
+默认情况下，`mapotf` 只转换 `--tf-dir` 指定目录中的 `.tf` 文件。但第三方模块下载后存放在 `.terraform/modules/` 子目录中——如果不递归进去，就无法修改模块内部的资源定义。
+
+`-r`（`--recursive`）参数让 `mapotf` 递归扫描所有子目录（包括 `.terraform/modules/`），这样就能对第三方模块中的资源应用转换规则：
+
+```bash
+# 递归转换，包括 .terraform/modules/ 中的第三方模块代码
+mapotf plan -r --mptf-dir ./mptf-rules --tf-dir .
+mapotf apply -r --mptf-dir ./mptf-rules --tf-dir . -auto-approve
+```
+
+这正是解决"无法定制第三方模块中资源的 `ignore_changes`"这一痛点的关键——`-r` 让 `mapotf` 深入到 `terraform init` 下载的模块源码中执行转换。由于 wrapper 模式下转换是临时的（执行后自动还原），模块源码不会被永久修改，下次 `terraform init -upgrade` 更新模块版本也不受影响。
+
 不同子命令的处理方式：
 
 | 子命令 | 是否先执行转换 | 说明 |

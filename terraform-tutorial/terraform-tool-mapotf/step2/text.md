@@ -42,10 +42,10 @@ EOF
 
 ## 预览转换效果
 
-先用 transform 模式查看 mapotf 会如何修改文件：
+先用 transform 模式查看 mapotf 会如何修改文件。注意 -r 参数——它让 mapotf 递归扫描子目录（包括 .terraform/modules/），这样才能修改第三方模块内部的代码：
 
 ```
-mapotf transform --mptf-dir ./mptf-rules --tf-dir .
+mapotf transform -r --mptf-dir ./mptf-rules --tf-dir .
 ```
 
 查看模块内部的 aws_vpc 资源被修改了什么：
@@ -71,7 +71,7 @@ terraform plan
 确认效果后，还原被修改的文件：
 
 ```
-mapotf reset --tf-dir .
+mapotf reset -r --tf-dir .
 ```
 
 验证模块代码已恢复原状：
@@ -85,15 +85,15 @@ diff .terraform/modules/vpc/main.tf .terraform/modules/vpc/main.tf.mptfbackup 2>
 在实际 CI/CD 中，推荐使用 mapotf apply——它会自动完成"转换 → terraform apply → 还原"的完整流程：
 
 ```
-mapotf apply --mptf-dir ./mptf-rules --tf-dir . -auto-approve
+mapotf apply -r --mptf-dir ./mptf-rules --tf-dir . -auto-approve
 ```
 
-注意 -- 后面的参数会传递给 terraform apply。mapotf apply 结束后，模块代码自动恢复原状，但 Terraform 状态已经更新。
+-r 让转换递归到模块目录，-auto-approve 透传给 terraform apply。mapotf apply 结束后，模块代码自动恢复原状，但 Terraform 状态已经更新。
 
 清理备份文件：
 
 ```
-mapotf clean-backup --tf-dir .
+mapotf clean-backup -r --tf-dir .
 ```
 
 ## 再次验证
