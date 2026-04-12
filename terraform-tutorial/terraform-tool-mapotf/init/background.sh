@@ -84,11 +84,10 @@ start_localstack
 
 # ── 3. Install Go and mapotf ──
 echo "安装 Go..."
-if ! command -v go &>/dev/null; then
-  curl -sSL "https://go.dev/dl/go1.23.8.linux-amd64.tar.gz" -o /tmp/go.tar.gz
-  tar xzf /tmp/go.tar.gz -C /usr/local
-  rm -f /tmp/go.tar.gz
-fi
+rm -rf /usr/local/go
+curl -sSL "https://go.dev/dl/go1.23.8.linux-amd64.tar.gz" -o /tmp/go.tar.gz
+tar xzf /tmp/go.tar.gz -C /usr/local
+rm -f /tmp/go.tar.gz
 export GOPATH=/root/go
 export PATH=/usr/local/go/bin:/root/go/bin:$PATH
 echo 'export GOPATH=/root/go' >> /root/.bashrc
