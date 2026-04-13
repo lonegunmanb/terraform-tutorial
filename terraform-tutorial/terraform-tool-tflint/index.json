@@ -1,0 +1,41 @@
+{
+  "title": "tflint：Terraform 代码静态分析",
+  "description": "体验 tflint 静态分析 Terraform 代码——检测废弃语法、未使用声明、命名规范、自定义规则配置",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "基础检查：发现代码中的问题",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "配置规则、修复问题与自定义规则",
+        "text": "step2/text.md"
+      },
+      {
+        "title": "使用 AWS 插件扩展检查规则",
+        "text": "step3/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
