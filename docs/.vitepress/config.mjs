@@ -61,7 +61,8 @@ export default defineConfig({
               { text: 'mapotf', link: '/terraform-tool-mapotf' },
               { text: 'avmfix', link: '/terraform-tool-avmfix' },
               { text: 'terraform-docs', link: '/terraform-tool-terraform-docs' },
-              { text: 'tflint', link: '/terraform-tool-tflint' }
+              { text: 'tflint', link: '/terraform-tool-tflint' },
+              { text: 'checkov', link: '/terraform-tool-checkov' }
             ]
           }
         ],

@@ -1,0 +1,37 @@
+{
+  "title": "Checkov：Terraform 安全合规扫描",
+  "description": "体验 Checkov 对 Terraform 代码进行安全扫描——发现不安全配置、理解规则、修复问题、自定义策略",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "基础扫描：发现安全问题并修复",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "规则管理与自定义策略",
+        "text": "step2/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
