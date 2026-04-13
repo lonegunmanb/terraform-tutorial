@@ -159,10 +159,84 @@ checkov -d .
 
 ## 使用 --soft-fail 模式
 
-在初始引入 Checkov 时，团队可能有大量历史代码未通过检查。使用 --soft-fail 可以让 Checkov 即使发现问题也返回退出码 0，不阻塞 CI 流程：
+在初始引入 Checkov 时，团队可能有大量历史代码未通过检查。使用 --soft-fail 可以让 Checkov 即使发现问题也返回退出码 0，不阻塞 CI 流程。
+
+先恢复原始的、包含安全问题的代码，这样才能看到 soft-fail 的效果：
 
 ```
-checkov -d . --soft-fail
+cat > main.tf <<'EOF'
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "test"
+  secret_key = "test"
+
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  s3_use_path_style           = true
+
+  endpoints {
+    s3  = "http://localhost:4566"
+    sts = "http://localhost:4566"
+  }
+}
+
+resource "aws_s3_bucket" "data" {
+  bucket        = "my-data-bucket"
+  force_destroy = true
+
+  tags = {
+    Environment = "dev"
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_s3_bucket" "logs" {
+  bucket        = "my-logs-bucket"
+  force_destroy = true
+}
+
+variable "environment" {
+  type        = string
+  default     = "dev"
+  description = "Deployment environment"
+}
+
+output "data_bucket_id" {
+  value       = aws_s3_bucket.data.id
+  description = "The ID of the data bucket"
+}
+
+output "logs_bucket_id" {
+  value       = aws_s3_bucket.logs.id
+  description = "The ID of the logs bucket"
+}
+EOF
+```
+
+现在不使用 --soft-fail 运行一次，确认有失败项并且退出码不为 0：
+
+```
+checkov -d . --compact
+echo "退出码: $?"
+```
+
+退出码不为 0，说明 Checkov 检测到了安全问题。在 CI 中这会导致流水线失败。
+
+现在加上 --soft-fail 再运行一次：
+
+```
+checkov -d . --soft-fail --compact
 echo "退出码: $?"
 ```
 
@@ -188,30 +262,25 @@ cat custom-policies/require_tags.yaml
 使用 --external-checks-dir 参数加载自定义策略运行扫描：
 
 ```
-checkov -d . --external-checks-dir custom-policies
+checkov -d . --external-checks-dir custom-policies --check CUSTOM_AWS_1
 ```
 
-因为我们之前修复时已经为两个桶都添加了标签，CUSTOM_AWS_1 应该通过。
+你会看到 CUSTOM_AWS_1 对 data 桶通过（有 Environment 和 ManagedBy 标签），但对 logs 桶失败——因为当前的 main.tf 中 logs 桶没有 tags。这展示了如何用自定义策略强制执行组织内部的标签规范。
 
-现在故意移除 logs 桶的标签来测试自定义策略的效果。创建一个没有标签的新桶：
+修复也很简单，为 logs 桶补上标签：
 
 ```
-cat >> main.tf <<'EOF'
-
-resource "aws_s3_bucket" "temp" {
-  bucket        = "my-temp-bucket"
-  force_destroy = true
-}
-EOF
+sed -i '/bucket.*=.*"my-logs-bucket"/a\
+\n  tags = {\n    Environment = "dev"\n    ManagedBy   = "Terraform"\n  }' main.tf
 ```
 
-再次扫描：
+再次验证：
 
 ```
 checkov -d . --external-checks-dir custom-policies --check CUSTOM_AWS_1
 ```
 
-你会看到 CUSTOM_AWS_1 对 temp 桶报错——因为它没有 Environment 和 ManagedBy 标签。这展示了如何用自定义策略强制执行组织内部的标签规范。
+CUSTOM_AWS_1 现在全部通过了。
 
 ## 输出为 JSON 格式
 
@@ -222,14 +291,6 @@ checkov -d . -o json --compact 2>/dev/null | head -50
 ```
 
 JSON 输出包含完整的检查结果结构，可以被自动化工具解析和处理。
-
-## 清理临时资源
-
-删除刚才添加的临时桶定义：
-
-```
-head -n -5 main.tf > main.tf.tmp && mv main.tf.tmp main.tf
-```
 
 ## 总结
 
