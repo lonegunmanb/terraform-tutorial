@@ -174,7 +174,85 @@ tflint
 
 ## 自定义规则：禁用特定规则
 
-有时候团队可能不需要某些规则。比如，如果团队习惯了 "\${}" 插值语法，可以关闭废弃语法检查：
+有时候团队可能不需要某些规则。比如，如果团队习惯了 "\${}" 插值语法，可以关闭废弃语法检查。
+
+先恢复原始代码，这样才能看到禁用规则的效果：
+
+```
+cp /root/workspace/main.tf.bak /root/workspace/main.tf 2>/dev/null || cat > main.tf <<'ORIG'
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "test"
+  secret_key = "test"
+
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  s3_use_path_style           = true
+
+  endpoints {
+    s3  = "http://localhost:4566"
+    sts = "http://localhost:4566"
+  }
+}
+
+resource "aws_s3_bucket" "MyBucket" {
+  bucket        = "${var.bucket_name}"
+  force_destroy = true
+
+  tags = {
+    Environment = "${var.environment}"
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_s3_bucket" "logs" {
+  bucket        = "${var.bucket_name}-logs"
+  force_destroy = true
+}
+
+variable "bucket_name" {
+  default = "my-demo-bucket"
+}
+
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
+variable "unused_var" {
+  type        = string
+  default     = "not-used"
+  description = "This variable is never referenced"
+}
+
+variable "noType" {
+  default     = "hello"
+  description = "A variable without type declaration"
+}
+
+output "bucket_id" {
+  value = aws_s3_bucket.MyBucket.id
+}
+
+output "logs_bucket_id" {
+  value       = aws_s3_bucket.logs.id
+  description = "The ID of the logs bucket"
+}
+ORIG
+```
+
+现在在配置中禁用废弃插值语法的检查：
 
 ```
 cat > .tflint.hcl <<'EOF'
@@ -208,9 +286,78 @@ tflint --init
 tflint
 ```
 
-terraform_deprecated_interpolation 的检查不再生效了。
+对比之前的输出，terraform_deprecated_interpolation 的警告消失了——"\${var.bucket_name}" 不再被报告。其他规则（命名、类型、描述、未使用声明）仍然正常检查。
 
-恢复完整规则，为下一步做准备：
+这就是 tflint 的灵活性：团队可以根据自身情况选择启用哪些规则。
+
+恢复修复后的代码和完整规则，为下一步做准备：
+
+```
+cat > main.tf <<'EOF'
+terraform {
+  required_version = ">= 1.0"
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region     = "us-east-1"
+  access_key = "test"
+  secret_key = "test"
+
+  skip_credentials_validation = true
+  skip_metadata_api_check     = true
+  skip_requesting_account_id  = true
+  s3_use_path_style           = true
+
+  endpoints {
+    s3  = "http://localhost:4566"
+    sts = "http://localhost:4566"
+  }
+}
+
+resource "aws_s3_bucket" "my_bucket" {
+  bucket        = var.bucket_name
+  force_destroy = true
+
+  tags = {
+    Environment = var.environment
+    ManagedBy   = "Terraform"
+  }
+}
+
+resource "aws_s3_bucket" "logs" {
+  bucket        = "${var.bucket_name}-logs"
+  force_destroy = true
+}
+
+variable "bucket_name" {
+  type        = string
+  default     = "my-demo-bucket"
+  description = "Name of the S3 bucket"
+}
+
+variable "environment" {
+  type        = string
+  default     = "dev"
+  description = "Deployment environment"
+}
+
+output "bucket_id" {
+  value       = aws_s3_bucket.my_bucket.id
+  description = "The ID of the main bucket"
+}
+
+output "logs_bucket_id" {
+  value       = aws_s3_bucket.logs.id
+  description = "The ID of the logs bucket"
+}
+EOF
+```
 
 ```
 cat > .tflint.hcl <<'EOF'
