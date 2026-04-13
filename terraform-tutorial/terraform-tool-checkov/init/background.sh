@@ -73,13 +73,13 @@ fi
 # ── 2. Install tooling ──
 install_terraform
 
-# Install Checkov via pip
+# Install Checkov in a virtual environment (PEP 668 — system Python is externally managed)
 echo "安装 Checkov..."
 apt-get install -y -qq python3-pip python3-venv > /dev/null 2>&1
-pip3 install --break-system-packages checkov > /dev/null 2>&1
-# pip may install scripts to /root/.local/bin which is not on PATH in background shell
-export PATH="/root/.local/bin:$PATH"
-echo 'export PATH="/root/.local/bin:$PATH"' >> /root/.bashrc
+python3 -m venv /opt/checkov
+/opt/checkov/bin/pip install --upgrade pip > /dev/null 2>&1
+/opt/checkov/bin/pip install checkov > /dev/null 2>&1
+ln -sf /opt/checkov/bin/checkov /usr/local/bin/checkov
 checkov --version || echo "WARNING: checkov install failed"
 
 # Create custom policy directory for step2
