@@ -106,20 +106,25 @@ tflint
 |------|------|
 | `terraform_deprecated_interpolation` | 检测废弃的插值语法 `"${var.x}"` → `var.x` |
 | `terraform_deprecated_index` | 检测废弃的索引语法 `.0` → `[0]` |
-| `terraform_documented_outputs` | output 块必须有 description |
-| `terraform_documented_variables` | variable 块必须有 description |
-| `terraform_naming_convention` | 资源/变量命名必须使用 snake_case |
 | `terraform_required_providers` | required_providers 块必须声明 source 和 version |
 | `terraform_required_version` | 必须声明 required_version |
 | `terraform_typed_variables` | variable 块必须声明 type |
 | `terraform_unused_declarations` | 检测未使用的 variable、data、locals |
 | `terraform_unused_required_providers` | 检测声明但未使用的 provider |
 
+以下规则不在 `recommended` 预设中，需手动启用：
+
+| 规则 | 说明 |
+|------|------|
+| `terraform_naming_convention` | 资源/变量命名必须使用 snake_case |
+| `terraform_documented_outputs` | output 块必须有 description |
+| `terraform_documented_variables` | variable 块必须有 description |
+
 可以在配置文件中单独启用或禁用某条规则：
 
 ```hcl
-rule "terraform_documented_outputs" {
-  enabled = false
+rule "terraform_naming_convention" {
+  enabled = true
 }
 ```
 
