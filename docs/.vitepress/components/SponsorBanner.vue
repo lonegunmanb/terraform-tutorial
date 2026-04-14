@@ -8,6 +8,9 @@
       AWS 云服务由
       <a href="https://www.localstack.cloud" target="_blank" rel="noopener">LocalStack</a>
       在本地完整模拟 —— 让开发者无需真实云账号即可快速构建和测试云应用。
+      在需要使用 AWS Provider v6 的场景中，我们使用了
+      <a href="https://github.com/ministackorg/ministack" target="_blank" rel="noopener">MiniStack</a>
+      —— 一个轻量级的 AWS 模拟服务。
     </p>
   </div>
 </template>
