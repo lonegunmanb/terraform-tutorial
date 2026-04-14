@@ -10,7 +10,9 @@
 cat > policy/s3_logging.rego <<'EOF'
 package main
 
-warn[msg] {
+import rego.v1
+
+warn contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_s3_bucket"
   actions := resource.change.actions
@@ -22,7 +24,7 @@ warn[msg] {
   msg := sprintf("建议为 S3 桶 '%s' 配置访问日志（aws_s3_bucket_logging）", [bucket_address])
 }
 
-has_logging(bucket_address) {
+has_logging(bucket_address) if {
   res := input.configuration.root_module.resources[_]
   res.type == "aws_s3_bucket_logging"
   some expr in res.expressions.bucket.references
@@ -51,7 +53,9 @@ echo "退出码: $?"
 cat > policy/s3_naming.rego <<'EOF'
 package s3.naming
 
-deny[msg] {
+import rego.v1
+
+deny contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_s3_bucket"
   actions := resource.change.actions

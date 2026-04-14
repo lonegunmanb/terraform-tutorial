@@ -1,6 +1,8 @@
 package main
 
-deny[msg] {
+import rego.v1
+
+deny contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_s3_bucket"
   actions := resource.change.actions
@@ -12,13 +14,13 @@ deny[msg] {
   msg := sprintf("S3 桶 '%s' 缺少服务端加密配置（aws_s3_bucket_server_side_encryption_configuration）", [bucket_address])
 }
 
-has_encryption(bucket_address) {
+has_encryption(bucket_address) if {
   res := input.resource_changes[_]
   res.type == "aws_s3_bucket_server_side_encryption_configuration"
   res.change.after.bucket == bucket_address
 }
 
-has_encryption(bucket_address) {
+has_encryption(bucket_address) if {
   res := input.configuration.root_module.resources[_]
   res.type == "aws_s3_bucket_server_side_encryption_configuration"
   some expr in res.expressions.bucket.references

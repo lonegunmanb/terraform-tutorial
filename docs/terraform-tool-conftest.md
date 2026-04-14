@@ -88,8 +88,10 @@ Conftest 使用 Rego 语言定义策略。核心概念很简单：
 ```rego
 package main
 
+import rego.v1
+
 # 拒绝没有开启版本控制的 S3 桶
-deny[msg] {
+deny contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_s3_bucket_versioning"
   resource.change.after.versioning_configuration[_].status != "Enabled"

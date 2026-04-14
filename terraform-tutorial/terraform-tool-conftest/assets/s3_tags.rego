@@ -1,8 +1,10 @@
 package main
 
+import rego.v1
+
 required_tags := {"Environment", "ManagedBy"}
 
-deny[msg] {
+deny contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_s3_bucket"
   actions := resource.change.actions
