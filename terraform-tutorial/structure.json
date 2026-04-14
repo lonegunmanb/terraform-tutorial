@@ -36,6 +36,7 @@
     { "path": "terraform-tool-avmfix" },
     { "path": "terraform-tool-tflint" },
     { "path": "terraform-tool-terraform-docs" },
-    { "path": "terraform-tool-checkov" }
+    { "path": "terraform-tool-checkov" },
+    { "path": "terraform-tool-conftest" }
   ]
 }

@@ -1,0 +1,40 @@
+{
+  "title": "Conftest：基于 OPA 的策略即代码",
+  "description": "体验 Conftest 对 Terraform Plan 进行策略检查——编写 Rego 策略、检测不合规配置、管理例外",
+  "details": {
+    "intro": {
+      "text": "init/init.md",
+      "background": "init/background.sh",
+      "foreground": "init/foreground.sh"
+    },
+    "steps": [
+      {
+        "title": "编写策略并检测不合规配置",
+        "text": "step1/text.md"
+      },
+      {
+        "title": "高级策略与例外管理",
+        "text": "step2/text.md"
+      }
+    ],
+    "finish": {
+      "text": "finish/finish.md"
+    },
+    "assets": {
+      "host01": [
+        {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
+        {"file": "main.tf", "target": "/root/workspace"},
+        {"file": "docker-compose.yml", "target": "/root/workspace"},
+        {"file": "s3_versioning.rego", "target": "/root/workspace/policy"},
+        {"file": "s3_encryption.rego", "target": "/root/workspace/policy"},
+        {"file": "s3_tags.rego", "target": "/root/workspace/policy"}
+      ]
+    }
+  },
+  "backend": {
+    "imageid": "ubuntu"
+  },
+  "interface": {
+    "layout": "editor-terminal"
+  }
+}
