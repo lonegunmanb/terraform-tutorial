@@ -65,6 +65,13 @@ export default defineConfig({
               { text: 'checkov', link: '/terraform-tool-checkov' },
               { text: 'conftest', link: '/terraform-tool-conftest' }
             ]
+          },
+          {
+            text: '生产实践',
+            collapsed: false,
+            items: [
+              { text: '生产就绪代码', link: '/terraform-production-ready-code' }
+            ]
           }
         ],
       },

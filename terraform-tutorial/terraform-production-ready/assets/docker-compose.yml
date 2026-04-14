@@ -1,0 +1,11 @@
+services:
+  ministack:
+    image: nahuelnucera/ministack
+    ports:
+      - "4566:4566"
+    environment:
+      - MINISTACK_REGION=us-east-1
+    deploy:
+      resources:
+        limits:
+          memory: 512M

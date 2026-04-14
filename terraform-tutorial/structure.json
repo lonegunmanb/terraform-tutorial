@@ -37,6 +37,7 @@
     { "path": "terraform-tool-tflint" },
     { "path": "terraform-tool-terraform-docs" },
     { "path": "terraform-tool-checkov" },
-    { "path": "terraform-tool-conftest" }
+    { "path": "terraform-tool-conftest" },
+    { "path": "terraform-production-ready" }
   ]
 }
