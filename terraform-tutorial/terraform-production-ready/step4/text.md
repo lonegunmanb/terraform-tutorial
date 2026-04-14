@@ -1,136 +1,114 @@
 # 第四步：内置防护与版本固定
 
-## 查看添加了防护的代码
+## 三层架构为什么需要防护
+
+在三层架构中，每一层的配置错误可能引发连锁反应：
+- 网络层的 CIDR 格式写错 → VPC 创建失败 → 所有层全部瘫痪
+- Web 层只传了 1 个子网给 ALB → 负载均衡没有跨 AZ 冗余 → 单点故障
+- 数据层的消息保留时长设错 → 任务丢失 → 数据不一致
+- 存储层的桶名太短 → AWS API 报错 → 部署中断
+
+内置防护让这些错误在部署之前就被拦截。
 
 ```bash
 cd /root/workspace/step4
 ```
 
-这一步我们在三个模块里各加了一种防护，在根模块里加了版本约束。
-
-## 1. validation 块：在变量层面拦截非法输入
+## 1. validation 块：网络层的 CIDR 格式校验
 
 ```bash
-cat modules/queue/variables.tf
+cat modules/networking/variables.tf
 ```
 
-`message_retention_seconds` 变量现在有了 `validation` 块。试试传一个非法值：
+vpc_cidr 变量有 validation 块，使用 can(cidrhost(...)) 检查格式合法性。试试传一个非法值：
+
+```bash
+terraform plan -var="vpc_cidr=not-a-cidr"
+```
+
+立刻报错，不需要 AWS API 调用。再试一个有效值：
+
+```bash
+terraform plan -var="vpc_cidr=172.16.0.0/16"
+```
+
+同时，数据层的 message_retention_seconds 也有 validation：
 
 ```bash
 terraform plan -var="message_retention_seconds=30"
 ```
 
-你会立刻看到错误，不需要等到 apply 阶段，也不需要 AWS API 调用：
-
-```
-│ Error: Invalid value for variable
-│
-│   Only free tier is allowed: ...
-│
-│ This was checked by the validation rule at ...
-```
-
-再试一个有效值：
+## 2. precondition 块：Web 层的高可用检查
 
 ```bash
-terraform plan -var="message_retention_seconds=3600"
+cat modules/web/main.tf | grep -A5 precondition
 ```
 
-## 2. precondition 块：在 apply 之前检查假设条件
+ALB 的 precondition 检查传入的子网数量是否 >= 2。这是三层架构高可用的基本要求——ALB 必须跨至少两个可用区。
+
+这种跨变量的约束（subnet 列表的长度）是 validation 做不到的，因为 validation 只能引用当前变量本身。
+
+同样，存储层检查 app_name 和 environment 组合后的桶名长度：
 
 ```bash
-cat modules/storage/main.tf
+cat modules/storage/main.tf | grep -A5 precondition
 ```
 
-注意 `aws_s3_bucket` resource 里的 `lifecycle { precondition { ... } }`。
-
-这个 precondition 检查 bucket 名称长度是否符合 AWS 规范（3–63 字符）。与 `validation` 不同，precondition 可以引用表达式和函数，适合更复杂的约束。
-
-试试触发它：
+试试触发存储层的 precondition：
 
 ```bash
 terraform plan -var="app_name=x"
 ```
 
-观察报错发生在 plan 阶段，在任何资源变更之前。
-
-## 3. postcondition 块：在 apply 之后验证保证条件
+## 3. postcondition 块：数据层的行为保证
 
 ```bash
-cat modules/database/main.tf
+cat modules/data/main.tf | grep -A5 postcondition
 ```
 
-`aws_dynamodb_table` resource 里有一个 `lifecycle { postcondition { ... } }`。
+DynamoDB 表的 postcondition 验证 apply 后的实际结果——确保计费模式是 PAY_PER_REQUEST。
 
-postcondition 用 `self` 引用当前资源的实际属性——verify that what was created matches what was intended。这是模块对外的**行为保证**：调用方相信"只要这个模块 apply 成功，表就一定是按需计费模式"。
+```bash
+terraform apply -auto-approve
+```
 
 ## 4. 版本固定：让部署可重现
 
 ```bash
-cat main.tf | head -20
+head -10 main.tf
 ```
 
-注意 `required_version` 和 `required_providers` 的写法，以及 `.terraform.lock.hcl` 的存在：
+required_version = ">= 1.5, < 2.0"——允许所有 1.x，拒绝 2.0 进入。
 
 ```bash
-terraform init
-cat .terraform.lock.hcl
+cat .terraform.lock.hcl | head -20
 ```
 
-这个文件记录了实际下载的 provider 版本和哈希校验值。**把这个文件提交到版本控制**，同一份代码在任何机器上的 `terraform init` 都会得到完全相同的 provider 版本。
-
-## 完整部署
-
-```bash
-terraform apply -auto-approve
-```
-
-## 模块安全测试
-
-验证防护机制在边界情况下的行为：
-
-```bash
-# 测试：消息保留时长超出最大值（应该立刻报错）
-terraform plan -var="message_retention_seconds=9999999"
-```
-
-```bash
-# 测试：应用名称太短（应该在 plan 阶段报错）
-terraform plan -var="app_name=ab"
-```
-
-```bash
-# 正常部署
-terraform apply -auto-approve
-```
+锁文件记录了实际下载的 provider 版本和哈希值。提交到版本控制后，任何机器的 terraform init 都会得到相同版本。
 
 ## 三层防护对比
 
 ```bash
-# 查看三种防护的位置
-grep -n "validation\|precondition\|postcondition" \
-  modules/queue/variables.tf \
-  modules/storage/main.tf \
-  modules/database/main.tf
+grep -rn "validation\|precondition\|postcondition" modules/
 ```
 
-| 工具 | 触发时机 | 可引用的内容 | 适用场景 |
-|------|---------|------------|---------|
-| `validation` | plan 之前 | 仅当前变量 | 变量基础合法性 |
-| `precondition` | apply 之前 | 数据源、表达式 | 跨变量/资源的前置断言 |
-| `postcondition` | apply 之后 | `self.*`（当前资源） | 模块行为的对外保证 |
+| 工具 | 触发时机 | 可引用的内容 | 本实验示例 |
+|------|---------|------------|----------|
+| validation | plan 之前 | 仅当前变量 | CIDR 格式、消息保留时长 |
+| precondition | apply 之前 | 多个变量、表达式 | ALB 子网数 >= 2、桶名长度 |
+| postcondition | apply 之后 | self.*（当前资源） | DynamoDB 计费模式保证 |
 
-## 最终状态
+## 最终验证
 
 ```bash
 terraform state list
 terraform output
 ```
 
-与第一步的单体相比，现在这套系统：
-- 代码按职责拆分在独立模块中，可单独测试和复用
-- 存储模块依赖经过验证的社区实现
-- 关键约束内嵌在模块里，传入非法配置时立即报错
+与第一步的 500 行单体相比，现在这套三层架构：
+- 五个模块各司其职，对应架构的五个层级
+- 网络层使用社区 VPC 模块，久经生产验证
+- 关键约束内嵌在各层——CIDR 格式、子网数量、桶名规范、计费模式
 - provider 和模块版本有明确约束，部署可重现
 
-恭喜完成了本实验的所有步骤！
+恭喜完成本实验的所有步骤！

@@ -1,11 +1,19 @@
 variable "environment" {
-  description = "部署环境（dev / stage / prod）"
-  type        = string
-  default     = "dev"
+  type    = string
+  default = "dev"
 }
 
 variable "app_name" {
-  description = "应用名称，用作所有资源名称的前缀"
-  type        = string
-  default     = "config-center"
+  type    = string
+  default = "webapp"
+}
+
+variable "vpc_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
+}
+
+variable "message_retention_seconds" {
+  type    = number
+  default = 86400
 }

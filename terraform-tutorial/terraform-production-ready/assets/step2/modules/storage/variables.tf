@@ -1,10 +1,17 @@
-variable "bucket_name" {
-  description = "S3 存储桶名称"
-  type        = string
+variable "app_name" {
+  type = string
+}
+
+variable "environment" {
+  type = string
 }
 
 variable "enable_versioning" {
-  description = "是否开启版本控制"
-  type        = bool
-  default     = true
+  type    = bool
+  default = true
+}
+
+variable "backup_expiration_days" {
+  type    = number
+  default = 90
 }

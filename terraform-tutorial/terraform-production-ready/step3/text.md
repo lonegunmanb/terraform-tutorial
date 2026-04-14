@@ -1,49 +1,52 @@
-# 第三步：引入社区模块——terraform-aws-modules
+# 第三步：引入社区模块——站在巨人肩膀上
 
-## 为什么要使用社区模块
+## 为什么网络层最适合用社区模块
 
-自制 `modules/storage` 能运行，但它有一些局限：
-- 没有处理 S3 的加密配置
-- 没有生命周期策略
-- 没有日志记录
-- 没有跨区域复制配置
+自制的 modules/networking 能运行，但它很基础：
+- 没有 NAT Gateway（私有子网出网）
+- 没有 VPC Flow Logs（网络审计）
+- 没有灵活的多 AZ 扩展
+- 没有处理各种边界情况
 
-`terraform-aws-modules/s3-bucket` 是社区维护的高质量模块，内置了这些生产级特性，并经过大量真实项目的验证。
+terraform-aws-modules/vpc 是社区最流行的 VPC 模块（GitHub 5000+ Stars），经过大量生产环境验证，一行参数就能开启 NAT、Flow Logs、VPN 等高级特性。MiniStack 明确支持该模块 v5.x/v6.x。
 
-## 看看更新后的 storage 模块
+## 查看更新后的网络层
 
 ```bash
 cd /root/workspace/step3
-cat modules/storage/main.tf
+cat modules/networking/main.tf
 ```
 
-与 step2 的版本对比：
+与 step2 对比：
 
 ```bash
-diff /root/workspace/step2/modules/storage/main.tf modules/storage/main.tf
-diff /root/workspace/step2/modules/storage/outputs.tf modules/storage/outputs.tf
+diff /root/workspace/step2/modules/networking/main.tf modules/networking/main.tf
 ```
 
-新版本的核心变化：
-- 自己创建的 `aws_s3_bucket` 资源被 `module "s3_bucket"` 调用替代
-- outputs 使用社区模块的输出属性（`s3_bucket_id`、`s3_bucket_arn`）
-- `variables.tf` 接口完全不变——调用方（根模块）不需要做任何修改
+核心变化：
+- 7 个手写的 resource 块被一个 module 调用替代
+- VPC、子网、IGW、路由表全部由社区模块内部管理
+- 只需要传入 CIDR 和可用区列表
 
-**这正是"用自己的模块包裹社区模块"的价值**：内部实现切换，外部接口稳定。
+再看 outputs：
 
-## 初始化并下载社区模块
+```bash
+diff /root/workspace/step2/modules/networking/outputs.tf modules/networking/outputs.tf
+```
+
+outputs 使用社区模块的输出（module.vpc.vpc_id、module.vpc.public_subnets）。而 variables.tf 完全不变——Web 层和其他模块不需要修改任何代码。
+
+## 下载社区模块
 
 ```bash
 terraform init
 ```
 
-观察输出，Terraform 正在从 Terraform Registry 下载 `terraform-aws-modules/s3-bucket`：
+观察 Terraform 从 Registry 下载 terraform-aws-modules/vpc：
 
 ```
-Downloading registry.terraform.io/terraform-aws-modules/s3-bucket/aws 4.x.x ...
+Downloading registry.terraform.io/terraform-aws-modules/vpc/aws ...
 ```
-
-社区模块和本地模块、provider 一起在 `terraform init` 阶段完成下载。
 
 ## 部署并验证
 
@@ -51,38 +54,34 @@ Downloading registry.terraform.io/terraform-aws-modules/s3-bucket/aws 4.x.x ...
 terraform plan
 ```
 
-`plan` 的输出会显示 `module.storage.module.s3_bucket.*` 这样的嵌套模块资源地址——这是模块嵌套调用的正常表现。
+plan 输出显示 module.networking.module.vpc.* 嵌套地址——模块嵌套调用的正常表现。
 
 ```bash
 terraform apply -auto-approve
 ```
 
-```bash
-# 验证 S3 存储桶已创建
-awslocal s3 ls
-awslocal s3api get-bucket-versioning --bucket config-center-dev-config
-```
-
-## 关于版本选择的思考
-
-查看当前使用的版本：
+验证网络资源：
 
 ```bash
-cat modules/storage/main.tf | grep version
+awslocal ec2 describe-vpcs --query 'Vpcs[].{ID:VpcId,CIDR:CidrBlock}' --output table
+awslocal ec2 describe-subnets --query 'Subnets[].{ID:SubnetId,AZ:AvailabilityZone,CIDR:CidrBlock}' --output table
+awslocal elbv2 describe-load-balancers --query 'LoadBalancers[].{Name:LoadBalancerName,DNS:DNSName}' --output table
 ```
 
-`~> 4.2` 的含义是 `>= 4.2, < 5.0`——允许 4.x 系列的任何 patch 升级，但不会突然拉进 5.0 的 breaking change。
+## 版本选择策略
 
-**版本选择策略**：
-- 生产模块：精确到 `x.y.z`，配合 CI 检测上游更新
-- 实验/学习：`~> x.y`，获取 bug fix 但保持接口稳定
+```bash
+grep version modules/networking/main.tf
+```
 
-## 查看模块的完整输出
+~> 5.0 意味着 >= 5.0, < 6.0——允许 5.x 系列的 patch/minor 升级，但不会拉入 6.0 的 breaking change。
+
+## 确认外部接口不变
 
 ```bash
 terraform output
 ```
 
-输出与 step2 完全相同——`modules/storage` 的外部接口没有变化，根模块不需要修改一行代码。
+输出与 step2 完全一致。网络层内部实现从 7 个 resource 变成 1 个 module 调用，但 web 模块、data 模块、security 模块都不需要改一行代码。
 
-下一步，我们在模块里加入内置防护机制——让错误在部署前就被发现。
+下一步，我们在各层模块里加入内置防护——让配置错误在部署之前就被拦截。

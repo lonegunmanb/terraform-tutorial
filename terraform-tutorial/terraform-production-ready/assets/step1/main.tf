@@ -1,7 +1,7 @@
 # ──────────────────────────────────────────────────────────────────────────────
 # step1/main.tf
-# 反模式示例：所有资源挤在单个文件里
-# 这个文件演示了"大模块"的典型问题：没有清晰边界、难以定位、牵一发动全身
+# 反模式示例：三层 Web 架构的所有资源挤在单个文件里
+# 网络、负载均衡、数据、存储、安全、监控——全部混在一起
 # ──────────────────────────────────────────────────────────────────────────────
 
 terraform {
@@ -25,15 +25,19 @@ provider "aws" {
   s3_use_path_style           = true
 
   endpoints {
-    s3       = "http://localhost:4566"
-    sqs      = "http://localhost:4566"
-    dynamodb = "http://localhost:4566"
-    iam      = "http://localhost:4566"
-    sts      = "http://localhost:4566"
+    s3             = "http://localhost:4566"
+    sqs            = "http://localhost:4566"
+    sns            = "http://localhost:4566"
+    dynamodb       = "http://localhost:4566"
+    iam            = "http://localhost:4566"
+    sts            = "http://localhost:4566"
+    secretsmanager = "http://localhost:4566"
+    ssm            = "http://localhost:4566"
+    cloudwatchlogs = "http://localhost:4566"
+    ec2            = "http://localhost:4566"
+    elbv2          = "http://localhost:4566"
   }
 }
-
-# ── 变量 ──────────────────────────────────────────────────────────────────────
 
 variable "environment" {
   type    = string
@@ -42,98 +46,446 @@ variable "environment" {
 
 variable "app_name" {
   type    = string
-  default = "config-center"
+  default = "webapp"
 }
 
-# ── S3 存储桶（配置文件存储）─────────────────────────────────────────────────
-
-resource "aws_s3_bucket" "config" {
-  bucket = "${var.app_name}-${var.environment}-config"
+variable "vpc_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
 }
 
-resource "aws_s3_bucket_versioning" "config" {
-  bucket = aws_s3_bucket.config.id
+variable "message_retention_seconds" {
+  type    = number
+  default = 86400
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 网络层
+# ══════════════════════════════════════════════════════════════════════════════
+
+resource "aws_vpc" "main" {
+  cidr_block           = var.vpc_cidr
+  enable_dns_support   = true
+  enable_dns_hostnames = true
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-vpc"
+  }
+}
+
+resource "aws_internet_gateway" "main" {
+  vpc_id = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-igw"
+  }
+}
+
+resource "aws_subnet" "public_a" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.1.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-public-a"
+  }
+}
+
+resource "aws_subnet" "public_b" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.2.0/24"
+  availability_zone = "us-east-1b"
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-public-b"
+  }
+}
+
+resource "aws_subnet" "private_a" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.11.0/24"
+  availability_zone = "us-east-1a"
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-private-a"
+  }
+}
+
+resource "aws_subnet" "private_b" {
+  vpc_id            = aws_vpc.main.id
+  cidr_block        = "10.0.12.0/24"
+  availability_zone = "us-east-1b"
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-private-b"
+  }
+}
+
+resource "aws_route_table" "public" {
+  vpc_id = aws_vpc.main.id
+
+  route {
+    cidr_block = "0.0.0.0/0"
+    gateway_id = aws_internet_gateway.main.id
+  }
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-public-rt"
+  }
+}
+
+resource "aws_route_table_association" "public_a" {
+  subnet_id      = aws_subnet.public_a.id
+  route_table_id = aws_route_table.public.id
+}
+
+resource "aws_route_table_association" "public_b" {
+  subnet_id      = aws_subnet.public_b.id
+  route_table_id = aws_route_table.public.id
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 安全组
+# ══════════════════════════════════════════════════════════════════════════════
+
+resource "aws_security_group" "alb" {
+  name_prefix = "${var.app_name}-alb-"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-alb-sg"
+  }
+}
+
+resource "aws_security_group_rule" "alb_ingress_http" {
+  type              = "ingress"
+  from_port         = 80
+  to_port           = 80
+  protocol          = "tcp"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.alb.id
+}
+
+resource "aws_security_group_rule" "alb_egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.alb.id
+}
+
+resource "aws_security_group" "app" {
+  name_prefix = "${var.app_name}-app-"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-app-sg"
+  }
+}
+
+resource "aws_security_group_rule" "app_ingress_from_alb" {
+  type                     = "ingress"
+  from_port                = 8080
+  to_port                  = 8080
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.alb.id
+  security_group_id        = aws_security_group.app.id
+}
+
+resource "aws_security_group_rule" "app_egress_all" {
+  type              = "egress"
+  from_port         = 0
+  to_port           = 0
+  protocol          = "-1"
+  cidr_blocks       = ["0.0.0.0/0"]
+  security_group_id = aws_security_group.app.id
+}
+
+resource "aws_security_group" "data" {
+  name_prefix = "${var.app_name}-data-"
+  vpc_id      = aws_vpc.main.id
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-data-sg"
+  }
+}
+
+resource "aws_security_group_rule" "data_ingress_from_app" {
+  type                     = "ingress"
+  from_port                = 5432
+  to_port                  = 5432
+  protocol                 = "tcp"
+  source_security_group_id = aws_security_group.app.id
+  security_group_id        = aws_security_group.data.id
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# Web 层：负载均衡
+# ══════════════════════════════════════════════════════════════════════════════
+
+resource "aws_lb" "web" {
+  name               = "${var.app_name}-${var.environment}-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-alb"
+  }
+}
+
+resource "aws_lb_target_group" "app" {
+  name     = "${var.app_name}-${var.environment}-app-tg"
+  port     = 8080
+  protocol = "HTTP"
+  vpc_id   = aws_vpc.main.id
+
+  health_check {
+    path                = "/health"
+    port                = "traffic-port"
+    healthy_threshold   = 2
+    unhealthy_threshold = 3
+    interval            = 30
+  }
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-app-tg"
+  }
+}
+
+resource "aws_lb_listener" "http" {
+  load_balancer_arn = aws_lb.web.arn
+  port              = 80
+  protocol          = "HTTP"
+
+  default_action {
+    type             = "forward"
+    target_group_arn = aws_lb_target_group.app.arn
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 数据层
+# ══════════════════════════════════════════════════════════════════════════════
+
+resource "aws_dynamodb_table" "users" {
+  name         = "${var.app_name}-${var.environment}-users"
+  billing_mode = "PAY_PER_REQUEST"
+  hash_key     = "UserId"
+  range_key    = "CreatedAt"
+
+  attribute {
+    name = "UserId"
+    type = "S"
+  }
+
+  attribute {
+    name = "CreatedAt"
+    type = "S"
+  }
+}
+
+resource "aws_sqs_queue" "task_dlq" {
+  name                      = "${var.app_name}-${var.environment}-tasks-dlq"
+  message_retention_seconds = 1209600
+}
+
+resource "aws_sqs_queue" "tasks" {
+  name                       = "${var.app_name}-${var.environment}-tasks"
+  visibility_timeout_seconds = 60
+  message_retention_seconds  = var.message_retention_seconds
+}
+
+resource "aws_sqs_queue_redrive_policy" "tasks" {
+  queue_url = aws_sqs_queue.tasks.id
+  redrive_policy = jsonencode({
+    deadLetterTargetArn = aws_sqs_queue.task_dlq.arn
+    maxReceiveCount     = 5
+  })
+}
+
+resource "aws_sns_topic" "alerts" {
+  name = "${var.app_name}-${var.environment}-alerts"
+}
+
+resource "aws_sns_topic_subscription" "alerts_to_queue" {
+  topic_arn = aws_sns_topic.alerts.arn
+  protocol  = "sqs"
+  endpoint  = aws_sqs_queue.tasks.arn
+}
+
+resource "aws_sqs_queue_policy" "allow_sns" {
+  queue_url = aws_sqs_queue.tasks.id
+  policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Effect    = "Allow"
+      Principal = { Service = "sns.amazonaws.com" }
+      Action    = "sqs:SendMessage"
+      Resource  = aws_sqs_queue.tasks.arn
+      Condition = {
+        ArnEquals = { "aws:SourceArn" = aws_sns_topic.alerts.arn }
+      }
+    }]
+  })
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 存储层
+# ══════════════════════════════════════════════════════════════════════════════
+
+resource "aws_s3_bucket" "static_assets" {
+  bucket = "${var.app_name}-${var.environment}-static"
+}
+
+resource "aws_s3_bucket_versioning" "static_assets" {
+  bucket = aws_s3_bucket.static_assets.id
   versioning_configuration {
     status = "Enabled"
   }
 }
 
-# ── SQS 队列（变更通知）──────────────────────────────────────────────────────
-
-resource "aws_sqs_queue" "dead_letter" {
-  name = "${var.app_name}-${var.environment}-notify-dlq"
+resource "aws_s3_bucket" "backups" {
+  bucket = "${var.app_name}-${var.environment}-backups"
 }
 
-resource "aws_sqs_queue" "notifications" {
-  name                       = "${var.app_name}-${var.environment}-notify"
-  message_retention_seconds  = 86400
-  visibility_timeout_seconds = 30
+resource "aws_s3_bucket_versioning" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  versioning_configuration {
+    status = "Enabled"
+  }
 }
 
-resource "aws_sqs_queue_redrive_policy" "notifications" {
-  queue_url = aws_sqs_queue.notifications.id
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.dead_letter.arn
-    maxReceiveCount     = 5
+resource "aws_s3_bucket_lifecycle_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  rule {
+    id     = "expire-old-backups"
+    status = "Enabled"
+    expiration {
+      days = 90
+    }
+  }
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 安全与配置
+# ══════════════════════════════════════════════════════════════════════════════
+
+resource "aws_secretsmanager_secret" "db_credentials" {
+  name = "${var.app_name}/${var.environment}/db-credentials"
+}
+
+resource "aws_secretsmanager_secret_version" "db_credentials" {
+  secret_id = aws_secretsmanager_secret.db_credentials.id
+  secret_string = jsonencode({
+    username = "app_user"
+    password = "change-me-in-production"
+    host     = "db.internal"
+    port     = 5432
   })
 }
 
-# ── DynamoDB 表（变更审计日志）───────────────────────────────────────────────
-
-resource "aws_dynamodb_table" "audit_log" {
-  name         = "${var.app_name}-${var.environment}-audit"
-  billing_mode = "PAY_PER_REQUEST"
-  hash_key     = "id"
-  range_key    = "timestamp"
-
-  attribute {
-    name = "id"
-    type = "S"
-  }
-
-  attribute {
-    name = "timestamp"
-    type = "S"
-  }
+resource "aws_ssm_parameter" "app_config" {
+  name  = "/${var.app_name}/${var.environment}/config"
+  type  = "String"
+  value = jsonencode({
+    log_level     = "info"
+    cache_ttl     = 300
+    feature_flags = { new_dashboard = true }
+  })
 }
 
-# ── IAM 策略（应用读取权限）──────────────────────────────────────────────────
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/${var.app_name}/${var.environment}/app"
+  retention_in_days = 30
+}
 
-resource "aws_iam_policy" "app_reader" {
-  name        = "${var.app_name}-${var.environment}-reader"
-  description = "Allow application to read config from S3 and send SQS messages"
+resource "aws_iam_role" "app" {
+  name = "${var.app_name}-${var.environment}-app-role"
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [{
+      Action    = "sts:AssumeRole"
+      Effect    = "Allow"
+      Principal = { Service = "ecs-tasks.amazonaws.com" }
+    }]
+  })
+}
 
+resource "aws_iam_policy" "app" {
+  name = "${var.app_name}-${var.environment}-app-policy"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
       {
         Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:ListBucket"]
-        Resource = [aws_s3_bucket.config.arn, "${aws_s3_bucket.config.arn}/*"]
+        Action   = ["s3:GetObject", "s3:PutObject"]
+        Resource = ["${aws_s3_bucket.static_assets.arn}/*"]
       },
       {
         Effect   = "Allow"
-        Action   = ["sqs:SendMessage", "sqs:GetQueueAttributes"]
-        Resource = aws_sqs_queue.notifications.arn
+        Action   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage"]
+        Resource = aws_sqs_queue.tasks.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query"]
+        Resource = aws_dynamodb_table.users.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["secretsmanager:GetSecretValue"]
+        Resource = aws_secretsmanager_secret.db_credentials.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["ssm:GetParameter"]
+        Resource = aws_ssm_parameter.app_config.arn
+      },
+      {
+        Effect   = "Allow"
+        Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
+        Resource = "${aws_cloudwatch_log_group.app.arn}:*"
       }
     ]
   })
 }
 
-# ── 输出 ──────────────────────────────────────────────────────────────────────
-
-output "config_bucket_name" {
-  value = aws_s3_bucket.config.bucket
+resource "aws_iam_role_policy_attachment" "app" {
+  role       = aws_iam_role.app.name
+  policy_arn = aws_iam_policy.app.arn
 }
 
-output "notification_queue_url" {
-  value = aws_sqs_queue.notifications.url
+# ══════════════════════════════════════════════════════════════════════════════
+# 输出
+# ══════════════════════════════════════════════════════════════════════════════
+
+output "vpc_id" {
+  value = aws_vpc.main.id
 }
 
-output "audit_table_name" {
-  value = aws_dynamodb_table.audit_log.name
+output "alb_dns_name" {
+  value = aws_lb.web.dns_name
 }
 
-output "app_policy_arn" {
-  value = aws_iam_policy.app_reader.arn
+output "static_bucket" {
+  value = aws_s3_bucket.static_assets.bucket
+}
+
+output "backup_bucket" {
+  value = aws_s3_bucket.backups.bucket
+}
+
+output "task_queue_url" {
+  value = aws_sqs_queue.tasks.url
+}
+
+output "users_table" {
+  value = aws_dynamodb_table.users.name
+}
+
+output "app_role_arn" {
+  value = aws_iam_role.app.arn
 }

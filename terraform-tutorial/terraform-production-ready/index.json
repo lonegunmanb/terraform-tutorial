@@ -1,6 +1,6 @@
 {
-  "title": "生产就绪代码：从大泥球到模块化",
-  "description": "从一个臃肿的单体模块出发，逐步拆分为小模块、引入社区模块、添加内置防护与版本固定，最终构建出一个麻雀虽小五脏俱全的配置变更通知系统",
+  "title": "生产就绪：三层 Web 应用架构",
+  "description": "从一个近 500 行的单体配置出发，按网络层、Web 层、数据层、存储层、安全层逐步拆分为五个模块，引入社区 VPC 模块并添加内置防护，构建模块化的三层 Web 应用基础设施",
   "details": {
     "intro": {
       "text": "init/init.md",
@@ -9,15 +9,15 @@
     },
     "steps": [
       {
-        "title": "观察大模块：症结在哪里",
+        "title": "观察大模块：三层架构的反面教材",
         "text": "step1/text.md"
       },
       {
-        "title": "拆分小模块：职责分离",
+        "title": "按架构层级拆分模块",
         "text": "step2/text.md"
       },
       {
-        "title": "引入社区模块：terraform-aws-modules",
+        "title": "引入社区模块：terraform-aws-modules/vpc",
         "text": "step3/text.md"
       },
       {
@@ -36,21 +36,29 @@
         {"file": "step2/main.tf", "target": "/root/workspace/step2"},
         {"file": "step2/variables.tf", "target": "/root/workspace/step2"},
         {"file": "step2/outputs.tf", "target": "/root/workspace/step2"},
+        {"file": "step2/modules/networking/main.tf", "target": "/root/workspace/step2/modules/networking"},
+        {"file": "step2/modules/networking/variables.tf", "target": "/root/workspace/step2/modules/networking"},
+        {"file": "step2/modules/networking/outputs.tf", "target": "/root/workspace/step2/modules/networking"},
+        {"file": "step2/modules/web/main.tf", "target": "/root/workspace/step2/modules/web"},
+        {"file": "step2/modules/web/variables.tf", "target": "/root/workspace/step2/modules/web"},
+        {"file": "step2/modules/web/outputs.tf", "target": "/root/workspace/step2/modules/web"},
+        {"file": "step2/modules/data/main.tf", "target": "/root/workspace/step2/modules/data"},
+        {"file": "step2/modules/data/variables.tf", "target": "/root/workspace/step2/modules/data"},
+        {"file": "step2/modules/data/outputs.tf", "target": "/root/workspace/step2/modules/data"},
         {"file": "step2/modules/storage/main.tf", "target": "/root/workspace/step2/modules/storage"},
         {"file": "step2/modules/storage/variables.tf", "target": "/root/workspace/step2/modules/storage"},
         {"file": "step2/modules/storage/outputs.tf", "target": "/root/workspace/step2/modules/storage"},
-        {"file": "step2/modules/queue/main.tf", "target": "/root/workspace/step2/modules/queue"},
-        {"file": "step2/modules/queue/variables.tf", "target": "/root/workspace/step2/modules/queue"},
-        {"file": "step2/modules/queue/outputs.tf", "target": "/root/workspace/step2/modules/queue"},
-        {"file": "step2/modules/database/main.tf", "target": "/root/workspace/step2/modules/database"},
-        {"file": "step2/modules/database/variables.tf", "target": "/root/workspace/step2/modules/database"},
-        {"file": "step2/modules/database/outputs.tf", "target": "/root/workspace/step2/modules/database"},
-        {"file": "step3/modules/storage/main.tf", "target": "/root/workspace/step3/modules/storage"},
-        {"file": "step3/modules/storage/outputs.tf", "target": "/root/workspace/step3/modules/storage"},
+        {"file": "step2/modules/security/main.tf", "target": "/root/workspace/step2/modules/security"},
+        {"file": "step2/modules/security/variables.tf", "target": "/root/workspace/step2/modules/security"},
+        {"file": "step2/modules/security/outputs.tf", "target": "/root/workspace/step2/modules/security"},
+        {"file": "step3/modules/networking/main.tf", "target": "/root/workspace/step3/modules/networking"},
+        {"file": "step3/modules/networking/outputs.tf", "target": "/root/workspace/step3/modules/networking"},
         {"file": "step4/main.tf", "target": "/root/workspace/step4"},
-        {"file": "step4/modules/storage/main.tf", "target": "/root/workspace/step4/modules/storage"},
-        {"file": "step4/modules/queue/variables.tf", "target": "/root/workspace/step4/modules/queue"},
-        {"file": "step4/modules/database/main.tf", "target": "/root/workspace/step4/modules/database"}
+        {"file": "step4/modules/networking/variables.tf", "target": "/root/workspace/step4/modules/networking"},
+        {"file": "step4/modules/web/main.tf", "target": "/root/workspace/step4/modules/web"},
+        {"file": "step4/modules/data/main.tf", "target": "/root/workspace/step4/modules/data"},
+        {"file": "step4/modules/data/variables.tf", "target": "/root/workspace/step4/modules/data"},
+        {"file": "step4/modules/storage/main.tf", "target": "/root/workspace/step4/modules/storage"}
       ]
     }
   },

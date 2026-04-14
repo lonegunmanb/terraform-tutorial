@@ -19,46 +19,82 @@ provider "aws" {
   s3_use_path_style           = true
 
   endpoints {
-    s3       = "http://localhost:4566"
-    sqs      = "http://localhost:4566"
-    dynamodb = "http://localhost:4566"
-    iam      = "http://localhost:4566"
-    sts      = "http://localhost:4566"
+    s3             = "http://localhost:4566"
+    sqs            = "http://localhost:4566"
+    sns            = "http://localhost:4566"
+    dynamodb       = "http://localhost:4566"
+    iam            = "http://localhost:4566"
+    sts            = "http://localhost:4566"
+    secretsmanager = "http://localhost:4566"
+    ssm            = "http://localhost:4566"
+    cloudwatchlogs = "http://localhost:4566"
+    ec2            = "http://localhost:4566"
+    elbv2          = "http://localhost:4566"
   }
 }
 
+# ── 网络层：VPC + 子网 + 路由 ─────────────────────────────────────────────
+module "networking" {
+  source = "./modules/networking"
+
+  app_name    = var.app_name
+  environment = var.environment
+  vpc_cidr    = var.vpc_cidr
+}
+
+# ── Web 层：ALB + 安全组 ──────────────────────────────────────────────────
+module "web" {
+  source = "./modules/web"
+
+  app_name          = var.app_name
+  environment       = var.environment
+  vpc_id            = module.networking.vpc_id
+  public_subnet_ids = module.networking.public_subnet_ids
+}
+
+# ── 数据与消息层 ──────────────────────────────────────────────────────────
+module "data" {
+  source = "./modules/data"
+
+  app_name                  = var.app_name
+  environment               = var.environment
+  message_retention_seconds = var.message_retention_seconds
+}
+
+# ── 存储层：S3 静态资源 + 备份 ────────────────────────────────────────────
 module "storage" {
-  source      = "./modules/storage"
-  bucket_name = "${var.app_name}-${var.environment}-config"
+  source = "./modules/storage"
+
+  app_name    = var.app_name
+  environment = var.environment
 }
 
-module "queue" {
-  source     = "./modules/queue"
-  queue_name = "${var.app_name}-${var.environment}-notify"
+# ── 安全层：IAM + Secrets Manager ─────────────────────────────────────────
+module "security" {
+  source = "./modules/security"
+
+  app_name    = var.app_name
+  environment = var.environment
+
+  static_bucket_arn = module.storage.static_bucket_arn
+  task_queue_arn    = module.data.task_queue_arn
+  users_table_arn   = module.data.users_table_arn
+  app_config_arn    = aws_ssm_parameter.app_config.arn
+  log_group_arn     = aws_cloudwatch_log_group.app.arn
 }
 
-module "database" {
-  source     = "./modules/database"
-  table_name = "${var.app_name}-${var.environment}-audit"
-}
-
-resource "aws_iam_policy" "app_reader" {
-  name        = "${var.app_name}-${var.environment}-reader"
-  description = "Allow application to read config from S3 and send SQS messages"
-
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [
-      {
-        Effect   = "Allow"
-        Action   = ["s3:GetObject", "s3:ListBucket"]
-        Resource = [module.storage.bucket_arn, "${module.storage.bucket_arn}/*"]
-      },
-      {
-        Effect   = "Allow"
-        Action   = ["sqs:SendMessage", "sqs:GetQueueAttributes"]
-        Resource = module.queue.queue_arn
-      }
-    ]
+# ── 配置与监控（根模块直管）─────────────────────────────────────────────
+resource "aws_ssm_parameter" "app_config" {
+  name  = "/${var.app_name}/${var.environment}/config"
+  type  = "String"
+  value = jsonencode({
+    log_level     = "info"
+    cache_ttl     = 300
+    feature_flags = { new_dashboard = true }
   })
+}
+
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/${var.app_name}/${var.environment}/app"
+  retention_in_days = 30
 }

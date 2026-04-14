@@ -1,113 +1,118 @@
-# 第二步：拆分小模块——职责分离
+# 第二步：按架构层级拆分模块
 
-## 查看拆分后的结构
+## 查看模块化后的结构
 
 ```bash
 cd /root/workspace/step2
 find . -name "*.tf" | sort
 ```
 
-你会看到以下目录结构：
+你会看到五个模块，每个对应三层架构的一个层级：
 
 ```
-./main.tf
-./variables.tf
-./outputs.tf
-./modules/storage/main.tf
-./modules/storage/variables.tf
-./modules/storage/outputs.tf
-./modules/queue/main.tf
-./modules/queue/variables.tf
-./modules/queue/outputs.tf
-./modules/database/main.tf
-./modules/database/variables.tf
-./modules/database/outputs.tf
+./modules/networking/    ← 网络层：VPC、子网、路由
+./modules/web/           ← Web 层：ALB、安全组
+./modules/data/          ← 数据层：DynamoDB、SQS、SNS
+./modules/storage/       ← 存储层：S3 静态资源、备份
+./modules/security/      ← 安全层：IAM、Secrets Manager
+./main.tf                ← 根模块：组装各层
 ```
 
-每个子模块只负责一件事—— storage 只管 S3，queue 只管 SQS，database 只管 DynamoDB。
-
-## 读懂每个模块的接口
-
-查看 storage 模块：
+## 理解网络层模块
 
 ```bash
-cat modules/storage/variables.tf
-cat modules/storage/outputs.tf
+cat modules/networking/main.tf
 ```
 
-模块的 `variable` 是它的**输入接口**，`output` 是它的**输出接口**。调用方完全不需要知道模块内部的实现细节——这正是封装的价值。
+注意 count 的使用——用一个数组变量同时创建多个子网，而不是重复写 4 个 resource 块。这在三层架构中尤其重要：你可能有 2 个、3 个甚至 6 个可用区。
 
-## 查看根模块如何组合
+```bash
+cat modules/networking/outputs.tf
+```
+
+网络层输出 vpc_id 和子网 ID 列表——这是其他层的基础依赖。
+
+## 理解 Web 层模块
+
+```bash
+cat modules/web/main.tf
+```
+
+Web 层包含 ALB 和三组安全组（ALB / App / Data），它们之间的引用链清晰可见：
+
+```
+ALB SG: 0.0.0.0/0:80 入站
+App SG: 仅允许来自 ALB SG 的 8080
+Data SG: 仅允许来自 App SG 的 5432
+```
+
+这是三层架构安全隔离的核心，现在全部收纳在一个模块里，逻辑一目了然。
+
+## 查看根模块如何组装
 
 ```bash
 cat main.tf
 ```
 
-注意这几行：
+注意模块间的依赖流：
 
-```hcl
-module "storage" {
-  source      = "./modules/storage"
-  bucket_name = "${var.app_name}-${var.environment}-config"
-}
-
-resource "aws_iam_policy" "app_reader" {
-  policy = jsonencode({
-    Statement = [{
-      Resource = module.storage.bucket_arn  # 使用 storage 模块的输出
-    }]
-  })
-}
+```
+networking → vpc_id, subnet_ids
+    ↓
+web(vpc_id, public_subnet_ids) → alb_dns, security_group_ids
+    ↓
+storage → bucket_arns     ──┐
+data → table_arn, queue_arn ─┼→ security(所有 ARN) → iam_role
+ssm, cloudwatch ─────────────┘
 ```
 
-`module.storage.bucket_arn` 是**函数组合**的体现：把 storage 模块的输出作为 IAM 策略的输入。整个系统是各模块输入/输出的网络，而不是硬编码的耦合。
+每一层只依赖它需要的输入——网络层不知道有 S3，数据层不知道有 ALB。
 
-## 部署完整的系统
+## 部署模块化版本
 
 ```bash
 terraform init
 terraform plan
 ```
 
-观察 `plan` 输出——现在你能清楚地看到每个模块负责哪些资源了。
+观察 plan 输出——现在每个资源前都带有 module 前缀，层级归属一目了然。
 
 ```bash
 terraform apply -auto-approve
 ```
 
-## 验证模块化部署成功
+## 验证模块化部署
 
 ```bash
 terraform state list
 ```
 
-注意资源地址的格式：
-- `module.storage.aws_s3_bucket.this`
-- `module.queue.aws_sqs_queue.this`
-- `module.database.aws_dynamodb_table.this`
+注意层次化的资源地址：
 
-层次化的资源地址，清楚表达了"谁属于谁"。
-
-## 体会权限边界的变化
-
-在真实的 AWS 环境里，你现在可以为不同的团队授予不同模块的操作权限：
-- 存储团队：只能操作 `module.storage` 相关资源
-- 消息团队：只能操作 `module.queue` 相关资源
-
-```bash
-# 查看队列相关的输出
-terraform output notification_queue_url
-terraform output audit_table_name
+```
+module.networking.aws_vpc.this
+module.networking.aws_subnet.public[0]
+module.web.aws_lb.this
+module.web.aws_security_group.alb
+module.data.aws_dynamodb_table.users
+module.storage.aws_s3_bucket.static
+module.security.aws_iam_role.app
 ```
 
-## 模块拆分后的对比
+谁属于哪一层，一看便知。
 
-| 维度 | 单体 | 小模块 |
-|------|------|-------|
-| 定位一个资源 | 在 100+ 行里 grep | 直接进对应模块目录 |
-| 修改影响范围 | 整个文件 | 单个模块 |
-| 权限控制 | 全有或全无 | 按模块精细控制 |
-| 团队协作 | 冲突频繁 | 各改各的模块 |
-| 测试 | 全量 apply | 单模块独立测试 |
+```bash
+terraform output
+```
 
-下一步，我们把自制的 S3 模块替换成来自社区的高质量模块。
+## 对比：单体 vs 模块化
+
+| 维度 | 单体（step1） | 模块化（step2） |
+|------|-------------|---------------|
+| 定位资源 | 在 500 行里搜索 | 进入对应层的模块目录 |
+| 安全组逻辑 | 散落在文件中间 | 集中在 web 模块里 |
+| 修改影响 | 可能误伤其他层 | 限定在单个模块内 |
+| 权限控制 | 全有或全无 | 网络团队只改 networking |
+| 独立测试 | 必须全量 apply | 单层独立验证 |
+
+下一步，我们把手写的网络层替换为社区验证的 VPC 模块。

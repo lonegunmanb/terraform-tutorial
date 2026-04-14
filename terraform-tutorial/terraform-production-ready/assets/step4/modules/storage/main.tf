@@ -1,23 +1,41 @@
-# modules/storage/main.tf（step4：在 step3 基础上加入 precondition）
+resource "aws_s3_bucket" "static" {
+  bucket = "${var.app_name}-${var.environment}-static"
+}
 
-module "s3_bucket" {
-  source  = "terraform-aws-modules/s3-bucket/aws"
-  version = "~> 4.2"
-
-  bucket = var.bucket_name
-
-  versioning = {
-    enabled = var.enable_versioning
+resource "aws_s3_bucket_versioning" "static" {
+  bucket = aws_s3_bucket.static.id
+  versioning_configuration {
+    status = var.enable_versioning ? "Enabled" : "Suspended"
   }
 }
 
-# precondition 在 apply 之前"提前断言"——如果传入的名称不符合 AWS S3 规范，
-# 立即报错，而不是等到 API 调用失败后再抛出一个难以阅读的错误信息。
-resource "null_resource" "bucket_name_guard" {
+resource "aws_s3_bucket" "backups" {
+  bucket = "${var.app_name}-${var.environment}-backups"
+}
+
+resource "aws_s3_bucket_versioning" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_lifecycle_configuration" "backups" {
+  bucket = aws_s3_bucket.backups.id
+  rule {
+    id     = "expire-old-backups"
+    status = "Enabled"
+    expiration {
+      days = var.backup_expiration_days
+    }
+  }
+}
+
+resource "terraform_data" "bucket_name_check" {
   lifecycle {
     precondition {
-      condition     = length(var.bucket_name) >= 3 && length(var.bucket_name) <= 63
-      error_message = "S3 存储桶名称长度必须在 3 到 63 个字符之间（AWS 规范）。当前值：\"${var.bucket_name}\"（${length(var.bucket_name)} 个字符）"
+      condition     = length(var.app_name) >= 3 && length("${var.app_name}-${var.environment}-backups") <= 63
+      error_message = "S3 桶名必须在 3–63 字符之间。app_name 至少 3 个字符，且 app_name + environment + 后缀的总长度不能超过 63。当前 app_name='${var.app_name}', environment='${var.environment}'。"
     }
   }
 }
