@@ -55,7 +55,7 @@ package s3.naming
 
 import rego.v1
 
-deny contains msg if {
+deny_bucket_naming_prefix contains msg if {
   resource := input.resource_changes[_]
   resource.type == "aws_s3_bucket"
   actions := resource.change.actions
@@ -102,12 +102,12 @@ package s3.naming
 import rego.v1
 
 exception contains rules if {
-  rules = ["deny"]
+  rules = ["bucket_naming_prefix"]
 }
 EOF
 ```
 
-这个例外文件和策略在同一个 package（s3.naming）下，它声明跳过该命名空间中所有 deny 规则。
+这个例外文件和策略在同一个 package（s3.naming）下。注意 conftest 的例外机制会自动去掉 deny_ 前缀来匹配规则名——我们的规则叫 deny_bucket_naming_prefix，所以例外中只写 bucket_naming_prefix。
 
 运行检查确认例外生效：
 
