@@ -85,6 +85,8 @@ Conftest 使用 Rego 语言定义策略。核心概念很简单：
 - `warn` 规则：返回非空值时表示警告（测试通过但有提示）
 - `input`：被测试的数据（Terraform Plan JSON）
 
+如果想要深入学习 Rego 语言，可以参考 [Rego 进阶教程](https://lonegunmanb.github.io/rego-tutorial/)。
+
 ```rego
 package main
 

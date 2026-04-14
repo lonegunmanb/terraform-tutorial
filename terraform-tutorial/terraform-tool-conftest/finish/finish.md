@@ -46,3 +46,4 @@ terraform apply tfplan.binary           # 4. 通过后部署
 - [Conftest 详解（Terraform 模块之道）](https://lonegunmanb.github.io/dao-of-terraform-modules/%E5%B7%A5%E5%85%B7%E9%93%BE/conftest.html)
 - [AWS Policy as Code 示例](https://github.com/aws-samples/aws-infra-policy-as-code-with-terraform)
 - [Rego 101 中文教程](https://xie.infoq.cn/article/c053620f2f0165de7846d83b8)
+- [Rego 进阶教程](https://lonegunmanb.github.io/rego-tutorial/)：如果想要学习更多有关 Rego 的知识，可以进一步学习这个教程
