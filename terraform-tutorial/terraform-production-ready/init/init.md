@@ -19,5 +19,3 @@
 - AWS Provider 6.x
 - MiniStack（模拟 AWS，支持 S3 / SQS / DynamoDB / IAM）
 - 工作目录：/root/workspace/
-
-环境正在准备中，请耐心等待……
