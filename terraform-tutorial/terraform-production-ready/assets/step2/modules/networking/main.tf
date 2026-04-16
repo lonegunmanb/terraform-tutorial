@@ -20,24 +20,26 @@ resource "aws_internet_gateway" "this" {
 }
 
 resource "aws_subnet" "public" {
-  count             = length(var.public_subnet_cidrs)
+  for_each = zipmap(var.public_subnet_cidrs, var.availability_zones)
+
   vpc_id            = aws_vpc.this.id
-  cidr_block        = var.public_subnet_cidrs[count.index]
-  availability_zone = var.availability_zones[count.index]
+  cidr_block        = each.key
+  availability_zone = each.value
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-public-${count.index}"
+    Name = "${var.app_name}-${var.environment}-public-${each.value}"
   }
 }
 
 resource "aws_subnet" "private" {
-  count             = length(var.private_subnet_cidrs)
+  for_each = zipmap(var.private_subnet_cidrs, var.availability_zones)
+
   vpc_id            = aws_vpc.this.id
-  cidr_block        = var.private_subnet_cidrs[count.index]
-  availability_zone = var.availability_zones[count.index]
+  cidr_block        = each.key
+  availability_zone = each.value
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-private-${count.index}"
+    Name = "${var.app_name}-${var.environment}-private-${each.value}"
   }
 }
 
@@ -55,7 +57,8 @@ resource "aws_route_table" "public" {
 }
 
 resource "aws_route_table_association" "public" {
-  count          = length(aws_subnet.public)
-  subnet_id      = aws_subnet.public[count.index].id
+  for_each = aws_subnet.public
+
+  subnet_id      = each.value.id
   route_table_id = aws_route_table.public.id
 }

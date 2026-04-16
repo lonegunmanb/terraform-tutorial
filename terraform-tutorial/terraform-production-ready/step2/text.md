@@ -91,7 +91,7 @@ terraform state list
 
 ```
 module.networking.aws_vpc.this
-module.networking.aws_subnet.public[0]
+module.networking.aws_subnet.public["10.0.1.0/24"]
 module.web.aws_lb.this
 module.web.aws_security_group.alb
 module.web.aws_instance.app
