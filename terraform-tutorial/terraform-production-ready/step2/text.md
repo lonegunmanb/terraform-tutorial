@@ -24,7 +24,7 @@ find . -name "*.tf" | sort
 cat modules/networking/main.tf
 ```
 
-注意 count 的使用——用一个数组变量同时创建多个子网，而不是重复写 4 个 resource 块。这在三层架构中尤其重要：你可能有 2 个、3 个甚至 6 个可用区。
+注意 for_each 的使用——以 CIDR 为 key、可用区为 value 的 map 驱动子网创建，而不是重复写 4 个 resource 块。相比 count + 列表下标，for_each 的好处是：从列表中间删除一个 CIDR 只会销毁那一个子网，不会因为下标位移而触发其他子网的 destroy/recreate。这在三层架构中尤其重要：你可能有 2 个、3 个甚至 6 个可用区。
 
 ```bash
 cat modules/networking/outputs.tf
