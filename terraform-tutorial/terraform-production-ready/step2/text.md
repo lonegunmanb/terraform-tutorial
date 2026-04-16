@@ -12,7 +12,7 @@ find . -name "*.tf" | sort
 ```
 ./modules/networking/    ← 网络层：VPC、子网、路由
 ./modules/web/           ← Web 层：ALB、安全组
-./modules/data/          ← 数据层：DynamoDB、SQS、SNS
+./modules/data/          ← 数据层：DynamoDB
 ./modules/storage/       ← 存储层：S3 静态资源、备份
 ./modules/security/      ← 安全层：IAM、Secrets Manager
 ./main.tf                ← 根模块：组装各层
@@ -62,7 +62,7 @@ networking → vpc_id, subnet_ids
 web(vpc_id, public_subnet_ids) → alb_dns, security_group_ids
     ↓
 storage → bucket_arns     ──┐
-data → table_arn, queue_arn ─┼→ security(所有 ARN) → iam_role
+data → table_arn ──────────┼→ security(所有 ARN) → iam_role
 ssm, cloudwatch ─────────────┘
 ```
 

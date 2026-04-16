@@ -5,7 +5,6 @@
 在三层架构中，每一层的配置错误可能引发连锁反应：
 - 网络层的 CIDR 格式写错 → VPC 创建失败 → 所有层全部瘫痪
 - Web 层只传了 1 个子网给 ALB → 负载均衡没有跨 AZ 冗余 → 单点故障
-- 数据层的消息保留时长设错 → 任务丢失 → 数据不一致
 - 存储层的桶名太短 → AWS API 报错 → 部署中断
 
 内置防护让这些错误在部署之前就被拦截。
@@ -30,12 +29,6 @@ terraform plan -var="vpc_cidr=not-a-cidr"
 
 ```bash
 terraform plan -var="vpc_cidr=172.16.0.0/16"
-```
-
-同时，数据层的 message_retention_seconds 也有 validation：
-
-```bash
-terraform plan -var="message_retention_seconds=30"
 ```
 
 ## 2. precondition 块：Web 层的高可用检查
@@ -94,7 +87,7 @@ grep -rn "validation\|precondition\|postcondition" modules/
 
 | 工具 | 触发时机 | 可引用的内容 | 本实验示例 |
 |------|---------|------------|----------|
-| validation | plan 之前 | 仅当前变量 | CIDR 格式、消息保留时长 |
+| validation | plan 之前 | 仅当前变量 | CIDR 格式 |
 | precondition | apply 之前 | 多个变量、表达式 | ALB 子网数 >= 2、桶名长度 |
 | postcondition | apply 之后 | self.*（当前资源） | DynamoDB 计费模式保证 |
 

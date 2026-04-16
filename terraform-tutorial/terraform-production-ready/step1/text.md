@@ -9,7 +9,7 @@ cd /root/workspace/step1
 wc -l main.tf
 ```
 
-将近 500 行代码——VPC、子网、安全组、ALB、DynamoDB、SQS、SNS、S3、IAM、Secrets Manager、CloudWatch——全部混在一起。
+将近 500 行代码——VPC、子网、安全组、ALB、DynamoDB、S3、IAM、Secrets Manager、CloudWatch——全部混在一起。
 
 ## 浏览各层资源
 
@@ -46,7 +46,6 @@ awslocal ec2 describe-vpcs --query 'Vpcs[].{ID:VpcId,CIDR:CidrBlock}' --output t
 awslocal ec2 describe-subnets --query 'Subnets[].{ID:SubnetId,AZ:AvailabilityZone,CIDR:CidrBlock}' --output table
 awslocal elbv2 describe-load-balancers --query 'LoadBalancers[].{Name:LoadBalancerName,DNS:DNSName}' --output table
 awslocal s3 ls
-awslocal sqs list-queues
 awslocal dynamodb list-tables
 awslocal iam list-roles --query 'Roles[].RoleName'
 awslocal ecs list-clusters

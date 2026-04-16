@@ -55,11 +55,6 @@ variable "vpc_cidr" {
   default = "10.0.0.0/16"
 }
 
-variable "message_retention_seconds" {
-  type    = number
-  default = 86400
-}
-
 # ══════════════════════════════════════════════════════════════════════════════
 # 网络层
 # ══════════════════════════════════════════════════════════════════════════════
@@ -325,51 +320,6 @@ resource "aws_dynamodb_table" "users" {
   }
 }
 
-resource "aws_sqs_queue" "task_dlq" {
-  name                      = "${var.app_name}-${var.environment}-tasks-dlq"
-  message_retention_seconds = 1209600
-}
-
-resource "aws_sqs_queue" "tasks" {
-  name                       = "${var.app_name}-${var.environment}-tasks"
-  visibility_timeout_seconds = 60
-  message_retention_seconds  = var.message_retention_seconds
-}
-
-resource "aws_sqs_queue_redrive_policy" "tasks" {
-  queue_url = aws_sqs_queue.tasks.id
-  redrive_policy = jsonencode({
-    deadLetterTargetArn = aws_sqs_queue.task_dlq.arn
-    maxReceiveCount     = 5
-  })
-}
-
-resource "aws_sns_topic" "alerts" {
-  name = "${var.app_name}-${var.environment}-alerts"
-}
-
-resource "aws_sns_topic_subscription" "alerts_to_queue" {
-  topic_arn = aws_sns_topic.alerts.arn
-  protocol  = "sqs"
-  endpoint  = aws_sqs_queue.tasks.arn
-}
-
-resource "aws_sqs_queue_policy" "allow_sns" {
-  queue_url = aws_sqs_queue.tasks.id
-  policy = jsonencode({
-    Version = "2012-10-17"
-    Statement = [{
-      Effect    = "Allow"
-      Principal = { Service = "sns.amazonaws.com" }
-      Action    = "sqs:SendMessage"
-      Resource  = aws_sqs_queue.tasks.arn
-      Condition = {
-        ArnEquals = { "aws:SourceArn" = aws_sns_topic.alerts.arn }
-      }
-    }]
-  })
-}
-
 # ══════════════════════════════════════════════════════════════════════════════
 # 存储层
 # ══════════════════════════════════════════════════════════════════════════════
@@ -464,11 +414,6 @@ resource "aws_iam_policy" "app" {
       },
       {
         Effect   = "Allow"
-        Action   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage"]
-        Resource = aws_sqs_queue.tasks.arn
-      },
-      {
-        Effect   = "Allow"
         Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query"]
         Resource = aws_dynamodb_table.users.arn
       },
@@ -514,10 +459,6 @@ output "static_bucket" {
 
 output "backup_bucket" {
   value = aws_s3_bucket.backups.bucket
-}
-
-output "task_queue_url" {
-  value = aws_sqs_queue.tasks.url
 }
 
 output "users_table" {

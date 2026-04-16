@@ -39,11 +39,6 @@ resource "aws_iam_policy" "app" {
       },
       {
         Effect   = "Allow"
-        Action   = ["sqs:SendMessage", "sqs:ReceiveMessage", "sqs:DeleteMessage"]
-        Resource = var.task_queue_arn
-      },
-      {
-        Effect   = "Allow"
         Action   = ["dynamodb:GetItem", "dynamodb:PutItem", "dynamodb:Query"]
         Resource = var.users_table_arn
       },

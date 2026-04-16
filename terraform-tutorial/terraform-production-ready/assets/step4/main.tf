@@ -56,9 +56,8 @@ module "web" {
 module "data" {
   source = "./modules/data"
 
-  app_name                  = var.app_name
-  environment               = var.environment
-  message_retention_seconds = var.message_retention_seconds
+  app_name    = var.app_name
+  environment = var.environment
 }
 
 module "storage" {
@@ -75,7 +74,7 @@ module "security" {
   environment = var.environment
 
   static_bucket_arn = module.storage.static_bucket_arn
-  task_queue_arn    = module.data.task_queue_arn
+  task_queue_arn    = "" # SQS removed
   users_table_arn   = module.data.users_table_arn
   app_config_arn    = aws_ssm_parameter.app_config.arn
   log_group_arn     = aws_cloudwatch_log_group.app.arn

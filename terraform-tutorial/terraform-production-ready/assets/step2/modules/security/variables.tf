@@ -10,10 +10,6 @@ variable "static_bucket_arn" {
   type = string
 }
 
-variable "task_queue_arn" {
-  type = string
-}
-
 variable "users_table_arn" {
   type = string
 }

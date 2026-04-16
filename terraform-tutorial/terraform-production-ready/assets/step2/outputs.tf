@@ -14,10 +14,6 @@ output "backup_bucket" {
   value = module.storage.backup_bucket_name
 }
 
-output "task_queue_url" {
-  value = module.data.task_queue_url
-}
-
 output "users_table" {
   value = module.data.users_table_name
 }
