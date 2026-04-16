@@ -21,3 +21,7 @@ output "app_security_group_id" {
 output "data_security_group_id" {
   value = aws_security_group.data.id
 }
+
+output "ecs_service_name" {
+  value = aws_ecs_service.app.name
+}

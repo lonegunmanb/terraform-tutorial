@@ -23,7 +23,7 @@ head -100 main.tf
 sed -n '147,212p' main.tf
 ```
 
-再看安全组：ALB 安全组、App 安全组、Data 安全组。注意它们之间的引用链：ALB 允许外部 80 端口 → App 只允许来自 ALB 的 8080 → Data 只允许来自 App 的 5432。
+再看安全组：ALB 安全组、App 安全组、Data 安全组。注意它们之间的引用链：ALB 允许外部 80 端口 → App 只允许来自 ALB 的 80（nginx）→ Data 只允许来自 App 的 5432。
 
 这是三层架构安全隔离的核心——但在一个文件里，这些引用关系散落在几百行之间。
 
@@ -49,6 +49,8 @@ awslocal s3 ls
 awslocal sqs list-queues
 awslocal dynamodb list-tables
 awslocal iam list-roles --query 'Roles[].RoleName'
+awslocal ecs list-clusters
+awslocal ecs list-services --cluster webapp-dev
 ```
 
 资源都创建成功了。现在想象几个场景：

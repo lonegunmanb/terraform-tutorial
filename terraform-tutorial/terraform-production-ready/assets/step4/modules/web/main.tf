@@ -26,8 +26,8 @@ resource "aws_security_group" "app" {
   vpc_id      = var.vpc_id
 
   ingress {
-    from_port       = 8080
-    to_port         = 8080
+    from_port       = 80
+    to_port         = 80
     protocol        = "tcp"
     security_groups = [aws_security_group.alb.id]
   }
@@ -80,13 +80,14 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "app" {
-  name     = "${var.app_name}-${var.environment}-app-tg"
-  port     = 8080
-  protocol = "HTTP"
-  vpc_id   = var.vpc_id
+  name        = "${var.app_name}-${var.environment}-app-tg"
+  port        = 80
+  protocol    = "HTTP"
+  vpc_id      = var.vpc_id
+  target_type = "ip"
 
   health_check {
-    path                = "/health"
+    path                = "/"
     port                = "traffic-port"
     healthy_threshold   = 2
     unhealthy_threshold = 3
@@ -106,5 +107,47 @@ resource "aws_lb_listener" "http" {
   default_action {
     type             = "forward"
     target_group_arn = aws_lb_target_group.app.arn
+  }
+}
+
+resource "aws_ecs_cluster" "app" {
+  name = "${var.app_name}-${var.environment}"
+}
+
+resource "aws_ecs_task_definition" "app" {
+  family                   = "${var.app_name}-${var.environment}-app"
+  network_mode             = "awsvpc"
+  requires_compatibilities = ["FARGATE"]
+  cpu                      = "256"
+  memory                   = "512"
+  execution_role_arn       = var.task_execution_role_arn
+
+  container_definitions = jsonencode([{
+    name      = "app"
+    image     = "nginx:alpine"
+    essential = true
+    portMappings = [{
+      containerPort = 80
+      protocol      = "tcp"
+    }]
+  }])
+}
+
+resource "aws_ecs_service" "app" {
+  name            = "${var.app_name}-${var.environment}-app"
+  cluster         = aws_ecs_cluster.app.id
+  task_definition = aws_ecs_task_definition.app.arn
+  desired_count   = 1
+  launch_type     = "FARGATE"
+
+  network_configuration {
+    subnets         = var.private_subnet_ids
+    security_groups = [aws_security_group.app.id]
+  }
+
+  load_balancer {
+    target_group_arn = aws_lb_target_group.app.arn
+    container_name   = "app"
+    container_port   = 80
   }
 }

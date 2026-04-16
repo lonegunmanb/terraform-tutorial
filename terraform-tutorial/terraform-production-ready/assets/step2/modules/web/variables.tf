@@ -13,3 +13,11 @@ variable "vpc_id" {
 variable "public_subnet_ids" {
   type = list(string)
 }
+
+variable "private_subnet_ids" {
+  type = list(string)
+}
+
+variable "task_execution_role_arn" {
+  type = string
+}

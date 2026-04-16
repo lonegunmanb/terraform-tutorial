@@ -3,9 +3,11 @@ services:
     image: nahuelnucera/ministack
     ports:
       - "4566:4566"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
     environment:
       - MINISTACK_REGION=us-east-1
     deploy:
       resources:
         limits:
-          memory: 512M
+          memory: 1536M

@@ -30,6 +30,7 @@ provider "aws" {
     cloudwatchlogs = "http://localhost:4566"
     ec2            = "http://localhost:4566"
     elbv2          = "http://localhost:4566"
+    ecs            = "http://localhost:4566"
   }
 }
 
@@ -46,10 +47,12 @@ module "networking" {
 module "web" {
   source = "./modules/web"
 
-  app_name          = var.app_name
-  environment       = var.environment
-  vpc_id            = module.networking.vpc_id
-  public_subnet_ids = module.networking.public_subnet_ids
+  app_name                = var.app_name
+  environment             = var.environment
+  vpc_id                  = module.networking.vpc_id
+  public_subnet_ids       = module.networking.public_subnet_ids
+  private_subnet_ids      = module.networking.private_subnet_ids
+  task_execution_role_arn = module.security.app_role_arn
 }
 
 # ── 数据与消息层 ──────────────────────────────────────────────────────────
