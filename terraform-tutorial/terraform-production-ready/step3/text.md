@@ -84,4 +84,8 @@ terraform output
 
 输出与 step2 完全一致。网络层内部实现从 7 个 resource 变成 1 个 module 调用，但 web 模块、data 模块、security 模块都不需要改一行代码。
 
-下一步，我们在各层模块里加入内置防护——让配置错误在部署之前就被拦截。
+下一步，我们在各层模块里加入内置防护——让配置错误在部署之前就被拦截。在进入下一步之前，先清理资源释放 LocalStack 内存：
+
+```bash
+terraform destroy -auto-approve -parallelism=2
+```

@@ -77,4 +77,8 @@ terraform state list
 | 难理解 | 网络/Web/数据/存储/安全混在一起 |
 | 难测试 | 要测数据层，必须连带部署整个 VPC |
 
-下一步，我们按架构层级把这个单体拆开。
+下一步，我们按架构层级把这个单体拆开。在进入下一步之前，先清理资源释放 LocalStack 内存：
+
+```bash
+terraform destroy -auto-approve -parallelism=2
+```

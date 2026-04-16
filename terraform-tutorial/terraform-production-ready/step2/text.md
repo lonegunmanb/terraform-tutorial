@@ -115,4 +115,8 @@ terraform output
 | 权限控制 | 全有或全无 | 网络团队只改 networking |
 | 独立测试 | 必须全量 apply | 单层独立验证 |
 
-下一步，我们把手写的网络层替换为社区验证的 VPC 模块。
+下一步，我们把手写的网络层替换为社区验证的 VPC 模块。在进入下一步之前，先清理资源释放 LocalStack 内存：
+
+```bash
+terraform destroy -auto-approve -parallelism=2
+```
