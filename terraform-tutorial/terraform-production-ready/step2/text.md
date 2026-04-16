@@ -94,8 +94,7 @@ module.networking.aws_vpc.this
 module.networking.aws_subnet.public[0]
 module.web.aws_lb.this
 module.web.aws_security_group.alb
-module.web.aws_ecs_cluster.app
-module.web.aws_ecs_service.app
+module.web.aws_instance.app
 module.data.aws_dynamodb_table.users
 module.storage.aws_s3_bucket.static
 module.security.aws_iam_role.app

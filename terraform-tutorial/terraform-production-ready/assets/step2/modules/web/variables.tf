@@ -18,6 +18,6 @@ variable "private_subnet_ids" {
   type = list(string)
 }
 
-variable "task_execution_role_arn" {
+variable "app_instance_profile_name" {
   type = string
 }

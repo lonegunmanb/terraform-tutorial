@@ -48,8 +48,7 @@ awslocal elbv2 describe-load-balancers --query 'LoadBalancers[].{Name:LoadBalanc
 awslocal s3 ls
 awslocal dynamodb list-tables
 awslocal iam list-roles --query 'Roles[].RoleName'
-awslocal ecs list-clusters
-awslocal ecs list-services --cluster webapp-dev
+awslocal ec2 describe-instances --query 'Reservations[].Instances[].{ID:InstanceId,State:State.Name}' --output table
 ```
 
 资源都创建成功了。现在想象几个场景：

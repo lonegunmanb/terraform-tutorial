@@ -10,9 +10,9 @@
 ┌──────────────────────────────────────────────────────┐
 │  网络层：VPC · 公有/私有子网 · 互联网网关 · 路由表     │
 ├──────────────────────────────────────────────────────┤
-│  Web 层：ALB 负载均衡 · 安全组（ALB / App / Data）     │
+│  Web 层：ALB 负载均衡 · EC2 应用实例 · 安全组 (ALB/App/Data) │
 ├──────────────────────────────────────────────────────┤
-│  数据与消息层：DynamoDB · SQS 任务队列 · SNS 告警      │
+│  数据层：DynamoDB 用户表                                   │
 ├──────────────────────────────────────────────────────┤
 │  存储层：S3 静态资源 · S3 备份                         │
 ├──────────────────────────────────────────────────────┤
@@ -20,15 +20,15 @@
 └──────────────────────────────────────────────────────┘
 ```
 
-本实验在 MiniStack 上模拟这套架构。MiniStack 支持 VPC、子网、ALB、安全组等网络资源（in-memory 模拟），以及 S3、SQS、SNS、DynamoDB、IAM、Secrets Manager 等数据与安全服务。
+本实验在 MiniStack 上模拟这套架构。MiniStack 支持 VPC、子网、ALB、安全组、EC2 等网络与计算资源（in-memory 模拟），以及 S3、DynamoDB、IAM、Secrets Manager 等数据与安全服务。
 
 ## 我们要构建什么
 
 一个跨两个可用区的 Web 应用基础设施，包含约 30 个资源：
 
 - **网络层**：VPC + 2 个公有子网 + 2 个私有子网 + 互联网网关 + 路由表
-- **Web 层**：ALB + 目标组 + 监听器 + 三组安全组（ALB / App / Data）
-- **数据层**：DynamoDB 用户表 + SQS 任务队列 + 死信队列 + SNS 告警
+- **Web 层**：ALB + 目标组 + 监听器 + EC2 应用实例 + 三组安全组（ALB / App / Data）
+- **数据层**：DynamoDB 用户表
 - **存储层**：S3 静态资源桶 + S3 备份桶
 - **安全层**：IAM 角色与最小权限策略 + Secrets Manager 凭证
 
@@ -36,5 +36,5 @@
 
 - Terraform 1.14+
 - AWS Provider 6.x
-- MiniStack（42 项 AWS 服务模拟，含 VPC/EC2/ELBv2/S3/SQS/SNS/DynamoDB/IAM 等）
+- MiniStack（42 项 AWS 服务模拟，含 VPC/EC2/ELBv2/S3/DynamoDB/IAM 等）
 - 工作目录：/root/workspace/

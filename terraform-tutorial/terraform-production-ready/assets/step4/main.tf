@@ -30,7 +30,6 @@ provider "aws" {
     cloudwatchlogs = "http://localhost:4566"
     ec2            = "http://localhost:4566"
     elbv2          = "http://localhost:4566"
-    ecs            = "http://localhost:4566"
   }
 }
 
@@ -50,7 +49,7 @@ module "web" {
   vpc_id                  = module.networking.vpc_id
   public_subnet_ids       = module.networking.public_subnet_ids
   private_subnet_ids      = module.networking.private_subnet_ids
-  task_execution_role_arn = module.security.app_role_arn
+  app_instance_profile_name = module.security.app_instance_profile_name
 }
 
 module "data" {

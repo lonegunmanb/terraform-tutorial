@@ -84,7 +84,7 @@ resource "aws_lb_target_group" "app" {
   port        = 80
   protocol    = "HTTP"
   vpc_id      = var.vpc_id
-  target_type = "ip"
+  target_type = "instance"
 
   health_check {
     path                = "/"
@@ -110,44 +110,27 @@ resource "aws_lb_listener" "http" {
   }
 }
 
-resource "aws_ecs_cluster" "app" {
-  name = "${var.app_name}-${var.environment}"
+resource "aws_instance" "app" {
+  ami                    = "ami-0c55b159cbfafe1f0"
+  instance_type          = "t3.micro"
+  subnet_id              = var.private_subnet_ids[0]
+  vpc_security_group_ids = [aws_security_group.app.id]
+  iam_instance_profile   = var.app_instance_profile_name
+
+  user_data = base64encode(<<-EOF
+    #!/bin/bash
+    yum install -y nginx
+    systemctl enable --now nginx
+  EOF
+  )
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-app"
+  }
 }
 
-resource "aws_ecs_task_definition" "app" {
-  family                   = "${var.app_name}-${var.environment}-app"
-  network_mode             = "awsvpc"
-  requires_compatibilities = ["FARGATE"]
-  cpu                      = "256"
-  memory                   = "512"
-  execution_role_arn       = var.task_execution_role_arn
-
-  container_definitions = jsonencode([{
-    name      = "app"
-    image     = "nginx:alpine"
-    essential = true
-    portMappings = [{
-      containerPort = 80
-      protocol      = "tcp"
-    }]
-  }])
-}
-
-resource "aws_ecs_service" "app" {
-  name            = "${var.app_name}-${var.environment}-app"
-  cluster         = aws_ecs_cluster.app.id
-  task_definition = aws_ecs_task_definition.app.arn
-  desired_count   = 1
-  launch_type     = "FARGATE"
-
-  network_configuration {
-    subnets         = var.private_subnet_ids
-    security_groups = [aws_security_group.app.id]
-  }
-
-  load_balancer {
-    target_group_arn = aws_lb_target_group.app.arn
-    container_name   = "app"
-    container_port   = 80
-  }
+resource "aws_lb_target_group_attachment" "app" {
+  target_group_arn = aws_lb_target_group.app.arn
+  target_id        = aws_instance.app.id
+  port             = 80
 }

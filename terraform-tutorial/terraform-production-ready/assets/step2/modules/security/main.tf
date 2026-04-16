@@ -22,7 +22,7 @@ resource "aws_iam_role" "app" {
     Statement = [{
       Action    = "sts:AssumeRole"
       Effect    = "Allow"
-      Principal = { Service = "ecs-tasks.amazonaws.com" }
+      Principal = { Service = "ec2.amazonaws.com" }
     }]
   })
 }
@@ -64,4 +64,9 @@ resource "aws_iam_policy" "app" {
 resource "aws_iam_role_policy_attachment" "app" {
   role       = aws_iam_role.app.name
   policy_arn = aws_iam_policy.app.arn
+}
+
+resource "aws_iam_instance_profile" "app" {
+  name = "${var.app_name}-${var.environment}-app-profile"
+  role = aws_iam_role.app.name
 }
