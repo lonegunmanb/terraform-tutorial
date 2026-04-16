@@ -152,72 +152,62 @@ resource "aws_security_group" "alb" {
   name_prefix = "${var.app_name}-alb-"
   vpc_id      = aws_vpc.main.id
 
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = {
     Name = "${var.app_name}-${var.environment}-alb-sg"
   }
-}
-
-resource "aws_security_group_rule" "alb_ingress_http" {
-  type              = "ingress"
-  from_port         = 80
-  to_port           = 80
-  protocol          = "tcp"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.alb.id
-}
-
-resource "aws_security_group_rule" "alb_egress_all" {
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.alb.id
 }
 
 resource "aws_security_group" "app" {
   name_prefix = "${var.app_name}-app-"
   vpc_id      = aws_vpc.main.id
 
+  ingress {
+    from_port       = 8080
+    to_port         = 8080
+    protocol        = "tcp"
+    security_groups = [aws_security_group.alb.id]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
   tags = {
     Name = "${var.app_name}-${var.environment}-app-sg"
   }
-}
-
-resource "aws_security_group_rule" "app_ingress_from_alb" {
-  type                     = "ingress"
-  from_port                = 8080
-  to_port                  = 8080
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.alb.id
-  security_group_id        = aws_security_group.app.id
-}
-
-resource "aws_security_group_rule" "app_egress_all" {
-  type              = "egress"
-  from_port         = 0
-  to_port           = 0
-  protocol          = "-1"
-  cidr_blocks       = ["0.0.0.0/0"]
-  security_group_id = aws_security_group.app.id
 }
 
 resource "aws_security_group" "data" {
   name_prefix = "${var.app_name}-data-"
   vpc_id      = aws_vpc.main.id
 
+  ingress {
+    from_port       = 5432
+    to_port         = 5432
+    protocol        = "tcp"
+    security_groups = [aws_security_group.app.id]
+  }
+
   tags = {
     Name = "${var.app_name}-${var.environment}-data-sg"
   }
-}
-
-resource "aws_security_group_rule" "data_ingress_from_app" {
-  type                     = "ingress"
-  from_port                = 5432
-  to_port                  = 5432
-  protocol                 = "tcp"
-  source_security_group_id = aws_security_group.app.id
-  security_group_id        = aws_security_group.data.id
 }
 
 # ══════════════════════════════════════════════════════════════════════════════

@@ -20,7 +20,7 @@ head -100 main.tf
 先看网络层：VPC、4 个子网（2 公有 + 2 私有）、互联网网关、路由表。
 
 ```bash
-sed -n '147,223p' main.tf
+sed -n '147,212p' main.tf
 ```
 
 再看安全组：ALB 安全组、App 安全组、Data 安全组。注意它们之间的引用链：ALB 允许外部 80 端口 → App 只允许来自 ALB 的 8080 → Data 只允许来自 App 的 5432。
