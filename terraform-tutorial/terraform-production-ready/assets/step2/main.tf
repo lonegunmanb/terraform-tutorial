@@ -5,7 +5,21 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
+}
+
+resource "random_string" "suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+locals {
+  app_name = "${var.app_name}-${random_string.suffix.result}"
 }
 
 provider "aws" {
@@ -37,7 +51,7 @@ provider "aws" {
 module "networking" {
   source = "./modules/networking"
 
-  app_name    = var.app_name
+  app_name    = local.app_name
   environment = var.environment
   vpc_cidr    = var.vpc_cidr
 }
@@ -46,7 +60,7 @@ module "networking" {
 module "web" {
   source = "./modules/web"
 
-  app_name                = var.app_name
+  app_name                = local.app_name
   environment             = var.environment
   vpc_id                  = module.networking.vpc_id
   public_subnet_ids       = module.networking.public_subnet_ids
@@ -58,7 +72,7 @@ module "web" {
 module "data" {
   source = "./modules/data"
 
-  app_name    = var.app_name
+  app_name    = local.app_name
   environment = var.environment
 }
 
@@ -66,7 +80,7 @@ module "data" {
 module "storage" {
   source = "./modules/storage"
 
-  app_name    = var.app_name
+  app_name    = local.app_name
   environment = var.environment
 }
 
@@ -74,7 +88,7 @@ module "storage" {
 module "security" {
   source = "./modules/security"
 
-  app_name    = var.app_name
+  app_name    = local.app_name
   environment = var.environment
 
   static_bucket_arn = module.storage.static_bucket_arn
@@ -85,7 +99,7 @@ module "security" {
 
 # ── 配置与监控（根模块直管）─────────────────────────────────────────────
 resource "aws_ssm_parameter" "app_config" {
-  name  = "/${var.app_name}/${var.environment}/config"
+  name  = "/${local.app_name}/${var.environment}/config"
   type  = "String"
   value = jsonencode({
     log_level     = "info"
@@ -95,6 +109,6 @@ resource "aws_ssm_parameter" "app_config" {
 }
 
 resource "aws_cloudwatch_log_group" "app" {
-  name              = "/${var.app_name}/${var.environment}/app"
+  name              = "/${local.app_name}/${var.environment}/app"
   retention_in_days = 30
 }

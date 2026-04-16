@@ -11,7 +11,21 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 6.0"
     }
+    random = {
+      source  = "hashicorp/random"
+      version = "~> 3.0"
+    }
   }
+}
+
+resource "random_string" "suffix" {
+  length  = 6
+  special = false
+  upper   = false
+}
+
+locals {
+  app_name = "${var.app_name}-${random_string.suffix.result}"
 }
 
 provider "aws" {
@@ -64,7 +78,7 @@ resource "aws_vpc" "main" {
   enable_dns_hostnames = true
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-vpc"
+    Name = "${local.app_name}-${var.environment}-vpc"
   }
 }
 
@@ -72,7 +86,7 @@ resource "aws_internet_gateway" "main" {
   vpc_id = aws_vpc.main.id
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-igw"
+    Name = "${local.app_name}-${var.environment}-igw"
   }
 }
 
@@ -82,7 +96,7 @@ resource "aws_subnet" "public_a" {
   availability_zone = "us-east-1a"
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-public-a"
+    Name = "${local.app_name}-${var.environment}-public-a"
   }
 }
 
@@ -92,7 +106,7 @@ resource "aws_subnet" "public_b" {
   availability_zone = "us-east-1b"
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-public-b"
+    Name = "${local.app_name}-${var.environment}-public-b"
   }
 }
 
@@ -102,7 +116,7 @@ resource "aws_subnet" "private_a" {
   availability_zone = "us-east-1a"
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-private-a"
+    Name = "${local.app_name}-${var.environment}-private-a"
   }
 }
 
@@ -112,7 +126,7 @@ resource "aws_subnet" "private_b" {
   availability_zone = "us-east-1b"
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-private-b"
+    Name = "${local.app_name}-${var.environment}-private-b"
   }
 }
 
@@ -125,7 +139,7 @@ resource "aws_route_table" "public" {
   }
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-public-rt"
+    Name = "${local.app_name}-${var.environment}-public-rt"
   }
 }
 
@@ -144,7 +158,7 @@ resource "aws_route_table_association" "public_b" {
 # ══════════════════════════════════════════════════════════════════════════════
 
 resource "aws_security_group" "alb" {
-  name_prefix = "${var.app_name}-alb-"
+  name_prefix = "${local.app_name}-alb-"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -162,12 +176,12 @@ resource "aws_security_group" "alb" {
   }
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-alb-sg"
+    Name = "${local.app_name}-${var.environment}-alb-sg"
   }
 }
 
 resource "aws_security_group" "app" {
-  name_prefix = "${var.app_name}-app-"
+  name_prefix = "${local.app_name}-app-"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -185,12 +199,12 @@ resource "aws_security_group" "app" {
   }
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-app-sg"
+    Name = "${local.app_name}-${var.environment}-app-sg"
   }
 }
 
 resource "aws_security_group" "data" {
-  name_prefix = "${var.app_name}-data-"
+  name_prefix = "${local.app_name}-data-"
   vpc_id      = aws_vpc.main.id
 
   ingress {
@@ -201,7 +215,7 @@ resource "aws_security_group" "data" {
   }
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-data-sg"
+    Name = "${local.app_name}-${var.environment}-data-sg"
   }
 }
 
@@ -210,19 +224,19 @@ resource "aws_security_group" "data" {
 # ══════════════════════════════════════════════════════════════════════════════
 
 resource "aws_lb" "web" {
-  name               = "${var.app_name}-${var.environment}-alb"
+  name               = "${local.app_name}-${var.environment}-alb"
   internal           = false
   load_balancer_type = "application"
   security_groups    = [aws_security_group.alb.id]
   subnets            = [aws_subnet.public_a.id, aws_subnet.public_b.id]
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-alb"
+    Name = "${local.app_name}-${var.environment}-alb"
   }
 }
 
 resource "aws_lb_target_group" "app" {
-  name        = "${var.app_name}-${var.environment}-app-tg"
+  name        = "${local.app_name}-${var.environment}-app-tg"
   port        = 80
   protocol    = "HTTP"
   vpc_id      = aws_vpc.main.id
@@ -237,7 +251,7 @@ resource "aws_lb_target_group" "app" {
   }
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-app-tg"
+    Name = "${local.app_name}-${var.environment}-app-tg"
   }
 }
 
@@ -271,7 +285,7 @@ resource "aws_instance" "app" {
   )
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-app"
+    Name = "${local.app_name}-${var.environment}-app"
   }
 }
 
@@ -286,7 +300,7 @@ resource "aws_lb_target_group_attachment" "app" {
 # ══════════════════════════════════════════════════════════════════════════════
 
 resource "aws_dynamodb_table" "users" {
-  name         = "${var.app_name}-${var.environment}-users"
+  name         = "${local.app_name}-${var.environment}-users"
   billing_mode = "PAY_PER_REQUEST"
   hash_key     = "UserId"
   range_key    = "CreatedAt"
@@ -307,7 +321,7 @@ resource "aws_dynamodb_table" "users" {
 # ══════════════════════════════════════════════════════════════════════════════
 
 resource "aws_s3_bucket" "static_assets" {
-  bucket = "${var.app_name}-${var.environment}-static"
+  bucket = "${local.app_name}-${var.environment}-static"
 }
 
 resource "aws_s3_bucket_versioning" "static_assets" {
@@ -318,7 +332,7 @@ resource "aws_s3_bucket_versioning" "static_assets" {
 }
 
 resource "aws_s3_bucket" "backups" {
-  bucket = "${var.app_name}-${var.environment}-backups"
+  bucket = "${local.app_name}-${var.environment}-backups"
 }
 
 resource "aws_s3_bucket_versioning" "backups" {
@@ -344,7 +358,7 @@ resource "aws_s3_bucket_lifecycle_configuration" "backups" {
 # ══════════════════════════════════════════════════════════════════════════════
 
 resource "aws_secretsmanager_secret" "db_credentials" {
-  name = "${var.app_name}/${var.environment}/db-credentials"
+  name = "${local.app_name}/${var.environment}/db-credentials"
 }
 
 resource "aws_secretsmanager_secret_version" "db_credentials" {
@@ -358,7 +372,7 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
 }
 
 resource "aws_ssm_parameter" "app_config" {
-  name  = "/${var.app_name}/${var.environment}/config"
+  name  = "/${local.app_name}/${var.environment}/config"
   type  = "String"
   value = jsonencode({
     log_level     = "info"
@@ -368,12 +382,12 @@ resource "aws_ssm_parameter" "app_config" {
 }
 
 resource "aws_cloudwatch_log_group" "app" {
-  name              = "/${var.app_name}/${var.environment}/app"
+  name              = "/${local.app_name}/${var.environment}/app"
   retention_in_days = 30
 }
 
 resource "aws_iam_role" "app" {
-  name = "${var.app_name}-${var.environment}-app-role"
+  name = "${local.app_name}-${var.environment}-app-role"
   assume_role_policy = jsonencode({
     Version = "2012-10-17"
     Statement = [{
@@ -385,7 +399,7 @@ resource "aws_iam_role" "app" {
 }
 
 resource "aws_iam_policy" "app" {
-  name = "${var.app_name}-${var.environment}-app-policy"
+  name = "${local.app_name}-${var.environment}-app-policy"
   policy = jsonencode({
     Version = "2012-10-17"
     Statement = [
@@ -424,7 +438,7 @@ resource "aws_iam_role_policy_attachment" "app" {
 }
 
 resource "aws_iam_instance_profile" "app" {
-  name = "${var.app_name}-${var.environment}-app-profile"
+  name = "${local.app_name}-${var.environment}-app-profile"
   role = aws_iam_role.app.name
 }
 
