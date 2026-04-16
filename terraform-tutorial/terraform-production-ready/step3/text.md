@@ -57,7 +57,7 @@ terraform plan
 plan 输出显示 module.networking.module.vpc.* 嵌套地址——模块嵌套调用的正常表现。
 
 ```bash
-terraform apply -auto-approve
+terraform apply -auto-approve -parallelism=2
 ```
 
 验证网络资源：

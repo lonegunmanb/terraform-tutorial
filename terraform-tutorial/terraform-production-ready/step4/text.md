@@ -69,7 +69,7 @@ cat modules/data/main.tf | grep -A5 postcondition
 DynamoDB 表的 postcondition 验证 apply 后的实际结果——确保计费模式是 PAY_PER_REQUEST。
 
 ```bash
-terraform apply -auto-approve
+terraform apply -auto-approve -parallelism=2
 ```
 
 ## 4. 版本固定：让部署可重现

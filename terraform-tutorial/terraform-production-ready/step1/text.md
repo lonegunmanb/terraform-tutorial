@@ -36,7 +36,7 @@ terraform plan
 plan 输出有多少行？你能快速分辨哪些资源属于网络层、哪些属于 Web 层吗？
 
 ```bash
-terraform apply -auto-approve
+terraform apply -auto-approve -parallelism=2
 ```
 
 ## 验证各层资源

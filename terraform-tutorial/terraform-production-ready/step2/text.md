@@ -78,7 +78,7 @@ terraform plan
 观察 plan 输出——现在每个资源前都带有 module 前缀，层级归属一目了然。
 
 ```bash
-terraform apply -auto-approve
+terraform apply -auto-approve -parallelism=2
 ```
 
 ## 验证模块化部署
