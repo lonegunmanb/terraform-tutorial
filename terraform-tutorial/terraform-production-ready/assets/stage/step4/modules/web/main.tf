@@ -1,6 +1,7 @@
 resource "aws_security_group" "alb" {
-  name   = "${var.app_name}-${var.environment}-alb-sg"
-  vpc_id = var.vpc_id
+  name        = "${var.app_name}-${var.environment}-alb-sg"
+  description = "${var.app_name}-${var.environment}-alb-sg"
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port   = 80
@@ -22,8 +23,9 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "app" {
-  name   = "${var.app_name}-${var.environment}-app-sg"
-  vpc_id = var.vpc_id
+  name        = "${var.app_name}-${var.environment}-app-sg"
+  description = "${var.app_name}-${var.environment}-app-sg"
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port       = 80
@@ -45,8 +47,9 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_security_group" "data" {
-  name   = "${var.app_name}-${var.environment}-data-sg"
-  vpc_id = var.vpc_id
+  name        = "${var.app_name}-${var.environment}-data-sg"
+  description = "${var.app_name}-${var.environment}-data-sg"
+  vpc_id      = var.vpc_id
 
   ingress {
     from_port       = 5432

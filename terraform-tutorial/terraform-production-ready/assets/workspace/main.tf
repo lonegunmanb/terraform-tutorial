@@ -158,8 +158,9 @@ resource "aws_route_table_association" "public_b" {
 # ══════════════════════════════════════════════════════════════════════════════
 
 resource "aws_security_group" "alb" {
-  name   = "${local.app_name}-${var.environment}-alb-sg"
-  vpc_id = aws_vpc.main.id
+  name        = "${local.app_name}-${var.environment}-alb-sg"
+  description = "${local.app_name}-${var.environment}-alb-sg"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port   = 80
@@ -181,8 +182,9 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "app" {
-  name   = "${local.app_name}-${var.environment}-app-sg"
-  vpc_id = aws_vpc.main.id
+  name        = "${local.app_name}-${var.environment}-app-sg"
+  description = "${local.app_name}-${var.environment}-app-sg"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port       = 80
@@ -204,8 +206,9 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_security_group" "data" {
-  name   = "${local.app_name}-${var.environment}-data-sg"
-  vpc_id = aws_vpc.main.id
+  name        = "${local.app_name}-${var.environment}-data-sg"
+  description = "${local.app_name}-${var.environment}-data-sg"
+  vpc_id      = aws_vpc.main.id
 
   ingress {
     from_port       = 5432
