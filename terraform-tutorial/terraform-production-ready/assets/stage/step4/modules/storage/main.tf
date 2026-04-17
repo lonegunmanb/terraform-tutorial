@@ -31,11 +31,3 @@ resource "aws_s3_bucket_lifecycle_configuration" "backups" {
   }
 }
 
-resource "terraform_data" "bucket_name_check" {
-  lifecycle {
-    precondition {
-      condition     = length(var.app_name) >= 3 && length("${var.app_name}-${var.environment}-backups") <= 63
-      error_message = "S3 桶名必须在 3–63 字符之间。app_name 至少 3 个字符，且 app_name + environment + 后缀的总长度不能超过 63。当前 app_name='${var.app_name}', environment='${var.environment}'。"
-    }
-  }
-}

@@ -35,10 +35,10 @@ diff /root/workspace/modules/web/main.tf /root/stage/step4/modules/web/main.tf
 Web 层：ALB 增加了 precondition 块，确保至少传入 2 个子网（跨 AZ 高可用）。
 
 ```bash
-diff /root/workspace/modules/storage/main.tf /root/stage/step4/modules/storage/main.tf
+diff /root/workspace/modules/storage/variables.tf /root/stage/step4/modules/storage/variables.tf
 ```
 
-存储层：precondition 块，校验 S3 桶名长度（3-63 字符）。
+存储层：app_name 变量增加了 validation 块，校验名称至少 3 个字符。
 
 ```bash
 diff /root/workspace/modules/data/main.tf /root/stage/step4/modules/data/main.tf
@@ -61,7 +61,7 @@ terraform init
 terraform plan
 ```
 
-不出意外：0 to add, 0 to change, 0 to destroy。安全层的搬迁完美完成，validation / precondition / postcondition 的加入也不影响已有资源。
+安全层的 moved 搬迁完美完成——已有资源 0 to add, 0 to change, 0 to destroy。validation / precondition / postcondition 的加入也不影响已有资源。
 
 ```bash
 terraform apply -auto-approve -parallelism=2
@@ -85,8 +85,8 @@ terraform plan -var="vpc_cidr=172.16.0.0/16"
 
 | 工具 | 触发时机 | 可引用的内容 | 本实验示例 |
 |------|---------|------------|----------|
-| validation | plan 之前 | 仅当前变量 | CIDR 格式 |
-| precondition | apply 之前 | 多个变量、表达式 | ALB 子网数 >= 2、桶名长度 |
+| validation | plan 之前 | 仅当前变量 | CIDR 格式、桶名长度 |
+| precondition | apply 之前 | 多个变量、表达式 | ALB 子网数 >= 2 |
 | postcondition | apply 之后 | self.*（当前资源） | DynamoDB 计费模式 |
 
 ## 最终成果
