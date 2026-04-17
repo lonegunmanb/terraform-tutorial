@@ -65,6 +65,8 @@ web 层声明了两个依赖：
 
 Terragrunt 自动从依赖层的 terraform output 获取值，通过 inputs 注入本层。
 
+注意每个 dependency 都配置了 mock_outputs——在首次 init/plan 时依赖层尚未 apply，Terragrunt 会用 mock 值占位，apply 后才读取真实输出。
+
 依赖图：
 
 ```

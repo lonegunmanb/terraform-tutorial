@@ -4,10 +4,18 @@ include "root" {
 
 dependency "storage" {
   config_path = "../storage"
+  mock_outputs = {
+    static_bucket_arn = "arn:aws:s3:::mock"
+  }
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
 dependency "data" {
   config_path = "../data"
+  mock_outputs = {
+    users_table_arn = "arn:aws:dynamodb:us-east-1:000000000000:table/mock"
+  }
+  mock_outputs_allowed_terraform_commands = ["init", "validate", "plan"]
 }
 
 inputs = {
