@@ -1,10 +1,10 @@
 # 实验完成
 
-恭喜！你完成了"三层 Web 应用架构——从单体到模块化"的全部四个步骤。
+恭喜！你完成了"三层 Web 应用架构——从单体到状态隔离"的全部五个步骤。
 
 ## 你做了什么
 
-从一个近 450 行的单体 main.tf 出发，用 moved 块把三层架构的 30+ 个资源一步步重构为模块化基础设施——全程零销毁、零重建：
+从一个近 450 行的单体 main.tf 出发，经历代码重构和状态拆分两个阶段——全程零销毁、零重建：
 
 | 步骤 | 做了什么 | 搬迁的资源 |
 |------|---------|----------|
@@ -12,13 +12,16 @@
 | step2 | 提取网络层 + Web 层 | 17 个资源 → module.networking + module.web |
 | step3 | 提取数据层 + 存储层 | 6 个资源 → module.data + module.storage |
 | step4 | 提取安全层 + 内置防护 | 6 个资源 → module.security + validation/precondition/postcondition |
+| step5 | 状态隔离 | 1 个 state → 5 个独立 state（Terragrunt + removed 块）|
 
-24 个 moved 块，覆盖了从单体到五层模块化的全部资源地址迁移。
+24 个 moved 块完成代码重构，5 组 removed 块完成状态拆分。
 
 ## 核心原则
 
 - **按层拆分**：networking / web / data / storage / security，每个模块对应一个架构关注点
 - **moved 块重构**：资源地址迁移不影响底层基础设施，生产环境可安全执行
+- **removed 块拆分**：从统一状态中释放资源到独立状态，不销毁基础设施
+- **Terragrunt 编排**：dependency + inputs 声明式连接层间依赖，run-all 按拓扑排序批量执行
 - **可组合**：networking 输出 vpc_id 和 subnet_ids → web 模块消费 → security 模块收集所有 ARN
 - **内置防护**：validation → precondition → postcondition，三层递进拦截错误
 - **版本固定**：required_version + required_providers + .terraform.lock.hcl 缺一不可

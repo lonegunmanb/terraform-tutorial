@@ -18,6 +18,7 @@
 
 TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.14.8}"
 TFLINT_VERSION="${TFLINT_VERSION:-v0.61.0}"
+TERRAGRUNT_VERSION="${TERRAGRUNT_VERSION:-0.77.5}"
 
 install_terraform() {
   apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
@@ -50,6 +51,15 @@ install_tflint() {
     && rm -f /tmp/tflint.zip
 
   tflint --version || echo "WARNING: tflint install failed"
+}
+
+install_terragrunt() {
+  curl --connect-timeout 10 --max-time 120 -fsSL \
+    "https://github.com/gruntwork-io/terragrunt/releases/download/v${TERRAGRUNT_VERSION}/terragrunt_linux_amd64" \
+    -o /usr/local/bin/terragrunt \
+    && chmod +x /usr/local/bin/terragrunt
+
+  terragrunt --version || echo "WARNING: terragrunt install failed"
 }
 
 install_awscli() {

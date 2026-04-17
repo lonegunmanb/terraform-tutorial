@@ -36,5 +36,6 @@
 
 - Terraform 1.14+
 - AWS Provider 6.x
+- Terragrunt 0.77+
 - MiniStack（42 项 AWS 服务模拟，含 VPC/EC2/ELBv2/S3/DynamoDB/IAM 等）
 - 工作目录：/root/workspace/（所有步骤在同一目录操作）

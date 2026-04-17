@@ -7,6 +7,7 @@ source /root/setup-common.sh
 # ── 1. Install tools ──────────────────────────────────────────────────────────
 install_terraform
 install_awscli
+install_terragrunt
 
 # ── 2. Start MiniStack ────────────────────────────────────────────────────────
 start_localstack

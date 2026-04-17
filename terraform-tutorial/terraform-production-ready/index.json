@@ -1,6 +1,6 @@
 {
   "title": "生产就绪：三层 Web 应用架构",
-  "description": "从一个近 500 行的单体配置出发，用 moved 块一步步将网络、Web、数据、存储、安全五个层级提取为模块——全程不销毁、不重建任何资源，演示生产环境代码重构的正确姿势",
+  "description": "从一个近 450 行的单体配置出发，用 moved 块逐步将五个层级提取为模块，再用 Terragrunt + removed 块实现状态隔离——全程不销毁、不重建任何资源",
   "details": {
     "intro": {
       "text": "init/init.md",
@@ -23,6 +23,10 @@
       {
         "title": "提取安全层并加入防护",
         "text": "step4/text.md"
+      },
+      {
+        "title": "状态隔离：Terragrunt + removed 块",
+        "text": "step5/text.md"
       }
     ],
     "finish": {
@@ -60,7 +64,24 @@
         {"file": "stage/step4/modules/networking/variables.tf", "target": "/root/stage/step4/modules/networking"},
         {"file": "stage/step4/modules/web/main.tf", "target": "/root/stage/step4/modules/web"},
         {"file": "stage/step4/modules/storage/main.tf", "target": "/root/stage/step4/modules/storage"},
-        {"file": "stage/step4/modules/data/main.tf", "target": "/root/stage/step4/modules/data"}
+        {"file": "stage/step4/modules/data/main.tf", "target": "/root/stage/step4/modules/data"},
+
+        {"file": "stage/step5/terragrunt.hcl", "target": "/root/stage/step5"},
+        {"file": "stage/step5/networking/main.tf", "target": "/root/stage/step5/networking"},
+        {"file": "stage/step5/networking/removed.tf", "target": "/root/stage/step5/networking"},
+        {"file": "stage/step5/networking/terragrunt.hcl", "target": "/root/stage/step5/networking"},
+        {"file": "stage/step5/web/main.tf", "target": "/root/stage/step5/web"},
+        {"file": "stage/step5/web/removed.tf", "target": "/root/stage/step5/web"},
+        {"file": "stage/step5/web/terragrunt.hcl", "target": "/root/stage/step5/web"},
+        {"file": "stage/step5/data/main.tf", "target": "/root/stage/step5/data"},
+        {"file": "stage/step5/data/removed.tf", "target": "/root/stage/step5/data"},
+        {"file": "stage/step5/data/terragrunt.hcl", "target": "/root/stage/step5/data"},
+        {"file": "stage/step5/storage/main.tf", "target": "/root/stage/step5/storage"},
+        {"file": "stage/step5/storage/removed.tf", "target": "/root/stage/step5/storage"},
+        {"file": "stage/step5/storage/terragrunt.hcl", "target": "/root/stage/step5/storage"},
+        {"file": "stage/step5/security/main.tf", "target": "/root/stage/step5/security"},
+        {"file": "stage/step5/security/removed.tf", "target": "/root/stage/step5/security"},
+        {"file": "stage/step5/security/terragrunt.hcl", "target": "/root/stage/step5/security"}
       ]
     }
   },
