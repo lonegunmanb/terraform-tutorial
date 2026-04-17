@@ -158,8 +158,8 @@ resource "aws_route_table_association" "public_b" {
 # ══════════════════════════════════════════════════════════════════════════════
 
 resource "aws_security_group" "alb" {
-  name_prefix = "${local.app_name}-alb-"
-  vpc_id      = aws_vpc.main.id
+  name   = "${local.app_name}-${var.environment}-alb-sg"
+  vpc_id = aws_vpc.main.id
 
   ingress {
     from_port   = 80
@@ -181,8 +181,8 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "app" {
-  name_prefix = "${local.app_name}-app-"
-  vpc_id      = aws_vpc.main.id
+  name   = "${local.app_name}-${var.environment}-app-sg"
+  vpc_id = aws_vpc.main.id
 
   ingress {
     from_port       = 80
@@ -204,8 +204,8 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_security_group" "data" {
-  name_prefix = "${local.app_name}-data-"
-  vpc_id      = aws_vpc.main.id
+  name   = "${local.app_name}-${var.environment}-data-sg"
+  vpc_id = aws_vpc.main.id
 
   ingress {
     from_port       = 5432
@@ -276,6 +276,7 @@ resource "aws_instance" "app" {
   subnet_id              = aws_subnet.private_a.id
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = aws_iam_instance_profile.app.name
+  source_dest_check      = false
 
   user_data = base64encode(<<-EOF
     #!/bin/bash

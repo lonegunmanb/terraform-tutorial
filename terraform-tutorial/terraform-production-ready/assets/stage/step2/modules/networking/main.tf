@@ -27,7 +27,7 @@ resource "aws_subnet" "public" {
   availability_zone = each.value
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-public-${each.value}"
+    Name = "${var.app_name}-${var.environment}-public-${substr(each.value, -1, 1)}"
   }
 }
 
@@ -39,7 +39,7 @@ resource "aws_subnet" "private" {
   availability_zone = each.value
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-private-${each.value}"
+    Name = "${var.app_name}-${var.environment}-private-${substr(each.value, -1, 1)}"
   }
 }
 

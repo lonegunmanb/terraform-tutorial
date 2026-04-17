@@ -2,8 +2,8 @@
 # 对应三层架构中的 Web 层——接收外部流量并分发给后端应用
 
 resource "aws_security_group" "alb" {
-  name_prefix = "${var.app_name}-alb-"
-  vpc_id      = var.vpc_id
+  name   = "${var.app_name}-${var.environment}-alb-sg"
+  vpc_id = var.vpc_id
 
   ingress {
     from_port   = 80
@@ -25,8 +25,8 @@ resource "aws_security_group" "alb" {
 }
 
 resource "aws_security_group" "app" {
-  name_prefix = "${var.app_name}-app-"
-  vpc_id      = var.vpc_id
+  name   = "${var.app_name}-${var.environment}-app-sg"
+  vpc_id = var.vpc_id
 
   ingress {
     from_port       = 80
@@ -48,8 +48,8 @@ resource "aws_security_group" "app" {
 }
 
 resource "aws_security_group" "data" {
-  name_prefix = "${var.app_name}-data-"
-  vpc_id      = var.vpc_id
+  name   = "${var.app_name}-${var.environment}-data-sg"
+  vpc_id = var.vpc_id
 
   ingress {
     from_port       = 5432
@@ -112,6 +112,7 @@ resource "aws_instance" "app" {
   subnet_id              = var.private_subnet_ids[0]
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = var.app_instance_profile_name
+  source_dest_check      = false
 
   user_data = base64encode(<<-EOF
     #!/bin/bash
