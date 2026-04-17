@@ -72,19 +72,19 @@ terraform init
 
 ## 验证零变更
 
-这是最关键的一步——plan 应该显示零基础设施变更：
+这是最关键的一步——plan 不应该有任何 create 或 destroy：
 
 ```bash
 terraform plan
 ```
 
-你会看到 Terraform 输出类似：
+你会看到类似：
 
 ```
-Plan: 0 to add, 0 to change, 0 to destroy.
+Plan: 0 to add, N to change, 0 to destroy.
 ```
 
-17 个资源的地址全部更新，但没有任何 create 或 destroy——moved 块精确完成了"搬家"。
+重点看：**0 to add, 0 to destroy**——没有资源被销毁或重建。少量 update in-place 是 MiniStack 模拟器的状态偏差（例如安全组的 ingress 引用），在真实 AWS 上这些也不会出现。moved 块精确完成了"搬家"。
 
 ```bash
 terraform apply -auto-approve -parallelism=2

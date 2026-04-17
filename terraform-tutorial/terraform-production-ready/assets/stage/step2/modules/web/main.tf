@@ -116,7 +116,7 @@ resource "aws_instance" "app" {
   vpc_security_group_ids = [aws_security_group.app.id]
   iam_instance_profile   = var.app_instance_profile_name
 
-  user_data = base64encode(<<-EOF
+  user_data_base64 = base64encode(<<-EOF
     #!/bin/bash
     yum install -y nginx
     systemctl enable --now nginx
