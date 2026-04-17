@@ -112,6 +112,6 @@ module.web.aws_instance.app
 wc -l main.tf
 ```
 
-网络和 Web 层的约 160 行代码被两个 module 调用块替代了。
+网络和 Web 层的代码被两个 module 调用块替代了。
 
 下一步，继续提取数据层和存储层。

@@ -9,7 +9,7 @@ cd /root/workspace
 wc -l main.tf
 ```
 
-将近 450 行代码——VPC、子网、安全组、ALB、DynamoDB、S3、IAM、Secrets Manager、CloudWatch——全部混在一起。
+将近 500 行代码——VPC、子网、安全组、ALB、DynamoDB、S3、IAM、Secrets Manager、CloudWatch——全部混在一起。
 
 ## 浏览各层资源
 
