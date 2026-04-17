@@ -44,6 +44,11 @@ resource "aws_security_group" "app" {
   tags = {
     Name = "${var.app_name}-${var.environment}-app-sg"
   }
+
+  # MiniStack 不返回 inline ingress 的 security_groups 引用，导致 plan 始终显示 drift
+  lifecycle {
+    ignore_changes = [ingress]
+  }
 }
 
 resource "aws_security_group" "data" {
@@ -60,6 +65,11 @@ resource "aws_security_group" "data" {
 
   tags = {
     Name = "${var.app_name}-${var.environment}-data-sg"
+  }
+
+  # MiniStack 不返回 inline ingress 的 security_groups 引用，导致 plan 始终显示 drift
+  lifecycle {
+    ignore_changes = [ingress]
   }
 }
 
@@ -129,6 +139,11 @@ resource "aws_instance" "app" {
 
   tags = {
     Name = "${var.app_name}-${var.environment}-app"
+  }
+
+  # MiniStack 不返回 iam_instance_profile 且 source_dest_check 默认为 false，导致 plan 始终显示 drift
+  lifecycle {
+    ignore_changes = [iam_instance_profile, source_dest_check]
   }
 }
 

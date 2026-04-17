@@ -61,7 +61,7 @@ terraform init
 terraform plan
 ```
 
-不出意外：0 to add, 0 to destroy。安全层的搬迁完成，validation / precondition / postcondition 的加入也不影响已有资源。
+不出意外：0 to add, 0 to change, 0 to destroy。安全层的搬迁完美完成，validation / precondition / postcondition 的加入也不影响已有资源。
 
 ```bash
 terraform apply -auto-approve -parallelism=2

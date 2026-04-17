@@ -46,7 +46,7 @@ terraform init
 terraform plan
 ```
 
-再次：0 to add, 0 to destroy。资源地址更新，没有任何销毁或重建。
+再次：0 to add, 0 to change, 0 to destroy。资源地址更新，没有任何基础设施变更。
 
 ```bash
 terraform apply -auto-approve -parallelism=2
