@@ -1,6 +1,6 @@
 # 生产就绪：三层 Web 应用架构
 
-本实验以经典的 AWS 三层 Web 架构为蓝本，从一个"一锅炖"的单体配置出发，一步步重构为模块化的基础设施代码。
+本实验以经典的 AWS 三层 Web 架构为蓝本，从一个"一锅炖"的单体配置出发，用 moved 块一步步重构为模块化的基础设施代码——全程不销毁、不重建任何资源。
 
 ## 架构概览
 
@@ -37,4 +37,4 @@
 - Terraform 1.14+
 - AWS Provider 6.x
 - MiniStack（42 项 AWS 服务模拟，含 VPC/EC2/ELBv2/S3/DynamoDB/IAM 等）
-- 工作目录：/root/workspace/
+- 工作目录：/root/workspace/（所有步骤在同一目录操作）

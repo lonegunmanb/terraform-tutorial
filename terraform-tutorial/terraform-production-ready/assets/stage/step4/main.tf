@@ -1,5 +1,5 @@
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.5, < 2.0"
   required_providers {
     aws = {
       source  = "hashicorp/aws"
@@ -47,7 +47,22 @@ provider "aws" {
   }
 }
 
-# ── 网络层：VPC + 子网 + 路由 ─────────────────────────────────────────────
+variable "environment" {
+  type    = string
+  default = "dev"
+}
+
+variable "app_name" {
+  type    = string
+  default = "webapp"
+}
+
+variable "vpc_cidr" {
+  type    = string
+  default = "10.0.0.0/16"
+}
+
+# ── 网络层 ────────────────────────────────────────────────────────────────
 module "networking" {
   source = "./modules/networking"
 
@@ -56,19 +71,19 @@ module "networking" {
   vpc_cidr    = var.vpc_cidr
 }
 
-# ── Web 层：ALB + 安全组 ──────────────────────────────────────────────────
+# ── Web 层 ──────────────────────────────────────────────────────────────
 module "web" {
   source = "./modules/web"
 
-  app_name                = local.app_name
-  environment             = var.environment
-  vpc_id                  = module.networking.vpc_id
-  public_subnet_ids       = module.networking.public_subnet_ids
-  private_subnet_ids      = module.networking.private_subnet_ids
+  app_name                  = local.app_name
+  environment               = var.environment
+  vpc_id                    = module.networking.vpc_id
+  public_subnet_ids         = module.networking.public_subnet_ids
+  private_subnet_ids        = module.networking.private_subnet_ids
   app_instance_profile_name = module.security.app_instance_profile_name
 }
 
-# ── 数据与消息层 ──────────────────────────────────────────────────────────
+# ── 数据层 ────────────────────────────────────────────────────────────────
 module "data" {
   source = "./modules/data"
 
@@ -76,7 +91,7 @@ module "data" {
   environment = var.environment
 }
 
-# ── 存储层：S3 静态资源 + 备份 ────────────────────────────────────────────
+# ── 存储层 ────────────────────────────────────────────────────────────────
 module "storage" {
   source = "./modules/storage"
 
@@ -84,7 +99,7 @@ module "storage" {
   environment = var.environment
 }
 
-# ── 安全层：IAM + Secrets Manager ─────────────────────────────────────────
+# ── 安全层（已提取为模块）─────────────────────────────────────────────────
 module "security" {
   source = "./modules/security"
 
@@ -111,4 +126,32 @@ resource "aws_ssm_parameter" "app_config" {
 resource "aws_cloudwatch_log_group" "app" {
   name              = "/${local.app_name}/${var.environment}/app"
   retention_in_days = 30
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 输出
+# ══════════════════════════════════════════════════════════════════════════════
+
+output "vpc_id" {
+  value = module.networking.vpc_id
+}
+
+output "alb_dns_name" {
+  value = module.web.alb_dns_name
+}
+
+output "static_bucket" {
+  value = module.storage.static_bucket_name
+}
+
+output "backup_bucket" {
+  value = module.storage.backup_bucket_name
+}
+
+output "users_table" {
+  value = module.data.users_table_name
+}
+
+output "app_role_arn" {
+  value = module.security.app_role_arn
 }

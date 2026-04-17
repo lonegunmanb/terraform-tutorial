@@ -4,18 +4,21 @@
 
 ## 你做了什么
 
-从一个近 500 行的单体 main.tf 出发，把三层架构的 30+ 个资源一步步重构为模块化基础设施：
+从一个近 450 行的单体 main.tf 出发，用 moved 块把三层架构的 30+ 个资源一步步重构为模块化基础设施——全程零销毁、零重建：
 
-| 步骤 | 做了什么 | 解决的问题 |
+| 步骤 | 做了什么 | 搬迁的资源 |
 |------|---------|----------|
-| step1 | 观察单体大模块 | 看清网络/Web/数据/存储/安全混在一起的代价 |
-| step2 | 按架构层级拆分五个模块 | 职责分离，权限边界清晰 |
-| step3 | 网络层引入 terraform-aws-modules/vpc | 社区验证的 VPC 模块替代手写资源 |
-| step4 | 内置防护 + 版本固定 | CIDR 校验、子网数检查、计费模式保证 |
+| step1 | 部署单体大模块 | — |
+| step2 | 提取网络层 + Web 层 | 17 个资源 → module.networking + module.web |
+| step3 | 提取数据层 + 存储层 | 6 个资源 → module.data + module.storage |
+| step4 | 提取安全层 + 内置防护 | 6 个资源 → module.security + validation/precondition/postcondition |
+
+24 个 moved 块，覆盖了从单体到五层模块化的全部资源地址迁移。
 
 ## 核心原则
 
 - **按层拆分**：networking / web / data / storage / security，每个模块对应一个架构关注点
+- **moved 块重构**：资源地址迁移不影响底层基础设施，生产环境可安全执行
 - **可组合**：networking 输出 vpc_id 和 subnet_ids → web 模块消费 → security 模块收集所有 ARN
 - **内置防护**：validation → precondition → postcondition，三层递进拦截错误
 - **版本固定**：required_version + required_providers + .terraform.lock.hcl 缺一不可

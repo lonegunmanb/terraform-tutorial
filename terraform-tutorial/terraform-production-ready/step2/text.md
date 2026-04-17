@@ -1,93 +1,102 @@
-# 第二步：按架构层级拆分模块
+# 第二步：提取网络层和 Web 层
 
-## 查看模块化后的结构
+## 查看预备好的模块文件
 
-```bash
-cd /root/workspace/step2
-find . -name "*.tf" | sort
-```
-
-你会看到五个模块，每个对应三层架构的一个层级：
-
-```
-./modules/networking/    ← 网络层：VPC、子网、路由
-./modules/web/           ← Web 层：ALB、安全组
-./modules/data/          ← 数据层：DynamoDB
-./modules/storage/       ← 存储层：S3 静态资源、备份
-./modules/security/      ← 安全层：IAM、Secrets Manager
-./main.tf                ← 根模块：组装各层
-```
-
-## 理解网络层模块
+我们已经为你准备好了重构后的模块文件。先看看目录结构：
 
 ```bash
-cat modules/networking/main.tf
+find /root/stage/step2 -name "*.tf" | sort
 ```
 
-注意 for_each 的使用——以 CIDR 为 key、可用区为 value 的 map 驱动子网创建，而不是重复写 4 个 resource 块。相比 count + 列表下标，for_each 的好处是：从列表中间删除一个 CIDR 只会销毁那一个子网，不会因为下标位移而触发其他子网的 destroy/recreate。这在三层架构中尤其重要：你可能有 2 个、3 个甚至 6 个可用区。
+两个模块——networking 和 web——分别封装了网络层和 Web 层的资源。
+
+## 理解 moved 块
+
+重构的关键是 moved 块。看看我们为这次重构准备的 moved 声明：
 
 ```bash
-cat modules/networking/outputs.tf
+cat /root/stage/step2/moved.tf
 ```
 
-网络层输出 vpc_id 和子网 ID 列表——这是其他层的基础依赖。
+每个 moved 块告诉 Terraform：旧地址的资源现在搬到了新地址。例如：
 
-## 理解 Web 层模块
+```
+moved {
+  from = aws_vpc.main
+  to   = module.networking.aws_vpc.this
+}
+```
+
+意思是：原来根模块的 aws_vpc.main 现在由 module.networking 管理，资源名改为 aws_vpc.this。Terraform 会更新状态文件里的地址，但不会销毁或重建 VPC。
+
+注意子网的地址变化——从独立资源变成了 for_each：
+
+```
+from = aws_subnet.public_a
+to   = module.networking.aws_subnet.public["10.0.1.0/24"]
+```
+
+moved 块能处理从单独命名到 for_each 键的转换。这是生产环境重构最常见的场景之一。
+
+## 查看网络层模块
 
 ```bash
-cat modules/web/main.tf
+cat /root/stage/step2/modules/networking/main.tf
 ```
 
-Web 层包含 ALB 和三组安全组（ALB / App / Data），它们之间的引用链清晰可见：
+注意 for_each 的使用——以 CIDR 为 key、可用区为 value 的 map 驱动子网创建，而不是原来手写 4 个独立的 resource 块。好处：从列表中间删一个 CIDR 只销毁那一个子网，不会因下标位移触发其他子网的 destroy/recreate。
 
-```
-ALB SG: 0.0.0.0/0:80 入站
-App SG: 仅允许来自 ALB SG 的 80
-Data SG: 仅允许来自 App SG 的 5432
-```
-
-这是三层架构安全隔离的核心，现在全部收纳在一个模块里，逻辑一目了然。
-
-## 查看根模块如何组装
+## 查看 Web 层模块
 
 ```bash
-cat main.tf
+cat /root/stage/step2/modules/web/main.tf
 ```
 
-注意模块间的依赖流：
+三组安全组（ALB / App / Data）和 ALB 现在集中在一个模块里，引用链一目了然。
 
+## 应用重构
+
+复制模块文件和新的根配置到工作目录：
+
+```bash
+cp -r /root/stage/step2/modules /root/workspace/
+cp /root/stage/step2/main.tf /root/workspace/
+cp /root/stage/step2/moved.tf /root/workspace/
 ```
-networking → vpc_id, subnet_ids
-    ↓
-web(vpc_id, public_subnet_ids) → alb_dns, security_group_ids
-    ↓
-storage → bucket_arns     ──┐
-data → table_arn ──────────┼→ security(所有 ARN) → iam_role
-ssm, cloudwatch ─────────────┘
-```
 
-每一层只依赖它需要的输入——网络层不知道有 S3，数据层不知道有 ALB。
-
-## 部署模块化版本
+初始化模块（本地模块不需要网络下载）：
 
 ```bash
 terraform init
+```
+
+## 验证零变更
+
+这是最关键的一步——plan 应该显示零基础设施变更：
+
+```bash
 terraform plan
 ```
 
-观察 plan 输出——现在每个资源前都带有 module 前缀，层级归属一目了然。
+你会看到 Terraform 输出类似：
+
+```
+Plan: 0 to add, 0 to change, 0 to destroy.
+```
+
+17 个资源的地址全部更新，但没有任何 create 或 destroy——moved 块精确完成了"搬家"。
 
 ```bash
 terraform apply -auto-approve -parallelism=2
 ```
 
-## 验证模块化部署
+## 查看重构后的状态
 
 ```bash
 terraform state list
 ```
 
-注意层次化的资源地址：
+现在资源地址带有 module 前缀：
 
 ```
 module.networking.aws_vpc.this
@@ -95,29 +104,14 @@ module.networking.aws_subnet.public["10.0.1.0/24"]
 module.web.aws_lb.this
 module.web.aws_security_group.alb
 module.web.aws_instance.app
-module.data.aws_dynamodb_table.users
-module.storage.aws_s3_bucket.static
-module.security.aws_iam_role.app
 ```
 
-谁属于哪一层，一看便知。
+谁属于哪一层，一看便知。比较一下 main.tf 的变化：
 
 ```bash
-terraform output
+wc -l main.tf
 ```
 
-## 对比：单体 vs 模块化
+网络和 Web 层的约 160 行代码被两个 module 调用块替代了。
 
-| 维度 | 单体（step1） | 模块化（step2） |
-|------|-------------|---------------|
-| 定位资源 | 在 500 行里搜索 | 进入对应层的模块目录 |
-| 安全组逻辑 | 散落在文件中间 | 集中在 web 模块里 |
-| 修改影响 | 可能误伤其他层 | 限定在单个模块内 |
-| 权限控制 | 全有或全无 | 网络团队只改 networking |
-| 独立测试 | 必须全量 apply | 单层独立验证 |
-
-下一步，我们把手写的网络层替换为社区验证的 VPC 模块。在进入下一步之前，先清理资源释放 MiniStack 内存：
-
-```bash
-terraform destroy -auto-approve -parallelism=2
-```
+下一步，继续提取数据层和存储层。

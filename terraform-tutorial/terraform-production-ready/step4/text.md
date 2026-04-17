@@ -1,107 +1,118 @@
-# 第四步：内置防护与版本固定
+# 第四步：提取安全层并加入防护
 
-## 三层架构为什么需要防护
+## 完成模块化：安全层
 
-在三层架构中，每一层的配置错误可能引发连锁反应：
-- 网络层的 CIDR 格式写错 → VPC 创建失败 → 所有层全部瘫痪
-- Web 层只传了 1 个子网给 ALB → 负载均衡没有跨 AZ 冗余 → 单点故障
-- 存储层的桶名太短 → AWS API 报错 → 部署中断
-
-内置防护让这些错误在部署之前就被拦截。
+查看安全模块：
 
 ```bash
-cd /root/workspace/step4
+cat /root/stage/step4/modules/security/main.tf
 ```
 
-## 1. validation 块：网络层的 CIDR 格式校验
+安全模块封装了 Secrets Manager 凭证和 IAM 角色/策略——三层架构的横切关注点。
+
+查看新增的 moved 块：
 
 ```bash
-cat modules/networking/variables.tf
+diff /root/workspace/moved.tf /root/stage/step4/moved.tf
 ```
 
-vpc_cidr 变量有 validation 块，使用 can(cidrhost(...)) 检查格式合法性。试试传一个非法值：
+最后 6 个资源搬进 module.security。
+
+## 加入内置防护
+
+除了安全模块，这次更新还为已有模块加入了防护机制。先看看有哪些变化：
 
 ```bash
-terraform plan -var="vpc_cidr=not-a-cidr"
+diff /root/workspace/modules/networking/variables.tf /root/stage/step4/modules/networking/variables.tf
 ```
 
-立刻报错，不需要 AWS API 调用。再试一个有效值：
+网络层：vpc_cidr 变量增加了 validation 块，用 can(cidrhost(...)) 确保 CIDR 格式合法。
 
 ```bash
-terraform plan -var="vpc_cidr=172.16.0.0/16"
+diff /root/workspace/modules/web/main.tf /root/stage/step4/modules/web/main.tf
 ```
 
-## 2. precondition 块：Web 层的高可用检查
+Web 层：ALB 增加了 precondition 块，确保至少传入 2 个子网（跨 AZ 高可用）。
 
 ```bash
-cat modules/web/main.tf | grep -A5 precondition
+diff /root/workspace/modules/storage/main.tf /root/stage/step4/modules/storage/main.tf
 ```
 
-ALB 的 precondition 检查传入的子网数量是否 >= 2。这是三层架构高可用的基本要求——ALB 必须跨至少两个可用区。
-
-这种跨变量的约束（subnet 列表的长度）是 validation 做不到的，因为 validation 只能引用当前变量本身。
-
-同样，存储层检查 app_name 和 environment 组合后的桶名长度：
+存储层：precondition 块，校验 S3 桶名长度（3-63 字符）。
 
 ```bash
-cat modules/storage/main.tf | grep -A5 precondition
+diff /root/workspace/modules/data/main.tf /root/stage/step4/modules/data/main.tf
 ```
 
-试试触发存储层的 precondition：
+数据层：postcondition 块，验证 DynamoDB 表的计费模式是 PAY_PER_REQUEST。
+
+## 应用最终重构
 
 ```bash
-terraform plan -var="app_name=x"
+cp -r /root/stage/step4/modules/* /root/workspace/modules/
+cp /root/stage/step4/main.tf /root/workspace/
+cp /root/stage/step4/moved.tf /root/workspace/
+terraform init
 ```
 
-## 3. postcondition 块：数据层的行为保证
+## 验证零变更
 
 ```bash
-cat modules/data/main.tf | grep -A5 postcondition
+terraform plan
 ```
 
-DynamoDB 表的 postcondition 验证 apply 后的实际结果——确保计费模式是 PAY_PER_REQUEST。
+不出意外：0 to add, 0 to change, 0 to destroy。安全层的搬迁完美完成，validation / precondition / postcondition 的加入也不影响已有资源。
 
 ```bash
 terraform apply -auto-approve -parallelism=2
 ```
 
-## 4. 版本固定：让部署可重现
+## 测试内置防护
+
+试试传一个非法 CIDR：
 
 ```bash
-head -10 main.tf
+terraform plan -var="vpc_cidr=not-a-cidr"
 ```
 
-required_version = ">= 1.5, < 2.0"——允许所有 1.x，拒绝 2.0 进入。
+立刻报错，不需要调用 AWS API。再试一个有效值确认能通过：
 
 ```bash
-cat .terraform.lock.hcl | head -20
+terraform plan -var="vpc_cidr=172.16.0.0/16"
 ```
-
-锁文件记录了实际下载的 provider 版本和哈希值。提交到版本控制后，任何机器的 terraform init 都会得到相同版本。
 
 ## 三层防护对比
-
-```bash
-grep -rn "validation\|precondition\|postcondition" modules/
-```
 
 | 工具 | 触发时机 | 可引用的内容 | 本实验示例 |
 |------|---------|------------|----------|
 | validation | plan 之前 | 仅当前变量 | CIDR 格式 |
 | precondition | apply 之前 | 多个变量、表达式 | ALB 子网数 >= 2、桶名长度 |
-| postcondition | apply 之后 | self.*（当前资源） | DynamoDB 计费模式保证 |
+| postcondition | apply 之后 | self.*（当前资源） | DynamoDB 计费模式 |
 
-## 最终验证
+## 最终成果
 
 ```bash
 terraform state list
-terraform output
 ```
 
-与第一步的 500 行单体相比，现在这套三层架构：
-- 五个模块各司其职，对应架构的五个层级
-- 网络层使用社区 VPC 模块，久经生产验证
-- 关键约束内嵌在各层——CIDR 格式、子网数量、桶名规范、计费模式
-- provider 和模块版本有明确约束，部署可重现
+```bash
+wc -l main.tf
+```
 
-恭喜完成本实验的所有步骤！
+从第一步的 450+ 行单体，到现在不到 120 行的根模块 + 五个职责清晰的子模块。全过程通过 moved 块完成，没有销毁、没有重建一个资源。
+
+```bash
+cat moved.tf | grep "moved {" | wc -l
+```
+
+总计 24 个 moved 块，覆盖了所有从单体到五层模块化的资源地址迁移。
+
+## 版本固定
+
+查看收紧后的版本约束：
+
+```bash
+head -3 main.tf
+```
+
+required_version = ">= 1.5, < 2.0" 确保团队所有人使用同一大版本的 Terraform，避免 2.0 的 breaking change 意外进入。

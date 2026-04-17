@@ -1,6 +1,6 @@
 {
   "title": "生产就绪：三层 Web 应用架构",
-  "description": "从一个近 500 行的单体配置出发，按网络层、Web 层、数据层、存储层、安全层逐步拆分为五个模块，引入社区 VPC 模块并添加内置防护，构建模块化的三层 Web 应用基础设施",
+  "description": "从一个近 500 行的单体配置出发，用 moved 块一步步将网络、Web、数据、存储、安全五个层级提取为模块——全程不销毁、不重建任何资源，演示生产环境代码重构的正确姿势",
   "details": {
     "intro": {
       "text": "init/init.md",
@@ -13,15 +13,15 @@
         "text": "step1/text.md"
       },
       {
-        "title": "按架构层级拆分模块",
+        "title": "提取网络层和 Web 层（moved 块）",
         "text": "step2/text.md"
       },
       {
-        "title": "引入社区模块：terraform-aws-modules/vpc",
+        "title": "提取数据层和存储层（moved 块）",
         "text": "step3/text.md"
       },
       {
-        "title": "内置防护与版本固定",
+        "title": "提取安全层并加入防护",
         "text": "step4/text.md"
       }
     ],
@@ -32,33 +32,35 @@
       "host01": [
         {"file": "setup-common.sh", "target": "/root", "chmod": "+x"},
         {"file": "docker-compose.yml", "target": "/root/workspace"},
-        {"file": "step1/main.tf", "target": "/root/workspace/step1"},
-        {"file": "step2/main.tf", "target": "/root/workspace/step2"},
-        {"file": "step2/variables.tf", "target": "/root/workspace/step2"},
-        {"file": "step2/outputs.tf", "target": "/root/workspace/step2"},
-        {"file": "step2/modules/networking/main.tf", "target": "/root/workspace/step2/modules/networking"},
-        {"file": "step2/modules/networking/variables.tf", "target": "/root/workspace/step2/modules/networking"},
-        {"file": "step2/modules/networking/outputs.tf", "target": "/root/workspace/step2/modules/networking"},
-        {"file": "step2/modules/web/main.tf", "target": "/root/workspace/step2/modules/web"},
-        {"file": "step2/modules/web/variables.tf", "target": "/root/workspace/step2/modules/web"},
-        {"file": "step2/modules/web/outputs.tf", "target": "/root/workspace/step2/modules/web"},
-        {"file": "step2/modules/data/main.tf", "target": "/root/workspace/step2/modules/data"},
-        {"file": "step2/modules/data/variables.tf", "target": "/root/workspace/step2/modules/data"},
-        {"file": "step2/modules/data/outputs.tf", "target": "/root/workspace/step2/modules/data"},
-        {"file": "step2/modules/storage/main.tf", "target": "/root/workspace/step2/modules/storage"},
-        {"file": "step2/modules/storage/variables.tf", "target": "/root/workspace/step2/modules/storage"},
-        {"file": "step2/modules/storage/outputs.tf", "target": "/root/workspace/step2/modules/storage"},
-        {"file": "step2/modules/security/main.tf", "target": "/root/workspace/step2/modules/security"},
-        {"file": "step2/modules/security/variables.tf", "target": "/root/workspace/step2/modules/security"},
-        {"file": "step2/modules/security/outputs.tf", "target": "/root/workspace/step2/modules/security"},
-        {"file": "step3/modules/networking/main.tf", "target": "/root/workspace/step3/modules/networking"},
-        {"file": "step3/modules/networking/outputs.tf", "target": "/root/workspace/step3/modules/networking"},
-        {"file": "step4/main.tf", "target": "/root/workspace/step4"},
-        {"file": "step4/modules/networking/variables.tf", "target": "/root/workspace/step4/modules/networking"},
-        {"file": "step4/modules/web/main.tf", "target": "/root/workspace/step4/modules/web"},
-        {"file": "step4/modules/data/main.tf", "target": "/root/workspace/step4/modules/data"},
-        {"file": "step4/modules/data/variables.tf", "target": "/root/workspace/step4/modules/data"},
-        {"file": "step4/modules/storage/main.tf", "target": "/root/workspace/step4/modules/storage"}
+        {"file": "workspace/main.tf", "target": "/root/workspace"},
+
+        {"file": "stage/step2/main.tf", "target": "/root/stage/step2"},
+        {"file": "stage/step2/moved.tf", "target": "/root/stage/step2"},
+        {"file": "stage/step2/modules/networking/main.tf", "target": "/root/stage/step2/modules/networking"},
+        {"file": "stage/step2/modules/networking/variables.tf", "target": "/root/stage/step2/modules/networking"},
+        {"file": "stage/step2/modules/networking/outputs.tf", "target": "/root/stage/step2/modules/networking"},
+        {"file": "stage/step2/modules/web/main.tf", "target": "/root/stage/step2/modules/web"},
+        {"file": "stage/step2/modules/web/variables.tf", "target": "/root/stage/step2/modules/web"},
+        {"file": "stage/step2/modules/web/outputs.tf", "target": "/root/stage/step2/modules/web"},
+
+        {"file": "stage/step3/main.tf", "target": "/root/stage/step3"},
+        {"file": "stage/step3/moved.tf", "target": "/root/stage/step3"},
+        {"file": "stage/step3/modules/data/main.tf", "target": "/root/stage/step3/modules/data"},
+        {"file": "stage/step3/modules/data/variables.tf", "target": "/root/stage/step3/modules/data"},
+        {"file": "stage/step3/modules/data/outputs.tf", "target": "/root/stage/step3/modules/data"},
+        {"file": "stage/step3/modules/storage/main.tf", "target": "/root/stage/step3/modules/storage"},
+        {"file": "stage/step3/modules/storage/variables.tf", "target": "/root/stage/step3/modules/storage"},
+        {"file": "stage/step3/modules/storage/outputs.tf", "target": "/root/stage/step3/modules/storage"},
+
+        {"file": "stage/step4/main.tf", "target": "/root/stage/step4"},
+        {"file": "stage/step4/moved.tf", "target": "/root/stage/step4"},
+        {"file": "stage/step4/modules/security/main.tf", "target": "/root/stage/step4/modules/security"},
+        {"file": "stage/step4/modules/security/variables.tf", "target": "/root/stage/step4/modules/security"},
+        {"file": "stage/step4/modules/security/outputs.tf", "target": "/root/stage/step4/modules/security"},
+        {"file": "stage/step4/modules/networking/variables.tf", "target": "/root/stage/step4/modules/networking"},
+        {"file": "stage/step4/modules/web/main.tf", "target": "/root/stage/step4/modules/web"},
+        {"file": "stage/step4/modules/storage/main.tf", "target": "/root/stage/step4/modules/storage"},
+        {"file": "stage/step4/modules/data/main.tf", "target": "/root/stage/step4/modules/data"}
       ]
     }
   },

@@ -1,91 +1,75 @@
-# 第三步：引入社区模块——站在巨人肩膀上
+# 第三步：提取数据层和存储层
 
-## 为什么网络层最适合用社区模块
-
-自制的 modules/networking 能运行，但它很基础：
-- 没有 NAT Gateway（私有子网出网）
-- 没有 VPC Flow Logs（网络审计）
-- 没有灵活的多 AZ 扩展
-- 没有处理各种边界情况
-
-terraform-aws-modules/vpc 是社区最流行的 VPC 模块（GitHub 5000+ Stars），经过大量生产环境验证，一行参数就能开启 NAT、Flow Logs、VPN 等高级特性。MiniStack 明确支持该模块 v5.x/v6.x。
-
-## 查看更新后的网络层
+## 查看新增模块
 
 ```bash
-cd /root/workspace/step3
-cat modules/networking/main.tf
+find /root/stage/step3/modules -name "*.tf" | sort
 ```
 
-与 step2 对比：
+data 和 storage 两个模块分别封装了 DynamoDB 表和 S3 存储桶。
 
 ```bash
-diff /root/workspace/step2/modules/networking/main.tf modules/networking/main.tf
+cat /root/stage/step3/modules/data/main.tf
 ```
 
-核心变化：
-- 7 个手写的 resource 块被一个 module 调用替代
-- VPC、子网、IGW、路由表全部由社区模块内部管理
-- 只需要传入 CIDR 和可用区列表
-
-再看 outputs：
-
 ```bash
-diff /root/workspace/step2/modules/networking/outputs.tf modules/networking/outputs.tf
+cat /root/stage/step3/modules/storage/main.tf
 ```
 
-outputs 使用社区模块的输出（module.vpc.vpc_id、module.vpc.public_subnets）。而 variables.tf 完全不变——Web 层和其他模块不需要修改任何代码。
-
-## 下载社区模块
+## 查看新增的 moved 块
 
 ```bash
+diff /root/workspace/moved.tf /root/stage/step3/moved.tf
+```
+
+新增了 6 个 moved 块，将 DynamoDB 表和 S3 桶从根模块搬进对应的模块。注意存储层的资源改名：
+
+```
+from = aws_s3_bucket.static_assets
+to   = module.storage.aws_s3_bucket.static
+```
+
+moved 块不仅能搬进模块，还能同时改名。原来叫 static_assets，模块里叫 static——底层资源不变，地址更清晰。
+
+## 应用重构
+
+```bash
+cp -r /root/stage/step3/modules/* /root/workspace/modules/
+cp /root/stage/step3/main.tf /root/workspace/
+cp /root/stage/step3/moved.tf /root/workspace/
 terraform init
 ```
 
-观察 Terraform 从 Registry 下载 terraform-aws-modules/vpc：
-
-```
-Downloading registry.terraform.io/terraform-aws-modules/vpc/aws ...
-```
-
-## 部署并验证
+## 验证零变更
 
 ```bash
 terraform plan
 ```
 
-plan 输出显示 module.networking.module.vpc.* 嵌套地址——模块嵌套调用的正常表现。
+再次：0 to add, 0 to change, 0 to destroy。6 个资源地址更新，0 个基础设施变更。
 
 ```bash
 terraform apply -auto-approve -parallelism=2
 ```
 
-验证网络资源：
+## 查看进度
 
 ```bash
-awslocal ec2 describe-vpcs --query 'Vpcs[].{ID:VpcId,CIDR:CidrBlock}' --output table
-awslocal ec2 describe-subnets --query 'Subnets[].{ID:SubnetId,AZ:AvailabilityZone,CIDR:CidrBlock}' --output table
-awslocal elbv2 describe-load-balancers --query 'LoadBalancers[].{Name:LoadBalancerName,DNS:DNSName}' --output table
+terraform state list
 ```
 
-## 版本选择策略
+现在 DynamoDB 和 S3 也有了 module 前缀：
+
+```
+module.data.aws_dynamodb_table.users
+module.storage.aws_s3_bucket.static
+module.storage.aws_s3_bucket.backups
+```
 
 ```bash
-grep version modules/networking/main.tf
+wc -l main.tf
 ```
 
-~> 5.0 意味着 >= 5.0, < 6.0——允许 5.x 系列的 patch/minor 升级，但不会拉入 6.0 的 breaking change。
+main.tf 又缩小了——数据层和存储层的代码被 module 调用替代。只剩安全与 IAM 相关的资源还在根模块。
 
-## 确认外部接口不变
-
-```bash
-terraform output
-```
-
-输出与 step2 完全一致。网络层内部实现从 7 个 resource 变成 1 个 module 调用，但 web 模块、data 模块、security 模块都不需要改一行代码。
-
-下一步，我们在各层模块里加入内置防护——让配置错误在部署之前就被拦截。在进入下一步之前，先清理资源释放 MiniStack 内存：
-
-```bash
-terraform destroy -auto-approve -parallelism=2
-```
+下一步，提取最后的安全层，并为关键模块加上内置防护。

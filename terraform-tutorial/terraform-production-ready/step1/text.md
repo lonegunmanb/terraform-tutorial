@@ -2,14 +2,14 @@
 
 ## 看看这个"大泥球"
 
-进入第一个工作目录，查看这个把整套三层架构塞进一个文件的配置：
+进入工作目录，查看这个把整套三层架构塞进一个文件的配置：
 
 ```bash
-cd /root/workspace/step1
+cd /root/workspace
 wc -l main.tf
 ```
 
-将近 500 行代码——VPC、子网、安全组、ALB、DynamoDB、S3、IAM、Secrets Manager、CloudWatch——全部混在一起。
+将近 450 行代码——VPC、子网、安全组、ALB、DynamoDB、S3、IAM、Secrets Manager、CloudWatch——全部混在一起。
 
 ## 浏览各层资源
 
@@ -20,7 +20,7 @@ head -100 main.tf
 先看网络层：VPC、4 个子网（2 公有 + 2 私有）、互联网网关、路由表。
 
 ```bash
-sed -n '141,206p' main.tf
+sed -n '155,227p' main.tf
 ```
 
 再看安全组：ALB 安全组、App 安全组、Data 安全组。注意它们之间的引用链：ALB 允许外部 80 端口 → App 只允许来自 ALB 的 80（nginx）→ Data 只允许来自 App 的 5432。
@@ -53,7 +53,7 @@ awslocal ec2 describe-instances --query 'Reservations[].Instances[].{ID:Instance
 
 资源都创建成功了。现在想象几个场景：
 
-**场景一**：安全审计要求你梳理安全组规则——谁能访问谁。在 500 行里，安全组散落在中间位置，你需要反复跳转才能理清引用链。
+**场景一**：安全审计要求你梳理安全组规则——谁能访问谁。在 450 行里，安全组散落在中间位置，你需要反复跳转才能理清引用链。
 
 **场景二**：网络团队只负责 VPC 和子网，但这个文件里还有 IAM 策略和 DynamoDB 表。他们被迫拥有不需要的修改权限。
 
@@ -77,8 +77,4 @@ terraform state list
 | 难理解 | 网络/Web/数据/存储/安全混在一起 |
 | 难测试 | 要测数据层，必须连带部署整个 VPC |
 
-下一步，我们按架构层级把这个单体拆开。在进入下一步之前，先清理资源释放 MiniStack 内存：
-
-```bash
-terraform destroy -auto-approve -parallelism=2
-```
+下一步，我们用 moved 块把网络层和 Web 层提取为模块——不销毁、不重建任何资源。
