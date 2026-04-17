@@ -12,8 +12,18 @@
       <a href="https://github.com/ministackorg/ministack" target="_blank" rel="noopener">MiniStack</a>
       —— 一个轻量级的 AWS 模拟服务。
     </p>
+    <p class="sponsor-text donate-hint">如果本教程对你有帮助，敬请微信打赏，您的打赏将成为后续更多教程的 Token 🪙</p>
+    <div class="sponsor-qrcode">
+      <img :src="qrcodeUrl" alt="微信打赏二维码" />
+    </div>
   </div>
 </template>
+
+<script setup>
+import { withBase } from 'vitepress'
+
+const qrcodeUrl = withBase('/images/donate.png')
+</script>
 
 <style scoped>
 .sponsor-banner {
@@ -37,5 +47,17 @@
   font-weight: 600;
   color: var(--vp-c-brand-1);
   text-decoration: underline;
+}
+.donate-hint {
+  margin-top: 0.75rem;
+  font-weight: 600;
+}
+.sponsor-qrcode {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+.sponsor-qrcode img {
+  max-width: 180px;
+  border-radius: 8px;
 }
 </style>
