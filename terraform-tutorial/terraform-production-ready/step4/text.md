@@ -16,7 +16,7 @@ cat /root/stage/step4/modules/security/main.tf
 diff /root/workspace/moved.tf /root/stage/step4/moved.tf
 ```
 
-最后 6 个资源搬进 module.security。
+最后 8 个资源搬进 module.security。
 
 ## 加入内置防护
 
@@ -99,13 +99,13 @@ terraform state list
 wc -l main.tf
 ```
 
-从第一步的 450+ 行单体，到现在不到 200 行的根模块 + 五个职责清晰的子模块。全过程通过 moved 块完成，没有销毁、没有重建一个资源。
+从第一步的 450+ 行单体，到现在不到 150 行的根模块 + 五个职责清晰的子模块。全过程通过 moved 块完成，没有销毁、没有重建一个资源。
 
 ```bash
 cat moved.tf | grep "moved {" | wc -l
 ```
 
-总计 29 个 moved 块，覆盖了所有从单体到五层模块化的资源地址迁移。
+总计 31 个 moved 块，覆盖了所有从单体到五层模块化的资源地址迁移。
 
 ## 版本固定
 

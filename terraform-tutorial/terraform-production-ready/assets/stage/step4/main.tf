@@ -108,24 +108,6 @@ module "security" {
 
   static_bucket_arn = module.storage.static_bucket_arn
   users_table_arn   = module.data.users_table_arn
-  app_config_arn    = aws_ssm_parameter.app_config.arn
-  log_group_arn     = aws_cloudwatch_log_group.app.arn
-}
-
-# ── 配置与监控（根模块直管）─────────────────────────────────────────────
-resource "aws_ssm_parameter" "app_config" {
-  name  = "/${local.app_name}/${var.environment}/config"
-  type  = "String"
-  value = jsonencode({
-    log_level     = "info"
-    cache_ttl     = 300
-    feature_flags = { new_dashboard = true }
-  })
-}
-
-resource "aws_cloudwatch_log_group" "app" {
-  name              = "/${local.app_name}/${var.environment}/app"
-  retention_in_days = 30
 }
 
 # ══════════════════════════════════════════════════════════════════════════════

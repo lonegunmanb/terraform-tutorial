@@ -42,23 +42,6 @@ module "security" {
 
   static_bucket_arn = var.static_bucket_arn
   users_table_arn   = var.users_table_arn
-  app_config_arn    = aws_ssm_parameter.app_config.arn
-  log_group_arn     = aws_cloudwatch_log_group.app.arn
-}
-
-resource "aws_ssm_parameter" "app_config" {
-  name  = "/${local.app_name}/${var.environment}/config"
-  type  = "String"
-  value = jsonencode({
-    log_level     = "info"
-    cache_ttl     = 300
-    feature_flags = { new_dashboard = true }
-  })
-}
-
-resource "aws_cloudwatch_log_group" "app" {
-  name              = "/${local.app_name}/${var.environment}/app"
-  retention_in_days = 30
 }
 
 output "app_role_arn" {

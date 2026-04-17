@@ -15,6 +15,21 @@ resource "aws_secretsmanager_secret_version" "db_credentials" {
   })
 }
 
+resource "aws_ssm_parameter" "app_config" {
+  name  = "/${var.app_name}/${var.environment}/config"
+  type  = "String"
+  value = jsonencode({
+    log_level     = "info"
+    cache_ttl     = 300
+    feature_flags = { new_dashboard = true }
+  })
+}
+
+resource "aws_cloudwatch_log_group" "app" {
+  name              = "/${var.app_name}/${var.environment}/app"
+  retention_in_days = 30
+}
+
 resource "aws_iam_role" "app" {
   name = "${var.app_name}-${var.environment}-app-role"
   assume_role_policy = jsonencode({
@@ -50,12 +65,12 @@ resource "aws_iam_policy" "app" {
       {
         Effect   = "Allow"
         Action   = ["ssm:GetParameter"]
-        Resource = var.app_config_arn
+        Resource = aws_ssm_parameter.app_config.arn
       },
       {
         Effect   = "Allow"
         Action   = ["logs:CreateLogStream", "logs:PutLogEvents"]
-        Resource = "${var.log_group_arn}:*"
+        Resource = "${aws_cloudwatch_log_group.app.arn}:*"
       }
     ]
   })

@@ -13,11 +13,3 @@ variable "static_bucket_arn" {
 variable "users_table_arn" {
   type = string
 }
-
-variable "app_config_arn" {
-  type = string
-}
-
-variable "log_group_arn" {
-  type = string
-}

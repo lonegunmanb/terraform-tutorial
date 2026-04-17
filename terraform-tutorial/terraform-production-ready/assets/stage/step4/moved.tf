@@ -152,3 +152,13 @@ moved {
   from = aws_iam_instance_profile.app
   to   = module.security.aws_iam_instance_profile.app
 }
+
+moved {
+  from = aws_ssm_parameter.app_config
+  to   = module.security.aws_ssm_parameter.app_config
+}
+
+moved {
+  from = aws_cloudwatch_log_group.app
+  to   = module.security.aws_cloudwatch_log_group.app
+}

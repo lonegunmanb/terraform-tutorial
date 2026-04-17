@@ -22,13 +22,3 @@ removed {
   from = module.security
   lifecycle { destroy = false }
 }
-
-removed {
-  from = aws_ssm_parameter.app_config
-  lifecycle { destroy = false }
-}
-
-removed {
-  from = aws_cloudwatch_log_group.app
-  lifecycle { destroy = false }
-}
