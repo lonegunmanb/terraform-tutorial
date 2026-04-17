@@ -9,6 +9,7 @@ dependency "networking" {
     public_subnet_ids  = ["subnet-mock-1", "subnet-mock-2"]
     private_subnet_ids = ["subnet-mock-3", "subnet-mock-4"]
   }
+  mock_outputs_merge_strategy_with_state = "shallow"
 }
 
 dependency "security" {
@@ -16,6 +17,7 @@ dependency "security" {
   mock_outputs = {
     app_instance_profile_name = "mock-profile"
   }
+  mock_outputs_merge_strategy_with_state = "shallow"
 }
 
 inputs = {

@@ -7,6 +7,7 @@ dependency "storage" {
   mock_outputs = {
     static_bucket_arn = "arn:aws:s3:::mock"
   }
+  mock_outputs_merge_strategy_with_state = "shallow"
 }
 
 dependency "data" {
@@ -14,6 +15,7 @@ dependency "data" {
   mock_outputs = {
     users_table_arn = "arn:aws:dynamodb:us-east-1:000000000000:table/mock"
   }
+  mock_outputs_merge_strategy_with_state = "shallow"
 }
 
 inputs = {
