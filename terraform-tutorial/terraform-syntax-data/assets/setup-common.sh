@@ -21,7 +21,9 @@ TFLINT_VERSION="${TFLINT_VERSION:-v0.61.0}"
 TERRAGRUNT_VERSION="${TERRAGRUNT_VERSION:-0.77.5}"
 
 install_terraform() {
-  apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
+  if ! command -v unzip > /dev/null 2>&1; then
+    apt-get update -qq && apt-get install -y -qq unzip > /dev/null 2>&1
+  fi
 
   # Install Docker Compose v2 plugin (binary download — apt package not available on Killercoda)
   if ! docker compose version > /dev/null 2>&1; then

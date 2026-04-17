@@ -18,6 +18,3 @@ terraform init -input=false
 
 # ── 4. Signal setup complete ──────────────────────────────────────────────────
 finish_setup
-
-# ── 6. Signal setup complete ──────────────────────────────────────────────────
-finish_setup
