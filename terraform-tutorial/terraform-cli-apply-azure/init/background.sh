@@ -121,6 +121,7 @@ fi
 
 # ── 2. Install tooling ──
 install_terraform
+apt-get update -qq && apt-get install -y -qq jq > /dev/null 2>&1
 start_miniblue
 install_azlocal
 

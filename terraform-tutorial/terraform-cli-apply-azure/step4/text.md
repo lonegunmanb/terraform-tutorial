@@ -6,17 +6,29 @@
 
 -refresh-only apply 可以将 state 与远端实际情况对齐，而不重建被删除的资源。
 
-模拟带外删除 app DNS Zone（用 azlocal）：
+模拟带外删除 app DNS Zone（用 azlocal），然后用 jq 只取剩余 Zone 的名字，便于看出 app 已经不在列表中：
 
 ```
 cd /root/workspace
 RG=$(terraform output -raw resource_group)
 ZONE=$(terraform output -raw app_dns_zone)
+
 azlocal dns zone delete --resource-group "$RG" --name "$ZONE"
-azlocal dns zone list --resource-group "$RG"
+
+echo "删除前期望的 app zone: $ZONE"
+echo "当前 RG 中剩余的 DNS Zone："
+azlocal dns zone list --resource-group "$RG" | jq -r '.value[].name'
 ```
 
-DNS Zone 列表中已看不到 app DNS Zone。但此时 Terraform 的 state 还不知道这件事：
+预期输出（只剩 logs zone，app zone 已消失）：
+
+```
+删除前期望的 app zone: myapp-dev-app-lab.local
+当前 RG 中剩余的 DNS Zone：
+myapp-dev-logs-lab.local
+```
+
+但此时 Terraform 的 state 还不知道这件事：
 
 ```
 terraform state list | grep dns_zone.app
