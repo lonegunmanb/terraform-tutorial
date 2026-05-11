@@ -240,4 +240,10 @@ terraform logout
 
 在以下实验中，你将在真实终端里练习 `-chdir`、`fmt`、`console`、`get`、`graph` 和 `force-unlock` 命令：
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-basics" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-basics" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-basics-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器）+ azlocal CLI；CLI 基础命令与 AWS 版完全一致，force-unlock 改用本地 backend + 长时 apply + kill -9 模拟孤儿锁。"
+/>
