@@ -1,7 +1,7 @@
 services:
   miniblue:
-    # 镜像版本已锁定，避免 latest 漂移
-    image: moabukar/miniblue:0.7.0
+    # 使用 fork 后的镜像（修复了 ARM 路由大小写敏感问题，兼容 azurerm v4），版本锁定
+    image: ghcr.io/lonegunmanb/miniblue:sha-cbbbc66
     ports:
       - "4566:4566"
       - "4567:4567"
