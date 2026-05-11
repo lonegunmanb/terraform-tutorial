@@ -151,4 +151,10 @@ terraform apply -refresh-only -auto-approve
 
 `-json`、`-no-color`、`-input`、`-lock`、`-lock-timeout` 等通用参数同样适用于 `terraform apply`。详见 [CLI 基础命令 — 跨命令通用参数](/terraform-cli-basic#跨命令通用参数)。
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-apply" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-apply" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-apply-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器，镜像版本已锁定为 0.7.0），所有 apply 子命令与 AWS 版完全一致。"
+/>

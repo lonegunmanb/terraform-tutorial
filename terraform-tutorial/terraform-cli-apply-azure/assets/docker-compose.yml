@@ -1,0 +1,14 @@
+services:
+  miniblue:
+    # 镜像版本已锁定，避免 latest 漂移
+    image: moabukar/miniblue:0.7.0
+    ports:
+      - "4566:4566"
+      - "4567:4567"
+    volumes:
+      # 把自签名证书目录暴露到宿主机，供 Terraform 信任
+      - /root/.miniblue:/root/.miniblue
+    deploy:
+      resources:
+        limits:
+          memory: 512M

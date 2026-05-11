@@ -19,6 +19,7 @@
 TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.14.8}"
 TFLINT_VERSION="${TFLINT_VERSION:-v0.61.0}"
 TERRAGRUNT_VERSION="${TERRAGRUNT_VERSION:-0.77.5}"
+MINIBLUE_VERSION="${MINIBLUE_VERSION:-0.7.0}"
 
 install_terraform() {
   if ! command -v unzip > /dev/null 2>&1; then
@@ -112,6 +113,35 @@ start_localstack() {
     sleep 2
   done
   echo "WARNING: LocalStack did not become healthy within 120 seconds"
+  docker compose logs
+}
+
+start_miniblue() {
+  cd /root/workspace
+  mkdir -p /root/.miniblue
+  docker compose up -d
+
+  echo "Waiting for miniblue to be ready..."
+  for i in $(seq 1 60); do
+    if curl -sf http://localhost:4566/health > /dev/null 2>&1; then
+      echo "miniblue is ready."
+      # Wait for self-signed cert to appear (created on first HTTPS request)
+      curl -sk https://localhost:4567/health > /dev/null 2>&1 || true
+      for j in $(seq 1 30); do
+        [ -f /root/.miniblue/cert.pem ] && break
+        sleep 1
+      done
+      # Make SSL_CERT_FILE available for all interactive shells
+      cat > /etc/profile.d/miniblue.sh <<'PROF'
+export SSL_CERT_FILE=/root/.miniblue/cert.pem
+PROF
+      chmod +x /etc/profile.d/miniblue.sh
+      export SSL_CERT_FILE=/root/.miniblue/cert.pem
+      return 0
+    fi
+    sleep 2
+  done
+  echo "WARNING: miniblue did not become healthy within 120 seconds"
   docker compose logs
 }
 

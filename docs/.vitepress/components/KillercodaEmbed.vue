@@ -2,6 +2,10 @@
 const props = defineProps({
   src: { type: String, required: true },
   title: { type: String, default: '实验环境' },
+  desc: {
+    type: String,
+    default: '点击下方按钮在新标签页中打开 Killercoda 实验环境，预装了 Terraform + LocalStack。',
+  },
 })
 
 function isValidUrl(url) {
@@ -22,7 +26,7 @@ const directUrl = isValidUrl(props.src) ? props.src.replace(/~embed$/, '') : nul
     <div class="link-icon">🧪</div>
     <div class="link-body">
       <p class="link-title">{{ title }}</p>
-      <p class="link-desc">点击下方按钮在新标签页中打开 Killercoda 实验环境，预装了 Terraform + LocalStack。</p>
+      <p class="link-desc">{{ desc }}</p>
       <a :href="directUrl" target="_blank" rel="noopener noreferrer" class="link-button">
         打开实验环境 ↗
       </a>
