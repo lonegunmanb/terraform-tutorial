@@ -12,7 +12,7 @@ if [ ! -f docker-compose.yml ]; then
 cat > docker-compose.yml <<EOF
 services:
   miniblue:
-    image: ghcr.io/lonegunmanb/miniblue:sha-cbbbc66
+    image: ghcr.io/lonegunmanb/miniblue:sha-b576dda
     ports:
       - "4566:4566"
       - "4567:4567"
@@ -98,8 +98,6 @@ resource "azurerm_virtual_network" "net" {
   address_space       = ["10.0.0.0/16"]
   location            = azurerm_resource_group.main.location
   resource_group_name = azurerm_resource_group.main.name
-  # miniblue 不返回该字段，显式声明避免永久漂移
-  private_endpoint_vnet_policies = "Disabled"
   tags                = local.common_tags
 }
 
