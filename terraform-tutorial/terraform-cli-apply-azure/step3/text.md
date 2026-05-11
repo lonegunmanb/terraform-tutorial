@@ -51,14 +51,6 @@ terraform apply -auto-approve
 
 当远端资源内部状态损坏，需要销毁重建恢复时，-replace 让你无需修改配置就能强制触发重建（替代了已废弃的 terraform taint 命令）。
 
-先记录 logs DNS Zone 当前的资源 ID：
-
-```
-terraform state show azurerm_dns_zone.logs | grep -E '^\s*id\s*='
-```
-
-记住这一行的值。
-
 对 logs DNS Zone 执行强制重建：
 
 ```
@@ -71,13 +63,17 @@ terraform apply -replace=azurerm_dns_zone.logs -auto-approve
 - app DNS Zone、虚拟网络与 Resource Group 没有任何变更
 - 汇总行：Apply complete! Resources: 1 added, 0 changed, 1 destroyed.
 
-再次查看 logs DNS Zone 的 ID：
+::: tip
+Azure 资源 ID 由资源路径（subscription / resourceGroup / 资源类型 / 名称）唯一决定，主键未变时重建前后的 ID 相同——这一点和 AWS（ARN 中常含随机后缀）不同。判断重建是否发生应以 plan/apply 的 `-/+` 符号与汇总行为准，而不是对比 ID。
+:::
+
+再次 plan 确认 state 与远端已重新对齐：
 
 ```
-terraform state show azurerm_dns_zone.logs | grep -E '^\s*id\s*='
+terraform plan
 ```
 
-ID 已发生变化（重建后是新的资源），其他资源不受影响。
+输出 Plan: 0 to add, 0 to change, 0 to destroy.（其他资源不受影响）。
 
 ## -destroy：销毁模式
 
