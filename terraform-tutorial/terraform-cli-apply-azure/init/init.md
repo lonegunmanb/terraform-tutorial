@@ -4,11 +4,11 @@
 
 ## 实验环境
 
-miniblue 已启动（端口 4566 / 4567），自签名证书已写入 `/root/.miniblue/cert.pem` 并通过 `SSL_CERT_FILE` 环境变量被 Terraform 信任，azurerm provider 已通过 `terraform init` 下载完毕，但尚未创建任何 Azure 资源。你将在第一步亲手执行首次 apply，亲眼看到资源从无到有的过程。
+miniblue 已启动（HTTP 4566 / HTTPS 4567）；自签名证书已写入 `/root/.miniblue/cert.pem` 并通过 `SSL_CERT_FILE` 环境变量被 Terraform 信任。同时已安装 `azlocal` CLI（类似 `awslocal`，走 HTTP 端口 4566，无需证书），用于在课程中校验 Azure 资源。azurerm provider 已通过 `terraform init` 下载完毕，但尚未创建任何 Azure 资源。你将在第一步亲手执行首次 apply，亲眼看到资源从无到有的过程。
 
 ## 与 AWS 版的区别
 
-本课程是 [terraform apply（LocalStack 版）](https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-apply) 的 Azure 对照版本：所有 apply 子命令、参数、工作流都完全一致，只是 provider 从 `aws` 换成 `azurerm`，模拟器从 LocalStack 换成了 miniblue（镜像锁定为 `moabukar/miniblue:0.7.0`）。配置中包含 1 个 Resource Group + 2 个 DNS Zone + 1 个 Virtual Network，用于体验定向 apply 与强制重建。
+本课程是 [terraform apply（LocalStack 版）](https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-apply) 的 Azure 对照版本：所有 apply 子命令、参数、工作流都完全一致，只是 provider 从 `aws` 换成 `azurerm`，模拟器从 LocalStack 换成了 miniblue。配置中包含 1 个 Resource Group + 2 个 DNS Zone + 1 个 Virtual Network，用于体验定向 apply 与强制重建。
 
 ## 学习内容
 

@@ -122,6 +122,7 @@ fi
 # ── 2. Install tooling ──
 install_terraform
 start_miniblue
+install_azlocal
 
 # ── 3. Initialize providers (do NOT apply — students run apply themselves in step 1) ──
 export SSL_CERT_FILE=/root/.miniblue/cert.pem

@@ -173,3 +173,19 @@ PROF
 finish_setup() {
   touch /tmp/.setup-done
 }
+
+install_azlocal() {
+  # azlocal is a standalone Go CLI bundled inside the miniblue image at /azlocal
+  # (analogous to awslocal for LocalStack). It uses HTTP on port 4566 and needs
+  # no certificate or az CLI. Requires miniblue to be running.
+  local cid
+  cid=$(docker compose ps -q miniblue 2>/dev/null)
+  if [ -z "$cid" ]; then
+    cid=$(docker ps -q --filter "name=miniblue" | head -1)
+  fi
+  if [ -n "$cid" ]; then
+    docker cp "$cid:/azlocal" /usr/local/bin/azlocal 2>/dev/null \
+      && chmod +x /usr/local/bin/azlocal
+  fi
+  azlocal --help > /dev/null 2>&1 || echo "WARNING: azlocal install failed"
+}

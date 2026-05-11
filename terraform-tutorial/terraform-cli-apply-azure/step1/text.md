@@ -48,11 +48,15 @@ Apply complete! Resources: 4 added, 0 changed, 0 destroyed.
 
 apply 完成后还会打印所有输出值（Outputs）。
 
-通过 miniblue 的 REST API 验证资源已创建：
+通过 `azlocal` CLI 验证资源已创建：
 
 ```
-curl -sk "https://localhost:4567/subscriptions/00000000-0000-0000-0000-000000000000/resourcegroups?api-version=2020-06-01"
+azlocal group list
+azlocal dns zone list --resource-group myapp-dev-rg-lab
+azlocal network vnet list --resource-group myapp-dev-rg-lab
 ```
+
+`azlocal` 走 HTTP 4566，无需证书；它是 miniblue 自带的 CLI，用法类似 `awslocal`。
 
 也可以直接看 Terraform state：
 

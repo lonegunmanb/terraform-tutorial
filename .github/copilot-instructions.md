@@ -140,8 +140,9 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 For Azure-flavoured scenarios (e.g. `terraform-cli-apply-azure`), substitute LocalStack with [miniblue](https://miniblue.io/):
 
 - `init/background.sh` calls `start_miniblue` instead of `start_localstack`. Do NOT call both — each scenario picks one cloud emulator.
-- `assets/docker-compose.yml` uses image `moabukar/miniblue:0.7.0` (version MUST be pinned, never `latest`), exposes ports `4566` (HTTP) and `4567` (HTTPS), and limits memory to 512M. Do NOT bind-mount the cert directory — the image is distroless and runs as `nonroot`, so the cert lives at `/home/nonroot/.miniblue/cert.pem` inside the container; `start_miniblue` extracts it via `docker cp` instead.
+- `assets/docker-compose.yml` uses image `ghcr.io/lonegunmanb/miniblue:sha-cbbbc66` (a fork that fixes case-insensitive ARM routing for azurerm v4 compatibility; version pinned by digest, never `latest`), exposes ports `4566` (HTTP) and `4567` (HTTPS), and limits memory to 512M. Do NOT bind-mount the cert directory — the image is distroless and runs as `nonroot`, so the cert lives at `/home/nonroot/.miniblue/cert.pem` inside the container; `start_miniblue` extracts it via `docker cp` instead.
 - `start_miniblue` writes `SSL_CERT_FILE=/root/.miniblue/cert.pem` to both `/etc/profile.d/miniblue.sh` and `/root/.bashrc` (Killercoda terminals are non-login shells), and exports it for the current shell.
+- After `start_miniblue`, call `install_azlocal` to extract the bundled `azlocal` binary (`/azlocal` inside the container) to `/usr/local/bin/`. `azlocal` is a standalone Go CLI (no `az` dependency) that talks to miniblue over HTTP 4566 — use it in step text instead of raw `curl` for resource verification (`azlocal group list`, `azlocal dns zone list --resource-group ...`, `azlocal network vnet list --resource-group ...`).
 - `assets/main.tf` MUST use the **azurerm v4** provider:
   ```hcl
   terraform {
@@ -172,7 +173,7 @@ For Azure-flavoured scenarios (e.g. `terraform-cli-apply-azure`), substitute Loc
 - **Auto-copied**: `scripts/sync-setup-common.mjs` copies it into every `terraform-tutorial/*/assets/` directory.
 - Run `npm run sync-setup` after editing, or it runs automatically via `prebuild`.
 - Do NOT edit `terraform-tutorial/*/assets/setup-common.sh` directly — changes will be overwritten.
-- Available functions: `install_terraform`, `install_awscli`, `install_tflint`, `start_localstack`, `start_miniblue`, `install_theia_plugin`, `finish_setup`.
+- Available functions: `install_terraform`, `install_awscli`, `install_tflint`, `start_localstack`, `start_miniblue`, `install_azlocal`, `install_theia_plugin`, `finish_setup`.
 - `install_awscli` installs AWS CLI v2 (official binary) and creates an `awslocal` shell wrapper that sets `--endpoint-url=http://localhost:4566` automatically.
 - `start_localstack` auto-installs Docker Compose v2 plugin if missing before running `docker compose up -d`.
 - `start_miniblue` runs `docker compose up -d`, waits for `http://localhost:4566/health`, primes the HTTPS port to materialise the self-signed cert, then exports `SSL_CERT_FILE=/root/.miniblue/cert.pem` globally via `/etc/profile.d/miniblue.sh`.

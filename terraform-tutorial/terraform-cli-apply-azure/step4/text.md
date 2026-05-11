@@ -6,16 +6,17 @@
 
 -refresh-only apply 可以将 state 与远端实际情况对齐，而不重建被删除的资源。
 
-模拟带外删除 app DNS Zone（直接调用 miniblue REST API）：
+模拟带外删除 app DNS Zone（用 azlocal）：
 
 ```
 cd /root/workspace
 RG=$(terraform output -raw resource_group)
 ZONE=$(terraform output -raw app_dns_zone)
-curl -sk -X DELETE "https://localhost:4567/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/${RG}/providers/Microsoft.Network/dnsZones/${ZONE}?api-version=2018-05-01"
+azlocal dns zone delete --resource-group "$RG" --name "$ZONE"
+azlocal dns zone list --resource-group "$RG"
 ```
 
-DNS Zone 已不存在。但此时 Terraform 的 state 还不知道这件事：
+DNS Zone 列表中已看不到 app DNS Zone。但此时 Terraform 的 state 还不知道这件事：
 
 ```
 terraform state list | grep dns_zone.app
