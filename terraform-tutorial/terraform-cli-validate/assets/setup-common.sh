@@ -136,6 +136,11 @@ start_miniblue() {
 export SSL_CERT_FILE=/root/.miniblue/cert.pem
 PROF
       chmod +x /etc/profile.d/miniblue.sh
+      # Killercoda terminals are non-login interactive shells — they only source
+      # ~/.bashrc, not /etc/profile.d/*. Append the export there too (idempotent).
+      if ! grep -q 'SSL_CERT_FILE=/root/.miniblue/cert.pem' /root/.bashrc 2>/dev/null; then
+        echo 'export SSL_CERT_FILE=/root/.miniblue/cert.pem' >> /root/.bashrc
+      fi
       export SSL_CERT_FILE=/root/.miniblue/cert.pem
       return 0
     fi
