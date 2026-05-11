@@ -5,9 +5,6 @@ services:
     ports:
       - "4566:4566"
       - "4567:4567"
-    volumes:
-      # 把自签名证书目录暴露到宿主机，供 Terraform 信任
-      - /root/.miniblue:/root/.miniblue
     deploy:
       resources:
         limits:

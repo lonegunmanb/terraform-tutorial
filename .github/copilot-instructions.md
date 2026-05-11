@@ -140,8 +140,8 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 For Azure-flavoured scenarios (e.g. `terraform-cli-apply-azure`), substitute LocalStack with [miniblue](https://miniblue.io/):
 
 - `init/background.sh` calls `start_miniblue` instead of `start_localstack`. Do NOT call both — each scenario picks one cloud emulator.
-- `assets/docker-compose.yml` uses image `moabukar/miniblue:0.7.0` (version MUST be pinned, never `latest`), exposes ports `4566` (HTTP) and `4567` (HTTPS), bind-mounts `/root/.miniblue:/root/.miniblue` so the self-signed cert is reachable from the host, and limits memory to 512M.
-- `start_miniblue` writes `SSL_CERT_FILE=/root/.miniblue/cert.pem` to `/etc/profile.d/miniblue.sh` and exports it for the current shell, so subsequent `terraform init`/`apply` in `background.sh` and in the student's interactive shell trust the cert automatically.
+- `assets/docker-compose.yml` uses image `moabukar/miniblue:0.7.0` (version MUST be pinned, never `latest`), exposes ports `4566` (HTTP) and `4567` (HTTPS), and limits memory to 512M. Do NOT bind-mount the cert directory — the image is distroless and runs as `nonroot`, so the cert lives at `/home/nonroot/.miniblue/cert.pem` inside the container; `start_miniblue` extracts it via `docker cp` instead.
+- `start_miniblue` writes `SSL_CERT_FILE=/root/.miniblue/cert.pem` to both `/etc/profile.d/miniblue.sh` and `/root/.bashrc` (Killercoda terminals are non-login shells), and exports it for the current shell.
 - `assets/main.tf` MUST use the **azurerm v4** provider:
   ```hcl
   terraform {

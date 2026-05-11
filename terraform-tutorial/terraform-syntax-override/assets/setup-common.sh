@@ -129,16 +129,16 @@ start_miniblue() {
       curl -sk https://localhost:4567/health > /dev/null 2>&1 || true
 
       # Locate cert inside the container and copy to host.
-      # The bind mount path is unreliable across miniblue versions, so we use
-      # `docker cp` (the same approach recommended in miniblue's CI docs).
+      # The miniblue image is distroless (no shell), so we can't `docker exec`
+      # to probe — `docker cp` itself is sufficient and silently fails on
+      # missing paths. Try known paths in order.
       local cid
       cid=$(docker compose ps -q miniblue 2>/dev/null)
       for j in $(seq 1 30); do
         if [ -n "$cid" ]; then
-          # Try common paths inside the container
-          for p in /root/.miniblue/cert.pem /home/miniblue/.miniblue/cert.pem /app/.miniblue/cert.pem; do
-            if docker exec "$cid" test -f "$p" 2>/dev/null; then
-              docker cp "$cid:$p" /root/.miniblue/cert.pem 2>/dev/null && break 2
+          for p in /home/nonroot/.miniblue/cert.pem /root/.miniblue/cert.pem /app/.miniblue/cert.pem; do
+            if docker cp "$cid:$p" /root/.miniblue/cert.pem 2>/dev/null; then
+              break 2
             fi
           done
         fi
@@ -146,8 +146,7 @@ start_miniblue() {
       done
 
       if [ ! -f /root/.miniblue/cert.pem ]; then
-        echo "WARNING: failed to locate miniblue cert.pem inside container"
-        docker exec "$cid" sh -c 'find / -name cert.pem 2>/dev/null' || true
+        echo "WARNING: failed to copy miniblue cert.pem out of container"
       else
         chmod 644 /root/.miniblue/cert.pem
       fi

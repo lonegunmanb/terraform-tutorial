@@ -16,8 +16,6 @@ services:
     ports:
       - "4566:4566"
       - "4567:4567"
-    volumes:
-      - /root/.miniblue:/root/.miniblue
     deploy:
       resources:
         limits:
