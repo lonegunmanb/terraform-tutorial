@@ -107,11 +107,12 @@ grep '"type":"apply_complete"' /tmp/apply.log
 
 在 CI 脚本中可以结合 jq 解析失败原因、资源变更列表等，实现结构化的流水线日志。
 
-恢复配置：
+恢复配置（先 apply 把标签去掉，再跑一次确认幂等）：
 
 ```
 sed -i '/Version.*v2/d' main.tf
-terraform apply -auto-approve
+terraform apply -auto-approve         # 0 added, 4 changed, 0 destroyed
+terraform apply -auto-approve         # No changes
 ```
 
-确认 No changes 后进入完成页。
+第二次 apply 显示 `No changes` 后即可进入完成页。
