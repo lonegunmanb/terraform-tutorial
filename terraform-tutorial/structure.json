@@ -20,7 +20,6 @@
     { "path": "terraform-cli-init" },
     { "path": "terraform-cli-plan" },
     { "path": "terraform-cli-apply" },
-    { "path": "terraform-cli-apply-azure" },
     { "path": "terraform-cli-destroy" },
     { "path": "terraform-cli-validate" },
     { "path": "terraform-cli-show" },
