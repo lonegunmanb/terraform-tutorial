@@ -11,6 +11,9 @@
       在需要使用 AWS Provider v6 的场景中，我们使用了
       <a href="https://github.com/ministackorg/ministack" target="_blank" rel="noopener">MiniStack</a>
       —— 一个轻量级的 AWS 模拟服务。
+      在需要使用 Azure 的场景中，我们使用了
+      <a href="https://github.com/moabukar/miniblue" target="_blank" rel="noopener">miniblue</a>
+      —— 一个免费开源的轻量级 Azure 本地模拟器。
     </p>
     <p class="sponsor-text donate-hint">如果本教程对你有帮助，敬请微信打赏，您的打赏将成为后续更多教程的 Token 🪙</p>
     <div class="sponsor-qrcode">
