@@ -3,7 +3,7 @@ terraform {
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
-      version = "~> 3.0"
+      version = "~> 4.0"
     }
   }
 }
@@ -12,8 +12,8 @@ provider "azurerm" {
   features {}
 
   # miniblue HTTPS metadata endpoint
-  metadata_host              = "localhost:4567"
-  skip_provider_registration = true
+  metadata_host                   = "localhost:4567"
+  resource_provider_registrations = "none"
 
   # miniblue 接受任意凭据
   subscription_id = "00000000-0000-0000-0000-000000000000"

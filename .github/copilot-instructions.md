@@ -135,16 +135,48 @@ Follow the structure in `https://github.com/killercoda/scenarios-istio`.
 7. The `assets/main.tf` must configure the AWS provider to use LocalStack endpoints (`http://localhost:4566`) with fake credentials (`access_key = "test"`, `secret_key = "test"`), skip credential validation, and set `s3_use_path_style = true`.
 8. The `assets/docker-compose.yml` must use `localstack/localstack:3` image, expose port 4566, set `SERVICES` to only the needed AWS services, and limit memory to 1536M.
 
+### Azure / miniblue Scenarios
+
+For Azure-flavoured scenarios (e.g. `terraform-cli-apply-azure`), substitute LocalStack with [miniblue](https://miniblue.io/):
+
+- `init/background.sh` calls `start_miniblue` instead of `start_localstack`. Do NOT call both — each scenario picks one cloud emulator.
+- `assets/docker-compose.yml` uses image `moabukar/miniblue:0.7.0` (version MUST be pinned, never `latest`), exposes ports `4566` (HTTP) and `4567` (HTTPS), bind-mounts `/root/.miniblue:/root/.miniblue` so the self-signed cert is reachable from the host, and limits memory to 512M.
+- `start_miniblue` writes `SSL_CERT_FILE=/root/.miniblue/cert.pem` to `/etc/profile.d/miniblue.sh` and exports it for the current shell, so subsequent `terraform init`/`apply` in `background.sh` and in the student's interactive shell trust the cert automatically.
+- `assets/main.tf` MUST use the **azurerm v4** provider:
+  ```hcl
+  terraform {
+    required_providers {
+      azurerm = {
+        source  = "hashicorp/azurerm"
+        version = "~> 4.0"
+      }
+    }
+  }
+
+  provider "azurerm" {
+    features {}
+    metadata_host                   = "localhost:4567"
+    resource_provider_registrations = "none"   # v4 replacement for v3's skip_provider_registration
+    subscription_id = "00000000-0000-0000-0000-000000000000"
+    tenant_id       = "00000000-0000-0000-0000-000000000001"
+    client_id       = "miniblue"
+    client_secret   = "miniblue"
+  }
+  ```
+  Do NOT use `~> 3.0` or the deprecated `skip_provider_registration = true` — this tutorial standardises on azurerm v4.
+- miniblue accepts any UUID/string for credentials; do not put real Azure secrets anywhere.
+
 ### Shared Setup Script (`setup-common.sh`)
 
 - **Source of truth**: `scripts/setup-common.sh` — edit ONLY this file for shared logic.
 - **Auto-copied**: `scripts/sync-setup-common.mjs` copies it into every `terraform-tutorial/*/assets/` directory.
 - Run `npm run sync-setup` after editing, or it runs automatically via `prebuild`.
 - Do NOT edit `terraform-tutorial/*/assets/setup-common.sh` directly — changes will be overwritten.
-- Available functions: `install_terraform`, `install_awscli`, `install_tflint`, `start_localstack`, `install_theia_plugin`, `finish_setup`.
+- Available functions: `install_terraform`, `install_awscli`, `install_tflint`, `start_localstack`, `start_miniblue`, `install_theia_plugin`, `finish_setup`.
 - `install_awscli` installs AWS CLI v2 (official binary) and creates an `awslocal` shell wrapper that sets `--endpoint-url=http://localhost:4566` automatically.
 - `start_localstack` auto-installs Docker Compose v2 plugin if missing before running `docker compose up -d`.
-- Versions can be overridden via env vars: `TERRAFORM_VERSION`, `TFLINT_VERSION`.
+- `start_miniblue` runs `docker compose up -d`, waits for `http://localhost:4566/health`, primes the HTTPS port to materialise the self-signed cert, then exports `SSL_CERT_FILE=/root/.miniblue/cert.pem` globally via `/etc/profile.d/miniblue.sh`.
+- Versions can be overridden via env vars: `TERRAFORM_VERSION`, `TFLINT_VERSION`, `MINIBLUE_VERSION` (default `0.7.0` — keep pinned).
 
 ### Sidebar Auto-Sync
 
