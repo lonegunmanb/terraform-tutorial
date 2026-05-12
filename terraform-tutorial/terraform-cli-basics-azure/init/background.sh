@@ -12,10 +12,13 @@ if [ ! -f docker-compose.yml ]; then
 cat > docker-compose.yml <<'EOF'
 services:
   miniblue:
-    image: ghcr.io/lonegunmanb/miniblue:sha-a1ad451
+    image: ghcr.io/lonegunmanb/miniblue:sha-5b0aa94
     ports:
       - "4566:4566"
       - "4567:4567"
+    environment:
+      - MINIBLUE_STORAGE_ENDPOINT=http://localhost:4566
+      - MINIBLUE_DISABLE_SHAREDKEY_AUTH=1
     deploy:
       resources:
         limits:
@@ -134,11 +137,14 @@ locals {
 }
 EOF
 
-# ── 4. Seed lock-demo workspace for force-unlock demo ──
-# Uses local backend + a long-running null_resource provisioner so we can
-# script "kill -9" to leave an orphan lock for force-unlock to clean up.
-mkdir -p /root/workspace/lock-demo
-cat > /root/workspace/lock-demo/main.tf <<'EOTF'
+# ── 4. Seed blob-demo workspace for force-unlock demo ──
+# Uses the azurerm backend pointed at miniblue. State is stored in a blob in
+# Azure Blob Storage; locking is implemented as a lease on that state blob.
+# Step 5 will simulate an orphan lock by acquiring the lease via curl, then
+# release it with `terraform force-unlock`. This mirrors the real azurerm
+# backend lock/force-unlock workflow exactly.
+mkdir -p /root/workspace/blob-demo
+cat > /root/workspace/blob-demo/main.tf <<'EOTF'
 terraform {
   required_version = ">= 1.0"
   required_providers {
@@ -147,37 +153,66 @@ terraform {
       version = "~> 3.0"
     }
   }
+
+  backend "azurerm" {
+    resource_group_name  = "tfstate-rg"
+    storage_account_name = "tfstateacct"
+    container_name       = "tfstate"
+    key                  = "demo.tfstate"
+
+    metadata_host   = "localhost:4567"
+    subscription_id = "00000000-0000-0000-0000-000000000000"
+    tenant_id       = "00000000-0000-0000-0000-000000000001"
+    client_id       = "miniblue"
+    client_secret   = "miniblue"
+  }
 }
 
-# 故意放一个会阻塞 60 秒的 provisioner，给我们时间在另一个进程里
-# kill -9 模拟崩溃，留下孤儿锁。
-resource "null_resource" "slow" {
+resource "null_resource" "demo" {
   triggers = {
-    run_id = "force-unlock-demo"
-  }
-
-  provisioner "local-exec" {
-    command = "sleep 60"
+    note = "state stored in Azure Blob Storage via miniblue"
   }
 }
 EOTF
 
 # ── 5. Install tools, start services, init workspaces ──
 install_terraform
-apt-get update -qq && apt-get install -y -qq jq > /dev/null 2>&1
+apt-get update -qq && apt-get install -y -qq jq curl > /dev/null 2>&1
 start_miniblue
 install_azlocal
 
-# Init lock-demo (local backend, null provider — quick).
-cd /root/workspace/lock-demo
+# Pre-create the resource group + storage account + container that the
+# azurerm backend will write state into. azlocal talks to miniblue's ARM
+# control plane over HTTP 4566 — no certificate or signing needed.
+azlocal group create --name tfstate-rg --location eastus
+azlocal storage account create \
+  --name tfstateacct \
+  --resource-group tfstate-rg \
+  --location eastus \
+  --sku Standard_LRS
+
+# Containers are an ARM sub-resource of the storage account. azlocal does not
+# expose a `storage container create` command for the ARM endpoint, so create
+# it via plain curl against miniblue's ARM API.
+curl -sf -X PUT \
+  "http://localhost:4566/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/tfstate-rg/providers/Microsoft.Storage/storageAccounts/tfstateacct/blobServices/default/containers/tfstate?api-version=2023-01-01" \
+  -H "Content-Type: application/json" \
+  -d '{"properties":{"publicAccess":"None"}}' \
+  > /dev/null
+
+# Init + apply blob-demo so a real state blob exists in the container. The
+# azurerm backend acquires a (legitimate) lease during apply and releases it
+# at the end — leaving the blob ready for step 5's orphan-lock simulation.
+cd /root/workspace/blob-demo
+export SSL_CERT_FILE=/root/.miniblue/cert.pem
 terraform init
+terraform apply -auto-approve
 
 # Init main workspace (azurerm provider, local backend).
 # Do NOT apply — students focus on fmt/console/get/graph here, not on cloud
 # resources. Pre-init keeps the workspace ready for `terraform fmt -check`,
 # `terraform get`, `terraform graph` etc. without an extra wait.
 cd /root/workspace
-export SSL_CERT_FILE=/root/.miniblue/cert.pem
 terraform init
 
 install_theia_plugin
