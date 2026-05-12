@@ -50,8 +50,7 @@ terraform {
     key                  = "demo/terraform.tfstate"
 
     # 指向 miniblue（HTTPS metadata + ARM 端点 4567）
-    metadata_host                   = "localhost:4567"
-    resource_provider_registrations = "none"
+    metadata_host = "localhost:4567"
 
     # miniblue 接受任意凭据
     subscription_id = "00000000-0000-0000-0000-000000000000"

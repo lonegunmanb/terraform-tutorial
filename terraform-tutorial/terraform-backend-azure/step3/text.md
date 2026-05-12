@@ -72,8 +72,7 @@ storage_account_name = "tfstatelab"
 container_name       = "tfstate"
 key                  = "partial-demo/terraform.tfstate"
 
-metadata_host                   = "localhost:4567"
-resource_provider_registrations = "none"
+metadata_host = "localhost:4567"
 
 subscription_id = "00000000-0000-0000-0000-000000000000"
 tenant_id       = "00000000-0000-0000-0000-000000000001"
@@ -115,7 +114,6 @@ terraform init -migrate-state \
   -backend-config="container_name=tfstate" \
   -backend-config="key=cli-demo/terraform.tfstate" \
   -backend-config="metadata_host=localhost:4567" \
-  -backend-config="resource_provider_registrations=none" \
   -backend-config="subscription_id=00000000-0000-0000-0000-000000000000" \
   -backend-config="tenant_id=00000000-0000-0000-0000-000000000001" \
   -backend-config="client_id=miniblue" \
