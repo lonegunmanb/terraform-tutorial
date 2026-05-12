@@ -9,7 +9,16 @@ cd /root/workspace
 cat main.tf
 ```
 
-这份配置定义了一个 Resource Group 和一个地址空间为 10.0.0.0/16 的 Virtual Network。接下来，初始化 Terraform 并创建它们：
+这份配置定义了一个 Resource Group 和一个地址空间为 10.0.0.0/16 的 Virtual Network。
+
+接下来，先确保当前 shell 能信任 miniblue 的自签名证书（Killercoda 的终端不会自动加载 /etc/profile.d/，所以这里手动 source 一次）：
+
+```
+source /etc/profile.d/miniblue.sh
+echo $SSL_CERT_FILE
+```
+
+第二条命令应输出 /root/.miniblue/cert.pem。然后初始化 Terraform 并创建资源：
 
 ```
 terraform init
