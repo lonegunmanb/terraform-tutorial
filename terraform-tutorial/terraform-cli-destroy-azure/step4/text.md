@@ -1,20 +1,27 @@
 # 第四步：依赖顺序销毁——time_sleep 与 depends_on 实战
 
-## 真实案例：Azure 控制平面的最终一致性
+## 真实案例：Azure 资源就绪状态的延迟
 
-在真实的 Azure 环境中，Resource Group / Role Assignment / Managed Identity 等控制平面对象都属于 ARM 全局服务，创建后需要数秒到数十秒才能在所有区域 / 服务端点完全生效（最终一致性）。如果另一个资源在前者未传播完成时就引用它，Azure API 会返回类似下面的瞬时错误：
+在真实的 Azure 环境中，许多资源在 ARM 控制平面返回 `201 Created` 之后，**资源本身的运行态（provisioningState / runtime status）还没有真正进入 `Succeeded` / `Running` / `Ready`**。比如：
+
+- Storage Account 创建完成后，账户的 blob/queue/table 端点 DNS 还需要数秒到数十秒才能解析到节点
+- AKS / VM / App Service 的控制平面对象已经存在，但容器/虚拟机进程仍在初始化，无法接受流量
+- Private Endpoint 创建完成后，对应的私有 IP 与 DNS 记录还需要时间在区域内同步
+- Managed Identity 创建后，新 principal 需要时间在 Azure AD 中传播到所有租户副本
+
+如果此时把上一个资源的 `id` / `endpoint` 传给下一个 API 去建立连接（如 Private Endpoint 指向 Storage Account、App Service 配置 Key Vault 引用、role assignment 引用刚创建的 managed identity），Azure 经常会返回类似下面的瞬时错误：
 
 ```
-PrincipalNotFound: Principal xxxx does not exist in the directory yyyy
+ResourceNotReady: The resource is being provisioned. Please retry the operation.
 ```
 
 或者：
 
 ```
-ResourceGroupNotFound: Resource group 'foo' could not be found
+PrincipalNotFound: Principal xxxx does not exist in the directory yyyy
 ```
 
-这是一个长期存在的问题（参考 https://github.com/hashicorp/terraform-provider-azurerm/issues/4430 ——"Principal does not exist in the directory" when creating role assignment）。即使 Terraform 通过资源引用建立了隐式依赖，Azure AD / ARM 控制平面的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
+这类问题在 azurerm provider 仓库里有大量长期 issue（典型如 [#4430 — "Principal does not exist in the directory" when creating role assignment](https://github.com/hashicorp/terraform-provider-azurerm/issues/4430)）。即使 Terraform 通过资源引用建立了隐式依赖（保证"创建完成才引用"），Azure 内部的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
 
 解决方案是使用 time_sleep 资源强制等待传播完成。这不仅保证了创建时的正确顺序，也确保了销毁时先删除引用方（DNS Zone、VNet），再删除被引用方（Resource Group）。
 
@@ -52,7 +59,7 @@ time_sleep.azure_propagation (等待 10 秒)
 ```
 terraform apply -auto-approve
 ```
-
+资源状态尚未就绪的瞬时
 仔细观察输出中的时间线：
 
 1. azurerm_resource_group.app 最先创建
@@ -92,7 +99,7 @@ terraform destroy -auto-approve
 
 原因有两个：
 
-1. 创建时：隐式依赖只保证"RG 创建完成后才创建子资源"，但不保证"RG 在 Azure 内部已传播完成"。time_sleep 的 create_duration 填补了这个时间差
+1. 创建时：隐式依赖只保证"RG 创建完成后才创建子资源"，但不保证"RG 在 Azure 内部已完全就绪"。time_sleep 的 create_duration 填补了这个时间差——在真实场景中（Storage / AKS / Managed Identity 等），这段等待是避免下游 API 报"资源未就绪"错误的关键
 2. 销毁时：time_sleep 通过 depends_on 建立的依赖链确保了严格的逆序销毁——先删使用方，等一会（虽然 destroy 不会真的等 create_duration），再删被使用方
 
 这就是 depends_on 与 time_sleep 的典型组合模式：解决云服务的最终一致性问题，同时保证创建和销毁的正确顺序。
