@@ -2,7 +2,7 @@ services:
   miniblue:
     # 使用 fork 后的镜像（修复 ARM 路由大小写敏感、blob metadata 持久化，并新增 MINIBLUE_DISABLE_SHAREDKEY_AUTH
     # 用于教学场景下绕过 SharedKey 校验），版本锁定
-    image: ghcr.io/lonegunmanb/miniblue:sha-7f8a94e
+    image: ghcr.io/lonegunmanb/miniblue:sha-8cc1c25
     ports:
       - "4566:4566"
       - "4567:4567"
