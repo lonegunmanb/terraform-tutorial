@@ -113,4 +113,10 @@ terraform destroy -var-file=prod.tfvars
 | 与其他选项组合 | 支持 `-target`、`-var` 等 | 支持 `-target`、`-var` 等 |
 | 推荐场景 | 日常终端使用（语义更清晰） | CI/CD 脚本（与 `apply` 保持一致的命令格式） |
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-destroy" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-destroy" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-destroy-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 destroy 子命令与 AWS 版完全一致。"
+/>
