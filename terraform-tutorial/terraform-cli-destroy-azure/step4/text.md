@@ -14,7 +14,7 @@ PrincipalNotFound: Principal xxxx does not exist in the directory yyyy
 ResourceGroupNotFound: Resource group 'foo' could not be found
 ```
 
-这是一个长期存在的问题（参考 https://github.com/hashicorp/terraform-provider-azurerm/issues/12025 ）。即使 Terraform 通过资源引用建立了隐式依赖，Azure 控制平面的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
+这是一个长期存在的问题（参考 https://github.com/hashicorp/terraform-provider-azurerm/issues/4430 ——"Principal does not exist in the directory" when creating role assignment）。即使 Terraform 通过资源引用建立了隐式依赖，Azure AD / ARM 控制平面的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
 
 解决方案是使用 time_sleep 资源强制等待传播完成。这不仅保证了创建时的正确顺序，也确保了销毁时先删除引用方（DNS Zone、VNet），再删除被引用方（Resource Group）。
 
