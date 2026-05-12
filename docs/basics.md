@@ -5,7 +5,7 @@ title: 基础：Terraform 基本生命周期
 
 # 基础：Terraform 基本生命周期
 
-在这一章中，你将通过一台 EC2 虚拟机，学习 Terraform 管理基础设施的完整生命周期——**创建、验证幂等性、修改配置、销毁资源**。
+在这一章中，你将通过一台虚拟机，学习 Terraform 管理基础设施的完整生命周期——**创建、验证幂等性、修改配置、销毁资源**。
 
 ## 📝 核心概念
 
@@ -89,8 +89,14 @@ awslocal ec2 describe-instances --output json
 3. **修改配置** — 将实例类型改为 `t2.small`，`plan` 查看差异，`apply` 并用 `awslocal` 确认变更
 4. **销毁** — `terraform destroy` 清理所有资源，用 `awslocal` 确认实例已消失
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-basics~embed" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-basics~embed" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-basics-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），将 EC2 实例换成 Resource Group + Virtual Network，命令与生命周期流程与 AWS 版完全一致。"
+/>
 
 ::: info 关于实验环境
-沙盒已预装 Terraform CLI、AWS CLI、awslocal 和 LocalStack（模拟 EC2）。工作目录中有一份预置的 `main.tf`，配置了 LocalStack 的 Endpoint 和伪 AWS 凭证，无需真实 AWS 账号。
+沙盒已预装 Terraform CLI、AWS CLI、awslocal 和 LocalStack（模拟 EC2）。工作目录中有一份预置的 `main.tf`，配置了 LocalStack 的 Endpoint 和伪 AWS 凭证，无需真实 AWS 账号。Azure 版沙盒则预装 Terraform CLI、miniblue（Azure 本地模拟器）与 `azlocal` CLI，使用伪 Azure 凭证。
 :::

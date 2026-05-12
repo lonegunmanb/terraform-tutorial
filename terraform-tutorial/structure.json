@@ -1,6 +1,7 @@
 {
   "items": [
     { "path": "terraform-basics" },
+    { "path": "terraform-basics-azure" },
     { "path": "terraform-state" },
     { "path": "terraform-backend" },
     { "path": "terraform-syntax-config-syntax" },
