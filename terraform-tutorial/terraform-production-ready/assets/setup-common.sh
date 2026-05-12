@@ -19,7 +19,10 @@
 TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.14.8}"
 TFLINT_VERSION="${TFLINT_VERSION:-v0.61.0}"
 TERRAGRUNT_VERSION="${TERRAGRUNT_VERSION:-0.77.5}"
-MINIBLUE_VERSION="${MINIBLUE_VERSION:-0.7.0}"
+# Note: the miniblue container image tag is pinned in scripts/miniblue-image.mjs
+# and propagated into every docker-compose.yml by `npm run sync-miniblue`.
+# There is no shell-side miniblue version variable — start_miniblue just runs
+# `docker compose up -d` against the pinned compose file.
 
 install_terraform() {
   if ! command -v unzip > /dev/null 2>&1; then

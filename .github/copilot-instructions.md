@@ -177,7 +177,14 @@ For Azure-flavoured scenarios (e.g. `terraform-cli-apply-azure`), substitute Loc
 - `install_awscli` installs AWS CLI v2 (official binary) and creates an `awslocal` shell wrapper that sets `--endpoint-url=http://localhost:4566` automatically.
 - `start_localstack` auto-installs Docker Compose v2 plugin if missing before running `docker compose up -d`.
 - `start_miniblue` runs `docker compose up -d`, waits for `http://localhost:4566/health`, primes the HTTPS port to materialise the self-signed cert, then exports `SSL_CERT_FILE=/root/.miniblue/cert.pem` globally via `/etc/profile.d/miniblue.sh`.
-- Versions can be overridden via env vars: `TERRAFORM_VERSION`, `TFLINT_VERSION`, `MINIBLUE_VERSION` (default `0.7.0` — keep pinned).
+- Versions can be overridden via env vars: `TERRAFORM_VERSION`, `TFLINT_VERSION`. The miniblue container image tag is **not** an env var — it lives in `scripts/miniblue-image.mjs` (single source of truth) and is propagated into every `docker-compose.yml` and `background.sh` heredoc by `npm run sync-miniblue`.
+
+### Miniblue Image Pin
+
+- **Source of truth**: `scripts/miniblue-image.mjs` exports the canonical image tag (e.g. `ghcr.io/lonegunmanb/miniblue:sha-5b0aa94`).
+- **Auto-propagated**: `scripts/sync-miniblue-image.mjs` rewrites every `image: ghcr.io/lonegunmanb/miniblue:sha-5b0aa94` line in `terraform-tutorial/*/assets/docker-compose.yml`, `terraform-tutorial/*/init/background.sh`, and the docs reference in this file.
+- Run `npm run sync-miniblue` after bumping, or it runs automatically via `prebuild`.
+- Do NOT edit the image tag in any docker-compose.yml or background.sh by hand — change `miniblue-image.mjs` and resync.
 
 ### Sidebar Auto-Sync
 

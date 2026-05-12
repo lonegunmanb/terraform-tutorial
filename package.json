@@ -9,7 +9,8 @@
     "preview": "vitepress preview docs",
     "sync-sidebar": "node scripts/sync-sidebar.mjs",
     "sync-setup": "node scripts/sync-setup-common.mjs",
-    "prebuild": "node scripts/sync-sidebar.mjs && node scripts/sync-setup-common.mjs"
+    "sync-miniblue": "node scripts/sync-miniblue-image.mjs",
+    "prebuild": "node scripts/sync-sidebar.mjs && node scripts/sync-miniblue-image.mjs && node scripts/sync-setup-common.mjs"
   },
   "devDependencies": {
     "vitepress": "^1.6.4"
