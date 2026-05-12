@@ -7,7 +7,6 @@
 - Storage Account 创建完成后，账户的 blob/queue/table 端点 DNS 还需要数秒到数十秒才能解析到节点
 - AKS / VM / App Service 的控制平面对象已经存在，但容器/虚拟机进程仍在初始化，无法接受流量
 - Private Endpoint 创建完成后，对应的私有 IP 与 DNS 记录还需要时间在区域内同步
-- Managed Identity 创建后，新 principal 需要时间在 Azure AD 中传播到所有租户副本
 
 如果此时把上一个资源的 `id` / `endpoint` 传给下一个 API 去建立连接（如 Private Endpoint 指向 Storage Account、App Service 配置 Key Vault 引用、role assignment 引用刚创建的 managed identity），Azure 经常会返回类似下面的瞬时错误：
 
@@ -21,7 +20,7 @@ ResourceNotReady: The resource is being provisioned. Please retry the operation.
 PrincipalNotFound: Principal xxxx does not exist in the directory yyyy
 ```
 
-这类问题在 azurerm provider 仓库里有大量长期 issue（典型如 [#4430 — "Principal does not exist in the directory" when creating role assignment](https://github.com/hashicorp/terraform-provider-azurerm/issues/4430)）。即使 Terraform 通过资源引用建立了隐式依赖（保证"创建完成才引用"），Azure 内部的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
+这类问题在 azurerm provider 仓库里有大量 issue（典型如 [#32161 — azurerm_kusto_cluster should poll Azure-AsyncOperation until terminal state before completing apply](https://github.com/hashicorp/terraform-provider-azurerm/issues/32161)）。即使 Terraform 通过资源引用建立了隐式依赖（保证"创建完成才引用"），Azure 内部的最终一致性仍然会导致首次 apply 失败、第二次才成功的情况。
 
 解决方案是使用 time_sleep 资源强制等待传播完成。这不仅保证了创建时的正确顺序，也确保了销毁时先删除引用方（DNS Zone、VNet），再删除被引用方（Resource Group）。
 
