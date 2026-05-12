@@ -1,0 +1,16 @@
+services:
+  miniblue:
+    # 使用 fork 后的镜像（修复 ARM 路由大小写、blob metadata 持久化、SharedKey 旁路），版本锁定
+    image: ghcr.io/lonegunmanb/miniblue:sha-5b0aa94
+    ports:
+      - "4566:4566"
+      - "4567:4567"
+    environment:
+      # 让 ARM 返回的 Storage Account primaryEndpoints.blob 指向本地端口
+      - MINIBLUE_STORAGE_ENDPOINT=http://localhost:4566
+      # 让 azurerm backend 的 blob lease + state 写入流程跳过 SharedKey 签名验证
+      - MINIBLUE_DISABLE_SHAREDKEY_AUTH=1
+    deploy:
+      resources:
+        limits:
+          memory: 512M

@@ -124,6 +124,45 @@ terraform {
 3. 设置 `use_lockfile = true` 启用状态锁定
 :::
 
+### azurerm 后端
+
+azurerm 后端将状态以 blob 的形式存储在 Azure Storage Account 的 Blob Container 中，是 Azure 项目最常用的远程后端：
+
+```hcl
+terraform {
+  backend "azurerm" {
+    resource_group_name  = "tfstate-rg"
+    storage_account_name = "tfstatelab"
+    container_name       = "tfstate"
+    key                  = "prod/terraform.tfstate"
+  }
+}
+```
+
+核心参数：
+
+- **`resource_group_name`**（必填）— Storage Account 所在的 Resource Group
+- **`storage_account_name`**（必填）— Storage Account 名称（全局唯一，3–24 位小写字母数字）
+- **`container_name`**（必填）— 用于存放状态 blob 的 Container
+- **`key`**（必填）— 状态文件在 Container 中的 blob 名称
+
+凭据相关参数：
+
+- **`subscription_id` / `tenant_id` / `client_id` / `client_secret`** — 服务主体认证；推荐通过 `ARM_*` 环境变量传递
+- **`use_azuread_auth`** — 设为 `true` 时使用 Microsoft Entra ID 身份直接访问 blob，无需 Storage Account 访问密钥（推荐生产使用）
+- **`use_oidc`** — 启用 OIDC 联合身份认证，适配 GitHub Actions / Azure DevOps 等 CI
+
+::: tip 状态锁机制
+azurerm 后端通过 Azure Blob 的 **lease（租约）** 实现状态锁定——租约直接作用在状态 blob 本身，**无需额外的锁表**（与 S3 后端需要 DynamoDB 不同）。Terraform 在 apply 开始时为状态 blob 申请独占租约，结束时释放。
+:::
+
+::: tip 生产环境推荐
+1. 为 Container 所属的 Storage Account 启用 **blob 版本控制** 和**软删除**，以便在出错时恢复状态
+2. 启用 **Microsoft Entra ID 认证**（`use_azuread_auth = true`），避免使用长期有效的访问密钥
+3. 通过 `ARM_*` 环境变量或 OIDC 注入凭据，不要把 `client_secret` 写进代码
+
+:::
+
 ### Consul 后端
 
 Consul 后端将状态存储在 [HashiCorp Consul](https://www.consul.io/) 的 KV（键值）存储中。Consul 原生支持状态锁定：
@@ -262,4 +301,10 @@ Do you want to migrate all workspaces to "local"?
 2. **S3 后端** — 配置 S3 后端（使用 LocalStack 模拟），将状态迁移到远程存储，体验状态锁定
 3. **部分配置** — 将后端参数从代码中分离，通过配置文件和命令行参数提供
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-backend" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-backend" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-backend-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），将 S3 + DynamoDB 替换为 Azure Storage Account + Blob Container（基于 blob lease 的状态锁定），后端配置流程与 AWS 版一一对应。"
+/>

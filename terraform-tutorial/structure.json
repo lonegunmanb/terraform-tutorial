@@ -4,6 +4,7 @@
     { "path": "terraform-basics-azure" },
     { "path": "terraform-state" },
     { "path": "terraform-backend" },
+    { "path": "terraform-backend-azure" },
     { "path": "terraform-syntax-config-syntax" },
     { "path": "terraform-syntax-type" },
     { "path": "terraform-syntax-variable" },
