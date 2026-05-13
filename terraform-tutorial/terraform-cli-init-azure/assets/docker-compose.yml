@@ -1,0 +1,14 @@
+services:
+  miniblue:
+    # 使用 fork 后的镜像（兼容 azurerm v4），版本通过 SHA tag 锁定
+    image: ghcr.io/lonegunmanb/miniblue:sha-8cc1c25
+    ports:
+      - "4566:4566"
+      - "4567:4567"
+    environment:
+      - MINIBLUE_STORAGE_ENDPOINT=http://localhost:4566
+      - MINIBLUE_DISABLE_SHAREDKEY_AUTH=1
+    deploy:
+      resources:
+        limits:
+          memory: 512M

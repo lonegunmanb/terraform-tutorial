@@ -21,6 +21,7 @@
     { "path": "terraform-cli-basics" },
     { "path": "terraform-cli-basics-azure" },
     { "path": "terraform-cli-init" },
+    { "path": "terraform-cli-init-azure" },
     { "path": "terraform-cli-plan" },
     { "path": "terraform-cli-apply" },
     { "path": "terraform-cli-apply-azure" },

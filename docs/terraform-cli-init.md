@@ -188,4 +188,10 @@ terraform init -input=false -lockfile=readonly
 - `-input=false`：禁用交互式输入（CI 中无法交互）
 - `-lockfile=readonly`：防止 CI 意外修改锁文件
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-init" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-init" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-init-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 init 子命令与参数与 AWS 版完全一致，远端状态存储改用 azurerm backend（Azure Blob Container）。"
+/>
