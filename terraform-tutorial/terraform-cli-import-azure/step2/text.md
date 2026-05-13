@@ -10,6 +10,14 @@ cat /root/foreach.tf
 
 配置使用 for_each 为 dev 和 staging 两个环境各创建一个 Resource Group。环境中已通过 miniblue ARM API 预创建了 app-dev-rg 和 app-staging-rg 这两个资源组。
 
+用 azlocal 确认这两个资源组确实已经存在：
+
+```
+azlocal group list
+```
+
+输出中应当能看到 app-dev-rg 和 app-staging-rg（以及 Step 1 导入过的 legacy-rg）。注意此时它们都还没有任何 tags。
+
 将配置复制到工作目录：
 
 ```
@@ -59,13 +67,14 @@ terraform plan
 terraform apply -auto-approve
 ```
 
-验证标签已设置：
+用 azlocal 验证两个资源组的标签都已设置：
 
 ```
 azlocal group show --name app-dev-rg
+azlocal group show --name app-staging-rg
 ```
 
-输出中应当能看到 Environment=dev、ManagedBy=Terraform 标签。
+输出中应当能分别看到 Environment=dev / Environment=staging，以及统一的 ManagedBy=Terraform 标签——这就证明 Terraform 已经接管了这两个原本由外部创建的资源组。
 
 最终确认所有资源都在 Terraform 管理中：
 
