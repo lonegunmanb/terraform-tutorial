@@ -135,4 +135,10 @@ shell 中使用 `for_each` 的 key 时，注意引号的转义。Linux/macOS 中
 - 导入后务必运行 `terraform plan` 验证配置与实际状态的一致性。plan 有差异时应补全配置，否则下一次 apply 可能会修改或销毁已导入的资源。
 - provider 配置不能依赖 data source 的输出。
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-import" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-import" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-import-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 import 子命令与 AWS 版完全一致。"
+/>

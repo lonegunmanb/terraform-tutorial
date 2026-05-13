@@ -1,0 +1,31 @@
+# 恭喜完成 terraform import 实战练习（Azure 版）！
+
+## 知识总结
+
+| 功能 | 方式 | 核心场景 |
+|------|------|---------|
+| 导入单个资源 | terraform import ADDR ID | 临时导入、快速接管 |
+| 导入到 count 资源 | terraform import 'ADDR[0]' ID | 多实例资源按索引导入 |
+| 导入到 for_each 资源 | terraform import 'ADDR["key"]' ID | 多实例资源按 key 导入 |
+
+## Azure 版要点回顾
+
+- azurerm 资源的 ID 是完整的 Azure Resource ID（形如 /subscriptions/{sub}/resourceGroups/{name}/providers/...），与 AWS 的简短 ID（桶名、实例 ID）不同
+- 本课程用 [miniblue](https://miniblue.io/) 在本地完整模拟 Azure REST API，无需真实订阅
+- 所有 import 子命令、参数、工作流与 AWS / LocalStack 版完全一致——这正是 Terraform 多云抽象的价值所在
+
+## 导入工作流
+
+```
+1. 在配置中声明 resource 块（可以是空的）
+2. 执行 terraform import
+3. 运行 terraform plan 查看差异
+4. 补全配置直到 plan 显示 No changes
+```
+
+## 关键要点
+
+- terraform import 不会自动生成配置，需要手动编写 resource 块
+- 每个远端资源只能导入到一个 Terraform 资源地址
+- 导入后务必运行 terraform plan 验证一致性
+- 声明式 import 块的用法请参考代码重构章节
