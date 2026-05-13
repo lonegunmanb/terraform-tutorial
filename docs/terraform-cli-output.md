@@ -149,4 +149,10 @@ BUCKET=$(cat infra-outputs.json | jq -r '.app_bucket.value')
 - 如果状态为空（从未执行过 `apply`），命令会报错：`No outputs found`。
 - `terraform output` 是只读命令，不会修改状态或资源。
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-output" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-output" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-output-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 output 子命令与 AWS 版完全一致。"
+/>
