@@ -54,18 +54,6 @@ resource "azurerm_resource_group" "main" {
   tags     = local.common_tags
 }
 
-resource "azurerm_dns_zone" "app" {
-  name                = "${var.app_name}-${var.environment}-app-${var.suffix}.local"
-  resource_group_name = azurerm_resource_group.main.name
-  tags                = local.common_tags
-}
-
-resource "azurerm_dns_zone" "logs" {
-  name                = "${var.app_name}-${var.environment}-logs-${var.suffix}.local"
-  resource_group_name = azurerm_resource_group.main.name
-  tags                = local.common_tags
-}
-
 resource "azurerm_virtual_network" "net" {
   name                = "${var.app_name}-${var.environment}-vnet-${var.suffix}"
   address_space       = ["10.0.0.0/16"]
@@ -74,18 +62,32 @@ resource "azurerm_virtual_network" "net" {
   tags                = local.common_tags
 }
 
+resource "azurerm_subnet" "app" {
+  name                 = "${var.app_name}-${var.environment}-app-${var.suffix}"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.net.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+resource "azurerm_subnet" "logs" {
+  name                 = "${var.app_name}-${var.environment}-logs-${var.suffix}"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.net.name
+  address_prefixes     = ["10.0.2.0/24"]
+}
+
 output "resource_group" {
   value = azurerm_resource_group.main.name
 }
 
-output "app_dns_zone" {
-  value = azurerm_dns_zone.app.name
-}
-
-output "logs_dns_zone" {
-  value = azurerm_dns_zone.logs.name
-}
-
 output "vnet" {
   value = azurerm_virtual_network.net.name
+}
+
+output "app_subnet" {
+  value = azurerm_subnet.app.name
+}
+
+output "logs_subnet" {
+  value = azurerm_subnet.logs.name
 }
