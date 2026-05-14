@@ -126,4 +126,10 @@ terraform show -json | python3 -m json.tool
 
 `terraform show` 不会修改任何状态或资源，是一个纯只读的检视命令。
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-show" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-show" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-show-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 show 子命令与 AWS 版完全一致。"
+/>
