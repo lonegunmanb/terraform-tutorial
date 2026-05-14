@@ -4,7 +4,7 @@
 
 ## 实验环境
 
-miniblue 已启动（HTTP 4566 / HTTPS 4567）；自签名证书已写入 `/root/.miniblue/cert.pem` 并通过系统 CA 信任链 + `SSL_CERT_FILE` 环境变量被 Terraform 信任。同时已安装 `azlocal` CLI（类似 `awslocal`，走 HTTP 端口 4566，无需证书），用于在课程中校验 Azure 资源。Terraform 已完成初始化并通过 `terraform apply -auto-approve` 创建了资源（1 个 Resource Group + 2 个 DNS Zone + 1 个 Virtual Network），你可以直接使用 `terraform show` 查看状态。
+miniblue 已启动（HTTP 4566 / HTTPS 4567）；自签名证书已写入 `/root/.miniblue/cert.pem` 并通过系统 CA 信任链 + `SSL_CERT_FILE` 环境变量被 Terraform 信任。同时已安装 `azlocal` CLI（类似 `awslocal`，走 HTTP 端口 4566，无需证书），用于在课程中校验 Azure 资源。Terraform 已完成初始化并通过 `terraform apply -auto-approve` 创建了资源（1 个 Resource Group + 1 个 Virtual Network + 2 个 Subnet），你可以直接使用 `terraform show` 查看状态。
 
 ## 与 AWS 版的区别
 

@@ -1,6 +1,6 @@
 {
   "title": "terraform show（Azure / miniblue 版）：查看状态与计划文件",
-  "description": "通过 miniblue 模拟的 Azure 资源（Resource Group、DNS Zone、Virtual Network），掌握 terraform show 的状态查看、计划文件解读、JSON 机器可读输出与脚本解析等核心能力",
+  "description": "通过 miniblue 模拟的 Azure 资源（Resource Group、Virtual Network、Subnet），掌握 terraform show 的状态查看、计划文件解读、JSON 机器可读输出与脚本解析等核心能力",
   "details": {
     "intro": {
       "text": "init/init.md",

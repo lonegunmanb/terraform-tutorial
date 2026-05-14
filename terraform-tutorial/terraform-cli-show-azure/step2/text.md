@@ -10,7 +10,7 @@ cp /root/updated-main.tf main.tf
 terraform plan -out=tfplan
 ```
 
-我们在 main.tf 中新增了一个 azurerm_subnet 资源（位于已有的 vnet 之下），plan 应显示 1 to add。
+我们在 main.tf 中新增了第三个 azurerm_subnet 资源（azurerm_subnet.db，位于同一个 vnet 之下），plan 应显示 1 to add。
 
 尝试直接查看计划文件的内容：
 
@@ -52,10 +52,10 @@ terraform apply tfplan
 计划执行完毕后，查看更新后的状态：
 
 ```
-terraform show | grep -A 5 "azurerm_subnet.app"
+terraform show | grep -A 5 "azurerm_subnet.db"
 ```
 
-可以看到新增的 subnet 资源已出现在状态中。
+可以看到新增的 db subnet 资源已出现在状态中。
 
 清理计划文件和文本记录：
 

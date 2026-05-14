@@ -9,7 +9,7 @@ cd /root/workspace
 terraform show
 ```
 
-输出包含每个资源的完整属性（DNS Zone 名、resource_group_name、tags、Virtual Network 的 address_space 等）以及所有 output 的值。这是检视"Terraform 眼中的基础设施当前样貌"的最直接方式。
+输出包含每个资源的完整属性（Resource Group、Virtual Network 的 address_space、Subnet 的 address_prefixes、tags 等）以及所有 output 的值。这是检视"Terraform 眼中的基础设施当前样貌"的最直接方式。
 
 ## 对比 state list 和 state show
 
@@ -24,7 +24,7 @@ terraform state list
 要查看某个特定资源的属性，用 state show：
 
 ```
-terraform state show azurerm_dns_zone.app
+terraform state show azurerm_subnet.app
 ```
 
 对比三者的定位：
