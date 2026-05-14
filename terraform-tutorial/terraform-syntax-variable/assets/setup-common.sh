@@ -152,9 +152,20 @@ start_miniblue() {
         echo "WARNING: failed to copy miniblue cert.pem out of container"
       else
         chmod 644 /root/.miniblue/cert.pem
+        # Install the cert into the system CA trust store so Go-based tools
+        # (terraform, azurerm provider) trust https://localhost:4567 WITHOUT
+        # needing SSL_CERT_FILE. This matters because Killercoda terminals are
+        # opened BEFORE background.sh runs, so the export appended to ~/.bashrc
+        # below does not affect the user's existing shell.
+        if command -v update-ca-certificates > /dev/null 2>&1; then
+          mkdir -p /usr/local/share/ca-certificates
+          cp /root/.miniblue/cert.pem /usr/local/share/ca-certificates/miniblue.crt
+          update-ca-certificates > /dev/null 2>&1 || true
+        fi
       fi
 
-      # Make SSL_CERT_FILE available for all interactive shells
+      # Make SSL_CERT_FILE available for all interactive shells (belt-and-braces;
+      # the system trust store above is the primary mechanism).
       cat > /etc/profile.d/miniblue.sh <<'PROF'
 export SSL_CERT_FILE=/root/.miniblue/cert.pem
 PROF
