@@ -204,4 +204,10 @@ terraform plan -parallelism=5
 
 `-json`、`-no-color`、`-input`、`-lock`、`-lock-timeout` 等通用参数同样适用于 `terraform plan`。详见 [CLI 基础命令 — 跨命令通用参数](/terraform-cli-basic#跨命令通用参数)。
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-plan" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-plan" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-plan-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 plan 子命令与 AWS 版完全一致。"
+/>
