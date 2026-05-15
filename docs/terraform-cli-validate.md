@@ -118,4 +118,10 @@ terraform plan -input=false -no-color
 
 validate 放在 fmt 之后、plan 之前——快速拦截语法错误，避免消耗远端 API 调用。
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-validate" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-validate" title="实验环境（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-validate-azure"
+  title="实验环境（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 validate 子命令与 AWS 版完全一致——provider 从 aws 换成 azurerm，演示资源换成了 azurerm_resource_group / azurerm_virtual_network。"
+/>

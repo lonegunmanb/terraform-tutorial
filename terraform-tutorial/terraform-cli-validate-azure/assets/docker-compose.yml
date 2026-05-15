@@ -1,0 +1,11 @@
+services:
+  miniblue:
+    # 使用 fork 后的镜像（修复了 ARM 路由大小写敏感与 vnet privateEndpointVNetPolicies 不回传问题，兼容 azurerm v4），版本锁定
+    image: ghcr.io/lonegunmanb/miniblue:sha-2fead35
+    ports:
+      - "4566:4566"
+      - "4567:4567"
+    deploy:
+      resources:
+        limits:
+          memory: 512M
