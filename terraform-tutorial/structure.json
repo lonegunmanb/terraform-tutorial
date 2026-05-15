@@ -37,6 +37,7 @@
     { "path": "terraform-cli-import-azure" },
     { "path": "terraform-cli-providers" },
     { "path": "terraform-cli-state" },
+    { "path": "terraform-cli-state-azure" },
     { "path": "terraform-cli-workspace" },
     { "path": "terraform-cli-config-file" },
     { "path": "terraform-query-import" },
