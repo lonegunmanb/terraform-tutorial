@@ -17,29 +17,29 @@ terraform state list
 输出会列出 5 个资源地址：
 
 ```
-azurerm_dns_zone.app
-azurerm_dns_zone.data
-azurerm_dns_zone.logs
 azurerm_resource_group.main
+azurerm_subnet.app
+azurerm_subnet.data
+azurerm_subnet.logs
 azurerm_virtual_network.net
 ```
 
 ### 用 grep 过滤
 
-只查看 DNS Zone：
+只查看 Subnet：
 
 ```
-terraform state list | grep azurerm_dns_zone
+terraform state list | grep azurerm_subnet
 ```
 
-只会显示 3 个 DNS Zone，Resource Group 与 Virtual Network 被过滤掉。
+只会显示 3 个 Subnet，Resource Group 与 Virtual Network 被过滤掉。
 
 ### 按 ID 过滤
 
 如果你知道远端资源的 ID，但不确定它在 Terraform 中叫什么名字：
 
 ```
-terraform state list -id=/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/state-demo-rg/providers/Microsoft.Network/dnszones/state-demo-logs.local
+terraform state list -id=/subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/state-demo-rg/providers/Microsoft.Network/virtualNetworks/state-demo-vnet/subnets/state-demo-logs
 ```
 
 输出只会显示匹配的资源地址。
@@ -50,13 +50,13 @@ Azure 资源 ID 是包含 subscription / resourceGroup / 资源类型 / 名称�
 
 ## 2. state show — 查看资源详情
 
-查看 app DNS Zone 的完整属性：
+查看 app subnet 的完整属性：
 
 ```
-terraform state show azurerm_dns_zone.app
+terraform state show azurerm_subnet.app
 ```
 
-输出包含该资源在状态中记录的所有属性（name、resource_group_name、id、tags、name_servers 等）。这些信息直接从状态文件读取，不会查询远端。
+输出包含该资源在状态中记录的所有属性（name、resource_group_name、virtual_network_name、address_prefixes、id 等）。这些信息直接从状态文件读取，不会查询远端。
 
 再看一下 Virtual Network：
 

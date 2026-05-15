@@ -11,14 +11,14 @@ Terraform 已完成初始化并 apply 了以下资源：
 | 资源 | 名称 |
 |------|------|
 | Resource Group | state-demo-rg |
-| DNS Zone | state-demo-app.local |
-| DNS Zone | state-demo-logs.local |
-| DNS Zone | state-demo-data.local |
 | Virtual Network | state-demo-vnet |
+| Subnet | state-demo-app |
+| Subnet | state-demo-logs |
+| Subnet | state-demo-data |
 
 ## 与 AWS 版的区别
 
-本课程是 [terraform state（LocalStack 版）](https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-state) 的 Azure 对照版本：所有 state 子命令、参数、工作流都完全一致，只是 provider 从 aws 换成 azurerm，模拟器从 LocalStack 换成了 miniblue，资源类型从 S3 桶 + DynamoDB 表换成了 DNS Zone + Virtual Network（外加一个父级 Resource Group）。
+本课程是 [terraform state（LocalStack 版）](https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-state) 的 Azure 对照版本：所有 state 子命令、参数、工作流都完全一致，只是 provider 从 aws 换成 azurerm，模拟器从 LocalStack 换成了 miniblue，资源类型从 S3 桶 + DynamoDB 表换成了 Resource Group + Virtual Network + Subnet（3 个 subnet 对应原 AWS 版的 3 个 S3 桶）。
 
 ## 学习内容
 

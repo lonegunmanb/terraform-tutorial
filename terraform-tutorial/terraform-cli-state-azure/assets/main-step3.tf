@@ -31,25 +31,6 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-# Step 3：data DNS Zone 已被 state rm，从配置中移除
-resource "azurerm_dns_zone" "application" {
-  name                = "state-demo-app.local"
-  resource_group_name = azurerm_resource_group.main.name
-  tags = {
-    Name        = "Application DNS Zone"
-    Environment = "production"
-  }
-}
-
-resource "azurerm_dns_zone" "logs" {
-  name                = "state-demo-logs.local"
-  resource_group_name = azurerm_resource_group.main.name
-  tags = {
-    Name        = "Logs DNS Zone"
-    Environment = "production"
-  }
-}
-
 resource "azurerm_virtual_network" "net" {
   name                = "state-demo-vnet"
   address_space       = ["10.0.0.0/16"]
@@ -59,4 +40,19 @@ resource "azurerm_virtual_network" "net" {
     Name        = "Demo VNet"
     Environment = "production"
   }
+}
+
+# Step 3：data subnet 已被 state rm，从配置中移除
+resource "azurerm_subnet" "application" {
+  name                 = "state-demo-app"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.net.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+resource "azurerm_subnet" "logs" {
+  name                 = "state-demo-logs"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.net.name
+  address_prefixes     = ["10.0.2.0/24"]
 }

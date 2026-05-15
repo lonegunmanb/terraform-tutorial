@@ -1,6 +1,6 @@
 {
   "title": "terraform state（Azure / miniblue 版）：状态管理子命令",
-  "description": "通过 miniblue 模拟的 Azure 资源（Resource Group、DNS Zone、Virtual Network），掌握 terraform state list/show/mv/rm/pull 等子命令的使用方法",
+  "description": "通过 miniblue 模拟的 Azure 资源（Resource Group、Virtual Network、Subnet），掌握 terraform state list/show/mv/rm/pull 等子命令的使用方法",
   "details": {
     "intro": {
       "text": "init/init.md",
