@@ -66,6 +66,11 @@ Terraform 报错：
 
 ```
 Error: Invalid default value for variable
+
+  on main.tf line 27, in variable "environment":
+  27:   default     = ["dev", "staging"]
+
+This default value is not compatible with the variable's type constraint: string required, but have tuple.
 ```
 
 default 值的类型（list）与声明的 type（string）不匹配。注意：数字和布尔值可以隐式转换为 string，不会报错，必须使用 list 或 map 等复合类型才能触发此错误。
@@ -95,6 +100,11 @@ terraform validate
 
 ```
 Error: Reference to undeclared input variable
+
+  on main.tf line 54, in output "resource_group":
+  54:   value = var.nonexistent
+
+An input variable with the name "nonexistent" has not been declared. This variable can be declared with a variable "nonexistent" {} block.
 ```
 
 Terraform 能在不访问远端的情况下发现这个引用错误——这就是 validate 作为快速预检的价值。
