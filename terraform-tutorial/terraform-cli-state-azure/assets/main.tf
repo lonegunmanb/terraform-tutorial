@@ -31,33 +31,6 @@ resource "azurerm_resource_group" "main" {
   }
 }
 
-resource "azurerm_dns_zone" "app" {
-  name                = "state-demo-app.local"
-  resource_group_name = azurerm_resource_group.main.name
-  tags = {
-    Name        = "Application DNS Zone"
-    Environment = "production"
-  }
-}
-
-resource "azurerm_dns_zone" "logs" {
-  name                = "state-demo-logs.local"
-  resource_group_name = azurerm_resource_group.main.name
-  tags = {
-    Name        = "Logs DNS Zone"
-    Environment = "production"
-  }
-}
-
-resource "azurerm_dns_zone" "data" {
-  name                = "state-demo-data.local"
-  resource_group_name = azurerm_resource_group.main.name
-  tags = {
-    Name        = "Data DNS Zone"
-    Environment = "staging"
-  }
-}
-
 resource "azurerm_virtual_network" "net" {
   name                = "state-demo-vnet"
   address_space       = ["10.0.0.0/16"]
@@ -67,4 +40,25 @@ resource "azurerm_virtual_network" "net" {
     Name        = "Demo VNet"
     Environment = "production"
   }
+}
+
+resource "azurerm_subnet" "app" {
+  name                 = "state-demo-app"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.net.name
+  address_prefixes     = ["10.0.1.0/24"]
+}
+
+resource "azurerm_subnet" "logs" {
+  name                 = "state-demo-logs"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.net.name
+  address_prefixes     = ["10.0.2.0/24"]
+}
+
+resource "azurerm_subnet" "data" {
+  name                 = "state-demo-data"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.net.name
+  address_prefixes     = ["10.0.3.0/24"]
 }

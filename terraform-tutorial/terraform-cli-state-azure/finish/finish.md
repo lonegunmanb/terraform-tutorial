@@ -25,4 +25,4 @@
 
 - Azure 资源 ID 是 /subscriptions/.../resourceGroups/.../providers/.../<name> 的完整路径，比 AWS 的 ARN 更长；做 import / state list -id 时需要写完整路径。
 - azurerm provider v4 中，metadata_host、resource_provider_registrations = "none" 等参数让 provider 指向 miniblue 模拟器，无需真实 Azure 凭据。
-- 使用 azlocal 验证远端资源（如 azlocal dns zone list、azlocal group list）比直接调用 ARM REST API 更直观。
+- 使用 azlocal 验证远端资源（如 azlocal network vnet subnet list、azlocal group list）比直接调用 ARM REST API 更直观。

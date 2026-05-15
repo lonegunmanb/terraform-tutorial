@@ -4,7 +4,7 @@
 
 ## 1. 观察问题
 
-当前配置中 app DNS Zone 名为 azurerm_dns_zone.app。假设我们要把它重命名为 azurerm_dns_zone.application。
+当前配置中 app subnet 名为 azurerm_subnet.app。假设我们要把它重命名为 azurerm_subnet.application。
 
 先看一下当前状态：
 
@@ -20,13 +20,13 @@ terraform state list
 在执行前先用 -dry-run 确认变更：
 
 ```
-terraform state mv -dry-run azurerm_dns_zone.app azurerm_dns_zone.application
+terraform state mv -dry-run azurerm_subnet.app azurerm_subnet.application
 ```
 
 输出类似：
 
 ```
-Would move "azurerm_dns_zone.app" to "azurerm_dns_zone.application"
+Would move "azurerm_subnet.app" to "azurerm_subnet.application"
 ```
 
 确认无误后执行。
@@ -34,13 +34,13 @@ Would move "azurerm_dns_zone.app" to "azurerm_dns_zone.application"
 ## 3. 执行 state mv
 
 ```
-terraform state mv azurerm_dns_zone.app azurerm_dns_zone.application
+terraform state mv azurerm_subnet.app azurerm_subnet.application
 ```
 
 输出：
 
 ```
-Move "azurerm_dns_zone.app" to "azurerm_dns_zone.application"
+Move "azurerm_subnet.app" to "azurerm_subnet.application"
 Successfully moved 1 object(s).
 ```
 
@@ -50,7 +50,7 @@ Successfully moved 1 object(s).
 terraform state list
 ```
 
-现在应该看到 azurerm_dns_zone.application 而不是 azurerm_dns_zone.app。
+现在应该看到 azurerm_subnet.application 而不是 azurerm_subnet.app。
 
 ## 4. 同步配置文件
 

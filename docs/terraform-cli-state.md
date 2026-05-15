@@ -248,5 +248,5 @@ terraform state replace-provider hashicorp/aws registry.acme.corp/acme/aws
 <KillercodaEmbed
   src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-cli-state-azure"
   title="实验环境（Azure / miniblue 版）"
-  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 state 子命令与 AWS 版完全一致，资源类型为 Resource Group + DNS Zone + Virtual Network。"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + miniblue（Azure 本地模拟器），所有 state 子命令与 AWS 版完全一致，资源类型为 Resource Group + Virtual Network + Subnet。"
 />
