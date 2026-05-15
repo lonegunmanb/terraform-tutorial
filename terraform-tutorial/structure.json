@@ -29,6 +29,7 @@
     { "path": "terraform-cli-destroy" },
     { "path": "terraform-cli-destroy-azure" },
     { "path": "terraform-cli-validate" },
+    { "path": "terraform-cli-validate-azure" },
     { "path": "terraform-cli-show" },
     { "path": "terraform-cli-show-azure" },
     { "path": "terraform-cli-output" },
