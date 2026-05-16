@@ -119,6 +119,13 @@ start_localstack() {
   docker compose logs
 }
 
+write_vault_hosts() {
+  for v in "$@"; do
+    grep -q "${v}.vault.azure.net" /etc/hosts \
+      || echo "127.0.0.1 ${v}.vault.azure.net" >> /etc/hosts
+  done
+}
+
 start_miniblue() {
   cd /root/workspace
   mkdir -p /root/.miniblue
@@ -176,6 +183,7 @@ PROF
         echo 'export SSL_CERT_FILE=/root/.miniblue/cert.pem' >> /root/.bashrc
       fi
       export SSL_CERT_FILE=/root/.miniblue/cert.pem
+      write_vault_hosts "webapp-dev-kv" "webapp-dev-lab-kv" "webapp-lab-dev-kv"
       return 0
     fi
     sleep 2

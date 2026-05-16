@@ -4,6 +4,7 @@ services:
     ports:
       - "4566:4566"
       - "4567:4567"
+      - "443:4567"
     environment:
       MINIBLUE_STORAGE_ENDPOINT: http://localhost:4566
       MINIBLUE_DISABLE_SHAREDKEY_AUTH: "1"

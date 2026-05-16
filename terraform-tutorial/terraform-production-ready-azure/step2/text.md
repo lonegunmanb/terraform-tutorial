@@ -1,34 +1,117 @@
-# 第二步：提取网络层和虚拟机层
+# 第二步：提取网络层和 Web 层
 
-## 查看预备好的模块
+## 查看预备好的模块文件
+
+我们已经为你准备好了重构后的模块文件。先看看目录结构：
 
 ```bash
 find /root/stage/step2 -name "*.tf" | sort
 ```
 
-networking 模块封装 Resource Group、VNet 和三个 Subnet。web 模块封装 Public IP、NIC、NSG 关联和 Linux VM。
+两个模块——networking 和 web——分别封装了网络层和 Web 层的资源。
+
+## 理解 moved 块
+
+重构的关键是 moved 块。看看我们为这次重构准备的 moved 声明：
 
 ```bash
 cat /root/stage/step2/moved.tf
 ```
 
-moved 块告诉 Terraform 资源只是换了地址，不要销毁重建。
+每个 moved 块告诉 Terraform：旧地址的资源现在搬到了新地址。例如：
+
+```
+moved {
+  from = azurerm_virtual_network.main
+  to   = module.networking.azurerm_virtual_network.this
+}
+```
+
+意思是：原来根模块的 azurerm_virtual_network.main 现在由 module.networking 管理，资源名改为 azurerm_virtual_network.this。Terraform 会更新状态文件里的地址，但不会销毁或重建 VNet。
+
+注意子网的地址变化——从独立资源变成了 for_each：
+
+```
+from = azurerm_subnet.public_a
+to   = module.networking.azurerm_subnet.public["10.0.1.0/24"]
+```
+
+moved 块能处理从单独命名到 for_each 键的转换。这是生产环境重构最常见的场景之一。
+
+## 查看网络层模块
+
+```bash
+cat /root/stage/step2/modules/networking/main.tf
+```
+
+注意 for_each 的使用——以 CIDR 为 key、可用区为 value 的 map 驱动子网创建，而不是原来手写 4 个独立的 resource 块。好处：从列表中间删一个 CIDR 只销毁那一个子网，不会因下标位移触发其他子网的 destroy/recreate。
+
+## 查看 Web 层模块
+
+```bash
+cat /root/stage/step2/modules/web/main.tf
+```
+
+三组 NSG（LB / App / Data）和 Load Balancer 现在集中在一个模块里，引用链一目了然。
 
 ## 应用重构
+
+复制模块文件和新的根配置到工作目录：
 
 ```bash
 cp -r /root/stage/step2/modules /root/workspace/
 cp /root/stage/step2/main.tf /root/workspace/
 cp /root/stage/step2/moved.tf /root/workspace/
+```
+
+初始化模块（本地模块不需要网络下载）：
+
+```bash
 terraform init
+```
+
+## 验证零变更
+
+这是最关键的一步——plan 应该显示零基础设施变更：
+
+```bash
 terraform plan
 ```
 
-计划应显示 0 to add, 0 to change, 0 to destroy。
+你会看到 Terraform 输出类似：
+
+```
+Plan: 0 to add, 0 to change, 0 to destroy.
+```
+
+18 个资源的地址全部更新，但没有任何 create、update 或 destroy——moved 块精确完成了"搬家"。
 
 ```bash
-terraform apply -auto-approve
+terraform apply -auto-approve -parallelism=2
+```
+
+## 查看重构后的状态
+
+```bash
 terraform state list
 ```
 
-现在网络和虚拟机资源已经带上 module 前缀，职责边界更清楚。
+现在资源地址带有 module 前缀：
+
+```
+module.networking.azurerm_virtual_network.this
+module.networking.azurerm_subnet.public["10.0.1.0/24"]
+module.web.azurerm_lb.this
+module.web.azurerm_network_security_group.lb
+module.web.azurerm_linux_virtual_machine.app
+```
+
+谁属于哪一层，一看便知。比较一下 main.tf 的变化：
+
+```bash
+wc -l main.tf
+```
+
+网络和 Web 层的代码被两个 module 调用块替代了。
+
+下一步，继续提取数据层和存储层。

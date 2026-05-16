@@ -1,36 +1,41 @@
-locals {
-  name_prefix = "${var.app_name}-${var.environment}-${var.suffix}"
-  common_tags = {
-    App         = var.app_name
-    Environment = var.environment
-    ManagedBy   = "Terraform"
-  }
-  subnets = {
-    web  = "10.0.1.0/24"
-    app  = "10.0.2.0/24"
-    data = "10.0.3.0/24"
-  }
-}
+# 网络层：Resource Group、VNet、子网
+# 对应三层架构中的网络基础设施——公有子网放 LB，私有子网放应用和数据
 
-resource "azurerm_resource_group" "this" {
-  name     = "${local.name_prefix}-rg"
+resource "azurerm_resource_group" "main" {
+  name     = "${var.app_name}-${var.environment}-rg"
   location = var.location
-  tags     = local.common_tags
+
+  tags = {
+    Environment = var.environment
+    App         = var.app_name
+  }
 }
 
 resource "azurerm_virtual_network" "this" {
-  name                = "${local.name_prefix}-vnet"
+  name                = "${var.app_name}-${var.environment}-vnet"
   address_space       = [var.vnet_cidr]
-  location            = azurerm_resource_group.this.location
-  resource_group_name = azurerm_resource_group.this.name
-  tags                = local.common_tags
+  location            = azurerm_resource_group.main.location
+  resource_group_name = azurerm_resource_group.main.name
+
+  tags = {
+    Name = "${var.app_name}-${var.environment}-vnet"
+  }
 }
 
-resource "azurerm_subnet" "this" {
-  for_each = local.subnets
+resource "azurerm_subnet" "public" {
+  for_each = zipmap(var.public_subnet_cidrs, var.availability_zones)
 
-  name                 = "${local.name_prefix}-${each.key}"
-  resource_group_name  = azurerm_resource_group.this.name
+  name                 = "${var.app_name}-${var.environment}-public-${each.value}"
+  resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.this.name
-  address_prefixes     = [each.value]
+  address_prefixes     = [each.key]
+}
+
+resource "azurerm_subnet" "private" {
+  for_each = zipmap(var.private_subnet_cidrs, var.availability_zones)
+
+  name                 = "${var.app_name}-${var.environment}-private-${each.value}"
+  resource_group_name  = azurerm_resource_group.main.name
+  virtual_network_name = azurerm_virtual_network.this.name
+  address_prefixes     = [each.key]
 }

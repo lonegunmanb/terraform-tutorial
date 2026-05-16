@@ -1,6 +1,6 @@
 {
-  "title": "生产就绪代码（Azure / miniblue 版）：三层 Web 应用架构",
-  "description": "用 miniblue 模拟 Azure 资源，从单体配置出发逐步提取网络、安全、虚拟机、存储和 DNS 模块，再用 Terragrunt + removed 块实现状态隔离。",
+  "title": "生产就绪：三层 Web 应用架构（Azure 版）",
+  "description": "从一个近 500 行的单体配置出发，用 moved 块逐步将五个层级提取为模块，再用 Terragrunt + removed 块实现状态隔离——全程不销毁、不重建任何资源（Azure on miniblue）",
   "details": {
     "intro": {
       "text": "init/init.md",
@@ -9,15 +9,15 @@
     },
     "steps": [
       {
-        "title": "观察大模块：Azure 三层架构的反面教材",
+        "title": "观察大模块：三层架构的反面教材",
         "text": "step1/text.md"
       },
       {
-        "title": "提取网络层和虚拟机层（moved 块）",
+        "title": "提取网络层和 Web 层（moved 块）",
         "text": "step2/text.md"
       },
       {
-        "title": "提取存储层和 DNS 层（moved 块）",
+        "title": "提取数据层和存储层（moved 块）",
         "text": "step3/text.md"
       },
       {
@@ -27,6 +27,10 @@
       {
         "title": "状态隔离：Terragrunt + removed 块",
         "text": "step5/text.md"
+      },
+      {
+        "title": "验证工作负载身份链端到端",
+        "text": "step6/text.md"
       }
     ],
     "finish": {
@@ -52,11 +56,11 @@
           "target": "/root/stage/step2"
         },
         {
-          "file": "stage/step2/modules/networking/main.tf",
-          "target": "/root/stage/step2/modules/networking"
+          "file": "stage/step2/moved.tf",
+          "target": "/root/stage/step2"
         },
         {
-          "file": "stage/step2/modules/networking/outputs.tf",
+          "file": "stage/step2/modules/networking/main.tf",
           "target": "/root/stage/step2/modules/networking"
         },
         {
@@ -64,11 +68,11 @@
           "target": "/root/stage/step2/modules/networking"
         },
         {
-          "file": "stage/step2/modules/web/main.tf",
-          "target": "/root/stage/step2/modules/web"
+          "file": "stage/step2/modules/networking/outputs.tf",
+          "target": "/root/stage/step2/modules/networking"
         },
         {
-          "file": "stage/step2/modules/web/outputs.tf",
+          "file": "stage/step2/modules/web/main.tf",
           "target": "/root/stage/step2/modules/web"
         },
         {
@@ -76,31 +80,31 @@
           "target": "/root/stage/step2/modules/web"
         },
         {
-          "file": "stage/step2/moved.tf",
-          "target": "/root/stage/step2"
+          "file": "stage/step2/modules/web/outputs.tf",
+          "target": "/root/stage/step2/modules/web"
         },
         {
           "file": "stage/step3/main.tf",
           "target": "/root/stage/step3"
         },
         {
-          "file": "stage/step3/modules/dns/main.tf",
-          "target": "/root/stage/step3/modules/dns"
+          "file": "stage/step3/moved.tf",
+          "target": "/root/stage/step3"
         },
         {
-          "file": "stage/step3/modules/dns/outputs.tf",
-          "target": "/root/stage/step3/modules/dns"
+          "file": "stage/step3/modules/data/main.tf",
+          "target": "/root/stage/step3/modules/data"
         },
         {
-          "file": "stage/step3/modules/dns/variables.tf",
-          "target": "/root/stage/step3/modules/dns"
+          "file": "stage/step3/modules/data/variables.tf",
+          "target": "/root/stage/step3/modules/data"
+        },
+        {
+          "file": "stage/step3/modules/data/outputs.tf",
+          "target": "/root/stage/step3/modules/data"
         },
         {
           "file": "stage/step3/modules/storage/main.tf",
-          "target": "/root/stage/step3/modules/storage"
-        },
-        {
-          "file": "stage/step3/modules/storage/outputs.tf",
           "target": "/root/stage/step3/modules/storage"
         },
         {
@@ -108,43 +112,19 @@
           "target": "/root/stage/step3/modules/storage"
         },
         {
-          "file": "stage/step3/moved.tf",
-          "target": "/root/stage/step3"
+          "file": "stage/step3/modules/storage/outputs.tf",
+          "target": "/root/stage/step3/modules/storage"
         },
         {
           "file": "stage/step4/main.tf",
           "target": "/root/stage/step4"
         },
         {
-          "file": "stage/step4/modules/dns/main.tf",
-          "target": "/root/stage/step4/modules/dns"
-        },
-        {
-          "file": "stage/step4/modules/dns/outputs.tf",
-          "target": "/root/stage/step4/modules/dns"
-        },
-        {
-          "file": "stage/step4/modules/dns/variables.tf",
-          "target": "/root/stage/step4/modules/dns"
-        },
-        {
-          "file": "stage/step4/modules/networking/main.tf",
-          "target": "/root/stage/step4/modules/networking"
-        },
-        {
-          "file": "stage/step4/modules/networking/outputs.tf",
-          "target": "/root/stage/step4/modules/networking"
-        },
-        {
-          "file": "stage/step4/modules/networking/variables.tf",
-          "target": "/root/stage/step4/modules/networking"
+          "file": "stage/step4/moved.tf",
+          "target": "/root/stage/step4"
         },
         {
           "file": "stage/step4/modules/security/main.tf",
-          "target": "/root/stage/step4/modules/security"
-        },
-        {
-          "file": "stage/step4/modules/security/outputs.tf",
           "target": "/root/stage/step4/modules/security"
         },
         {
@@ -152,104 +132,28 @@
           "target": "/root/stage/step4/modules/security"
         },
         {
-          "file": "stage/step4/modules/storage/main.tf",
-          "target": "/root/stage/step4/modules/storage"
+          "file": "stage/step4/modules/security/outputs.tf",
+          "target": "/root/stage/step4/modules/security"
         },
         {
-          "file": "stage/step4/modules/storage/outputs.tf",
-          "target": "/root/stage/step4/modules/storage"
-        },
-        {
-          "file": "stage/step4/modules/storage/variables.tf",
-          "target": "/root/stage/step4/modules/storage"
+          "file": "stage/step4/modules/networking/variables.tf",
+          "target": "/root/stage/step4/modules/networking"
         },
         {
           "file": "stage/step4/modules/web/main.tf",
           "target": "/root/stage/step4/modules/web"
         },
         {
-          "file": "stage/step4/modules/web/outputs.tf",
-          "target": "/root/stage/step4/modules/web"
+          "file": "stage/step4/modules/storage/variables.tf",
+          "target": "/root/stage/step4/modules/storage"
         },
         {
-          "file": "stage/step4/modules/web/variables.tf",
-          "target": "/root/stage/step4/modules/web"
+          "file": "stage/step4/modules/data/main.tf",
+          "target": "/root/stage/step4/modules/data"
         },
         {
-          "file": "stage/step4/moved.tf",
-          "target": "/root/stage/step4"
-        },
-        {
-          "file": "stage/step5/dns/main.tf",
-          "target": "/root/stage/step5/dns"
-        },
-        {
-          "file": "stage/step5/dns/removed.tf",
-          "target": "/root/stage/step5/dns"
-        },
-        {
-          "file": "stage/step5/dns/terragrunt.hcl",
-          "target": "/root/stage/step5/dns"
-        },
-        {
-          "file": "stage/step5/modules/dns/main.tf",
-          "target": "/root/stage/step5/modules/dns"
-        },
-        {
-          "file": "stage/step5/modules/dns/outputs.tf",
-          "target": "/root/stage/step5/modules/dns"
-        },
-        {
-          "file": "stage/step5/modules/dns/variables.tf",
-          "target": "/root/stage/step5/modules/dns"
-        },
-        {
-          "file": "stage/step5/modules/networking/main.tf",
-          "target": "/root/stage/step5/modules/networking"
-        },
-        {
-          "file": "stage/step5/modules/networking/outputs.tf",
-          "target": "/root/stage/step5/modules/networking"
-        },
-        {
-          "file": "stage/step5/modules/networking/variables.tf",
-          "target": "/root/stage/step5/modules/networking"
-        },
-        {
-          "file": "stage/step5/modules/security/main.tf",
-          "target": "/root/stage/step5/modules/security"
-        },
-        {
-          "file": "stage/step5/modules/security/outputs.tf",
-          "target": "/root/stage/step5/modules/security"
-        },
-        {
-          "file": "stage/step5/modules/security/variables.tf",
-          "target": "/root/stage/step5/modules/security"
-        },
-        {
-          "file": "stage/step5/modules/storage/main.tf",
-          "target": "/root/stage/step5/modules/storage"
-        },
-        {
-          "file": "stage/step5/modules/storage/outputs.tf",
-          "target": "/root/stage/step5/modules/storage"
-        },
-        {
-          "file": "stage/step5/modules/storage/variables.tf",
-          "target": "/root/stage/step5/modules/storage"
-        },
-        {
-          "file": "stage/step5/modules/web/main.tf",
-          "target": "/root/stage/step5/modules/web"
-        },
-        {
-          "file": "stage/step5/modules/web/outputs.tf",
-          "target": "/root/stage/step5/modules/web"
-        },
-        {
-          "file": "stage/step5/modules/web/variables.tf",
-          "target": "/root/stage/step5/modules/web"
+          "file": "stage/step5/terragrunt.hcl",
+          "target": "/root/stage/step5"
         },
         {
           "file": "stage/step5/networking/main.tf",
@@ -264,16 +168,28 @@
           "target": "/root/stage/step5/networking"
         },
         {
-          "file": "stage/step5/security/main.tf",
-          "target": "/root/stage/step5/security"
+          "file": "stage/step5/web/main.tf",
+          "target": "/root/stage/step5/web"
         },
         {
-          "file": "stage/step5/security/removed.tf",
-          "target": "/root/stage/step5/security"
+          "file": "stage/step5/web/removed.tf",
+          "target": "/root/stage/step5/web"
         },
         {
-          "file": "stage/step5/security/terragrunt.hcl",
-          "target": "/root/stage/step5/security"
+          "file": "stage/step5/web/terragrunt.hcl",
+          "target": "/root/stage/step5/web"
+        },
+        {
+          "file": "stage/step5/data/main.tf",
+          "target": "/root/stage/step5/data"
+        },
+        {
+          "file": "stage/step5/data/removed.tf",
+          "target": "/root/stage/step5/data"
+        },
+        {
+          "file": "stage/step5/data/terragrunt.hcl",
+          "target": "/root/stage/step5/data"
         },
         {
           "file": "stage/step5/storage/main.tf",
@@ -288,20 +204,16 @@
           "target": "/root/stage/step5/storage"
         },
         {
-          "file": "stage/step5/terragrunt.hcl",
-          "target": "/root/stage/step5"
+          "file": "stage/step5/security/main.tf",
+          "target": "/root/stage/step5/security"
         },
         {
-          "file": "stage/step5/web/main.tf",
-          "target": "/root/stage/step5/web"
+          "file": "stage/step5/security/removed.tf",
+          "target": "/root/stage/step5/security"
         },
         {
-          "file": "stage/step5/web/removed.tf",
-          "target": "/root/stage/step5/web"
-        },
-        {
-          "file": "stage/step5/web/terragrunt.hcl",
-          "target": "/root/stage/step5/web"
+          "file": "stage/step5/security/terragrunt.hcl",
+          "target": "/root/stage/step5/security"
         }
       ]
     }
