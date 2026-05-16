@@ -185,7 +185,7 @@ resource "azurerm_linux_virtual_machine" "web" {
   admin_username                  = "azureuser"
   admin_password                  = "Password1234!"
   disable_password_authentication = false
-  network_interface_ids          = [azurerm_network_interface.web.id]
+  network_interface_ids           = [azurerm_network_interface.web.id]
 
   os_disk {
     caching              = "ReadWrite"
