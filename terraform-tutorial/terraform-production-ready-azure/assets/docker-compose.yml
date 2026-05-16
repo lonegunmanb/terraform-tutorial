@@ -1,0 +1,10 @@
+services:
+  miniblue:
+    image: ghcr.io/lonegunmanb/miniblue:sha-2fead35
+    ports:
+      - "4566:4566"
+      - "4567:4567"
+    deploy:
+      resources:
+        limits:
+          memory: 512M

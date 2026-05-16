@@ -367,4 +367,10 @@ module "app" {
 3. **引入社区模块**：用 `terraform-aws-modules/s3-bucket` 替换自制存储模块，接口不变
 4. **内置防护 + 版本固定**：加入 validation、precondition、postcondition 和版本约束，让模块更健壮
 
-<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-production-ready" title="生产就绪代码：从大泥球到模块化" />
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-production-ready" title="生产就绪代码：从大泥球到模块化（AWS / LocalStack 版）" />
+
+<KillercodaEmbed
+  src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-production-ready-azure"
+  title="生产就绪代码：从大泥球到模块化（Azure / miniblue 版）"
+  desc="点击下方按钮在新标签页中打开 Azure 版 Killercoda 实验环境，预装了 Terraform + Terragrunt + miniblue（Azure 本地模拟器）。资源映射：VPC→VNet、ALB→Load Balancer、EC2→Linux VM、DynamoDB→Cosmos DB、S3→Storage Account、IAM Role→Managed Identity、Secrets Manager→Key Vault、SSM Parameter→App Configuration；五个步骤的拆模块/moved/removed/Terragrunt 流程与 AWS 版完全一致。"
+/>
