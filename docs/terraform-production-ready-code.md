@@ -368,3 +368,5 @@ module "app" {
 4. **内置防护 + 版本固定**：加入 validation、precondition、postcondition 和版本约束，让模块更健壮
 
 <KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-production-ready" title="生产就绪代码：从大泥球到模块化" />
+
+<KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-production-ready-azure" title="生产就绪代码（Azure 版）：从大泥球到模块化" />
