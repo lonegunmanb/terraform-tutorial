@@ -5,7 +5,21 @@ terraform {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
+}
+
+locals {
+  suffix   = "lab"
+  app_name = "${var.app_name}-${local.suffix}"
+}
+
+resource "tls_private_key" "web_ssh" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
 provider "azurerm" {
@@ -30,9 +44,9 @@ variable "app_name" {
   default = "webapp"
 }
 
-variable "suffix" {
+variable "vnet_cidr" {
   type    = string
-  default = "lab"
+  default = "10.0.0.0/16"
 }
 
 variable "location" {
@@ -40,123 +54,164 @@ variable "location" {
   default = "East US"
 }
 
-variable "vnet_cidr" {
-  type    = string
-  default = "10.0.0.0/16"
-}
-
-locals {
-  name_prefix = "${var.app_name}-${var.environment}-${var.suffix}"
-  common_tags = {
-    App         = var.app_name
-    Environment = var.environment
-    ManagedBy   = "Terraform"
-  }
-}
-
+# ── 网络层 ────────────────────────────────────────────────────────────────
 module "networking" {
   source = "./modules/networking"
 
-  app_name    = var.app_name
+  app_name    = local.app_name
   environment = var.environment
-  suffix      = var.suffix
-  location    = var.location
   vnet_cidr   = var.vnet_cidr
+  location    = var.location
 }
 
-resource "azurerm_network_security_group" "web" {
-  name                = "${local.name_prefix}-web-nsg"
-  location            = module.networking.location
-  resource_group_name = module.networking.resource_group_name
-
-  security_rule {
-    name                       = "AllowHttp"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "80"
-    source_address_prefix      = "Internet"
-    destination_address_prefix = "*"
-  }
-
-  tags = local.common_tags
-}
-
-resource "azurerm_network_security_group" "app" {
-  name                = "${local.name_prefix}-app-nsg"
-  location            = module.networking.location
-  resource_group_name = module.networking.resource_group_name
-
-  security_rule {
-    name                       = "AllowWeb"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "8080"
-    source_address_prefix      = "10.0.1.0/24"
-    destination_address_prefix = "*"
-  }
-
-  tags = local.common_tags
-}
-
-resource "azurerm_network_security_group" "data" {
-  name                = "${local.name_prefix}-data-nsg"
-  location            = module.networking.location
-  resource_group_name = module.networking.resource_group_name
-
-  security_rule {
-    name                       = "AllowApp"
-    priority                   = 100
-    direction                  = "Inbound"
-    access                     = "Allow"
-    protocol                   = "Tcp"
-    source_port_range          = "*"
-    destination_port_range     = "5432"
-    source_address_prefix      = "10.0.2.0/24"
-    destination_address_prefix = "*"
-  }
-
-  tags = local.common_tags
-}
-
+# ── Web 层 ──────────────────────────────────────────────────────────────
 module "web" {
   source = "./modules/web"
 
-  app_name            = var.app_name
+  app_name            = local.app_name
   environment         = var.environment
-  suffix              = var.suffix
   resource_group_name = module.networking.resource_group_name
-  location            = module.networking.location
-  web_subnet_id       = module.networking.web_subnet_id
-  web_nsg_id          = azurerm_network_security_group.web.id
+  location            = var.location
+  vnet_id             = module.networking.vnet_id
+  public_subnet_ids   = module.networking.public_subnet_ids
+  private_subnet_ids  = module.networking.private_subnet_ids
+  web_ssh_public_key  = tls_private_key.web_ssh.public_key_openssh
+  app_identity_id     = azurerm_user_assigned_identity.app.id
 }
 
+# ── 数据层（已提取为模块）────────────────────────────────────────────────
+module "data" {
+  source = "./modules/data"
+
+  app_name            = local.app_name
+  environment         = var.environment
+  resource_group_name = module.networking.resource_group_name
+  location            = module.networking.location
+}
+
+# ── 存储层（已提取为模块）────────────────────────────────────────────────
 module "storage" {
   source = "./modules/storage"
 
-  app_name            = var.app_name
+  app_name            = local.app_name
   environment         = var.environment
-  suffix              = var.suffix
   resource_group_name = module.networking.resource_group_name
   location            = module.networking.location
+  suffix              = local.suffix
 }
 
-module "dns" {
-  source = "./modules/dns"
+# ══════════════════════════════════════════════════════════════════════════════
+# 安全与配置（待提取）
+# ══════════════════════════════════════════════════════════════════════════════
 
-  app_name            = var.app_name
-  environment         = var.environment
-  suffix              = var.suffix
+data "azurerm_client_config" "current" {}
+
+resource "azurerm_user_assigned_identity" "app" {
+  name                = "${local.app_name}-${var.environment}-app-identity"
   resource_group_name = module.networking.resource_group_name
+  location            = module.networking.location
+
+  tags = {
+    Name = "${local.app_name}-${var.environment}-app-identity"
+  }
 }
 
-output "resource_group_name" { value = module.networking.resource_group_name }
-output "vnet_name" { value = module.networking.vnet_name }
-output "web_vm_name" { value = module.web.web_vm_name }
-output "storage_account_name" { value = module.storage.storage_account_name }
-output "dns_zone_name" { value = module.dns.dns_zone_name }
+resource "azurerm_role_assignment" "storage_static" {
+  scope                = module.storage.static_storage_account_id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+resource "azurerm_role_assignment" "storage_backups" {
+  scope                = module.storage.backup_storage_account_id
+  role_definition_name = "Storage Blob Data Contributor"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+resource "azurerm_role_assignment" "cosmos" {
+  scope                = module.data.cosmos_account_id
+  role_definition_name = "Cosmos DB Account Reader Role"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+resource "azurerm_key_vault" "app" {
+  name                       = substr("${local.app_name}-${var.environment}-kv", 0, 24)
+  location                   = module.networking.location
+  resource_group_name        = module.networking.resource_group_name
+  tenant_id                  = data.azurerm_client_config.current.tenant_id
+  sku_name                   = "standard"
+  soft_delete_retention_days = 7
+  purge_protection_enabled   = false
+  enable_rbac_authorization  = true
+
+
+  tags = {
+    Name = "${local.app_name}-${var.environment}-kv"
+  }
+}
+
+resource "azurerm_key_vault_secret" "db_credentials" {
+  name = "db-credentials"
+  value = jsonencode({
+    username = "app_user"
+    password = "change-me-in-production"
+    host     = "db.internal"
+    port     = 5432
+  })
+  key_vault_id = azurerm_key_vault.app.id
+}
+
+resource "azurerm_app_configuration" "app" {
+  name                = "${local.app_name}-${var.environment}-appconfig"
+  resource_group_name = module.networking.resource_group_name
+  location            = module.networking.location
+  sku                 = "free"
+
+  tags = {
+    Name = "${local.app_name}-${var.environment}-appconfig"
+  }
+}
+
+resource "azurerm_role_assignment" "appconfig" {
+  scope                = azurerm_app_configuration.app.id
+  role_definition_name = "App Configuration Data Reader"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+resource "azurerm_role_assignment" "keyvault" {
+  scope                = azurerm_key_vault.app.id
+  role_definition_name = "Key Vault Secrets User"
+  principal_id         = azurerm_user_assigned_identity.app.principal_id
+}
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 输出
+# ══════════════════════════════════════════════════════════════════════════════
+
+output "resource_group_name" {
+  value = module.networking.resource_group_name
+}
+
+output "vnet_id" {
+  value = module.networking.vnet_id
+}
+
+output "lb_public_ip" {
+  value = module.web.lb_public_ip
+}
+
+output "static_storage_account" {
+  value = module.storage.static_storage_account_name
+}
+
+output "backup_storage_account" {
+  value = module.storage.backup_storage_account_name
+}
+
+output "cosmos_account" {
+  value = module.data.cosmos_account_name
+}
+
+output "app_identity_principal_id" {
+  value = azurerm_user_assigned_identity.app.principal_id
+}

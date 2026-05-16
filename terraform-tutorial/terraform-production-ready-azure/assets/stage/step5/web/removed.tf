@@ -4,7 +4,7 @@ removed {
 }
 
 removed {
-  from = module.security
+  from = module.data
   lifecycle { destroy = false }
 }
 
@@ -14,6 +14,6 @@ removed {
 }
 
 removed {
-  from = module.dns
+  from = module.security
   lifecycle { destroy = false }
 }

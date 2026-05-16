@@ -1,11 +1,25 @@
 terraform {
-  required_version = ">= 1.5"
+  required_version = ">= 1.5, < 2.0"
   required_providers {
     azurerm = {
       source  = "hashicorp/azurerm"
       version = "~> 4.0"
     }
+    tls = {
+      source  = "hashicorp/tls"
+      version = "~> 4.0"
+    }
   }
+}
+
+locals {
+  suffix   = "lab"
+  app_name = "${var.app_name}-${local.suffix}"
+}
+
+resource "tls_private_key" "web_ssh" {
+  algorithm = "RSA"
+  rsa_bits  = 4096
 }
 
 provider "azurerm" {
@@ -30,9 +44,9 @@ variable "app_name" {
   default = "webapp"
 }
 
-variable "suffix" {
+variable "vnet_cidr" {
   type    = string
-  default = "lab"
+  default = "10.0.0.0/16"
 }
 
 variable "location" {
@@ -40,73 +54,94 @@ variable "location" {
   default = "East US"
 }
 
-variable "vnet_cidr" {
-  type    = string
-  default = "10.0.0.0/16"
-}
-
-locals {
-  name_prefix = "${var.app_name}-${var.environment}-${var.suffix}"
-  common_tags = {
-    App         = var.app_name
-    Environment = var.environment
-    ManagedBy   = "Terraform"
-  }
-}
-
+# ── 网络层 ────────────────────────────────────────────────────────────────
 module "networking" {
   source = "./modules/networking"
 
-  app_name    = var.app_name
+  app_name    = local.app_name
   environment = var.environment
-  suffix      = var.suffix
-  location    = var.location
   vnet_cidr   = var.vnet_cidr
+  location    = var.location
 }
 
-module "security" {
-  source = "./modules/security"
-
-  app_name            = var.app_name
-  environment         = var.environment
-  suffix              = var.suffix
-  resource_group_name = module.networking.resource_group_name
-  location            = module.networking.location
-}
-
+# ── Web 层 ──────────────────────────────────────────────────────────────
 module "web" {
   source = "./modules/web"
 
-  app_name            = var.app_name
+  app_name            = local.app_name
   environment         = var.environment
-  suffix              = var.suffix
   resource_group_name = module.networking.resource_group_name
-  location            = module.networking.location
-  web_subnet_id       = module.networking.web_subnet_id
-  web_nsg_id          = module.security.web_nsg_id
+  location            = var.location
+  vnet_id             = module.networking.vnet_id
+  public_subnet_ids   = module.networking.public_subnet_ids
+  private_subnet_ids  = module.networking.private_subnet_ids
+  web_ssh_public_key  = tls_private_key.web_ssh.public_key_openssh
+  app_identity_id     = module.security.app_identity_id
 }
 
+# ── 数据层 ────────────────────────────────────────────────────────────────
+module "data" {
+  source = "./modules/data"
+
+  app_name            = local.app_name
+  environment         = var.environment
+  resource_group_name = module.networking.resource_group_name
+  location            = module.networking.location
+}
+
+# ── 存储层 ────────────────────────────────────────────────────────────────
 module "storage" {
   source = "./modules/storage"
 
-  app_name            = var.app_name
+  app_name            = local.app_name
   environment         = var.environment
-  suffix              = var.suffix
   resource_group_name = module.networking.resource_group_name
   location            = module.networking.location
+  suffix              = local.suffix
 }
 
-module "dns" {
-  source = "./modules/dns"
+# ── 安全层（已提取为模块）─────────────────────────────────────────────────
+module "security" {
+  source = "./modules/security"
 
-  app_name            = var.app_name
+  app_name            = local.app_name
   environment         = var.environment
-  suffix              = var.suffix
   resource_group_name = module.networking.resource_group_name
+  location            = module.networking.location
+
+  static_storage_account_id = module.storage.static_storage_account_id
+  backup_storage_account_id = module.storage.backup_storage_account_id
+  cosmos_account_id         = module.data.cosmos_account_id
 }
 
-output "resource_group_name" { value = module.networking.resource_group_name }
-output "vnet_name" { value = module.networking.vnet_name }
-output "web_vm_name" { value = module.web.web_vm_name }
-output "storage_account_name" { value = module.storage.storage_account_name }
-output "dns_zone_name" { value = module.dns.dns_zone_name }
+# ══════════════════════════════════════════════════════════════════════════════
+# 输出
+# ══════════════════════════════════════════════════════════════════════════════
+
+output "resource_group_name" {
+  value = module.networking.resource_group_name
+}
+
+output "vnet_id" {
+  value = module.networking.vnet_id
+}
+
+output "lb_public_ip" {
+  value = module.web.lb_public_ip
+}
+
+output "static_storage_account" {
+  value = module.storage.static_storage_account_name
+}
+
+output "backup_storage_account" {
+  value = module.storage.backup_storage_account_name
+}
+
+output "cosmos_account" {
+  value = module.data.cosmos_account_name
+}
+
+output "app_identity_principal_id" {
+  value = module.security.app_identity_principal_id
+}

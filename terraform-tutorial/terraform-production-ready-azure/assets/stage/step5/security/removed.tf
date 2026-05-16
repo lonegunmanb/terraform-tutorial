@@ -1,4 +1,9 @@
 removed {
+  from = tls_private_key.web_ssh
+  lifecycle { destroy = false }
+}
+
+removed {
   from = module.networking
   lifecycle { destroy = false }
 }
@@ -9,11 +14,11 @@ removed {
 }
 
 removed {
-  from = module.storage
+  from = module.data
   lifecycle { destroy = false }
 }
 
 removed {
-  from = module.dns
+  from = module.storage
   lifecycle { destroy = false }
 }

@@ -1,2 +1,15 @@
-output "storage_account_name" { value = azurerm_storage_account.assets.name }
-output "container_name" { value = azurerm_storage_container.assets.name }
+output "static_storage_account_name" {
+  value = azurerm_storage_account.static.name
+}
+
+output "static_storage_account_id" {
+  value = azurerm_storage_account.static.id
+}
+
+output "backup_storage_account_name" {
+  value = azurerm_storage_account.backups.name
+}
+
+output "backup_storage_account_id" {
+  value = azurerm_storage_account.backups.id
+}
