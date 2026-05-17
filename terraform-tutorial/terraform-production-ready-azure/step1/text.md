@@ -35,7 +35,7 @@ terraform plan
 
 plan 输出有多少行？你能快速分辨哪些资源属于网络层、哪些属于 Web 层吗？
 
-首次 apply 可能需要 1-2 分钟（Cosmos DB 和 Storage Account 初始化较慢）：
+首次 apply 可能需要比较久（Cosmos DB 和 Storage Account 初始化较慢）：
 
 ```bash
 terraform apply -auto-approve -parallelism=2
