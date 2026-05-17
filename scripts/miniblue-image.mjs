@@ -14,7 +14,7 @@
  * Never edit those references by hand — they are managed.
  */
 
-export const MINIBLUE_IMAGE = 'ghcr.io/lonegunmanb/miniblue:sha-cf2cb7f'
+export const MINIBLUE_IMAGE = 'ghcr.io/lonegunmanb/miniblue:sha-af2a16a'
 
 // Loose-but-anchored regex matching only the lonegunmanb miniblue image with
 // any tag, so we never accidentally rewrite unrelated lines.
