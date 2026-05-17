@@ -1,7 +1,7 @@
 services:
   miniblue:
     # 使用 fork 后的镜像（修复 ARM 路由大小写、blob metadata 持久化、SharedKey 旁路），版本锁定
-    image: ghcr.io/lonegunmanb/miniblue:sha-3fa70c3
+    image: ghcr.io/lonegunmanb/miniblue:sha-decf9af
     ports:
       - "4566:4566"
       - "4567:4567"
