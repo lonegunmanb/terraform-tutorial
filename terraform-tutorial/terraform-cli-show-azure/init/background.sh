@@ -12,7 +12,7 @@ if [ ! -f docker-compose.yml ]; then
 cat > docker-compose.yml <<'EOF'
 services:
   miniblue:
-    image: ghcr.io/lonegunmanb/miniblue:sha-af2a16a
+    image: ghcr.io/lonegunmanb/miniblue:sha-3fa70c3
     ports:
       - "4566:4566"
       - "4567:4567"
