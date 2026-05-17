@@ -4,3 +4,7 @@ dist/
 *.local
 docs/.vitepress/dist/
 docs/.vitepress/cache/
+
+# OCI manifest payloads sometimes downloaded when querying ghcr.io
+/latest.json
+/main.json
