@@ -19,7 +19,7 @@ resource "azurerm_storage_account" "static" {
   }
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-static"
+    Name = "${var.app_name}-${var.suffix}-${var.environment}-static"
   }
 }
 
@@ -41,7 +41,7 @@ resource "azurerm_storage_account" "backups" {
   }
 
   tags = {
-    Name = "${var.app_name}-${var.environment}-backups"
+    Name = "${var.app_name}-${var.suffix}-${var.environment}-backups"
   }
 }
 
