@@ -93,7 +93,9 @@ module "data" {
 module "storage" {
   source = "./modules/storage"
 
-  app_name            = local.app_name
+  # 注意：传入 var.app_name（不带 -lab 后缀）以保持与 step1/2 中
+  # 硬编码的 storage account 名称一致，避免触发资源重建。
+  app_name            = var.app_name
   environment         = var.environment
   resource_group_name = module.networking.resource_group_name
   location            = module.networking.location
