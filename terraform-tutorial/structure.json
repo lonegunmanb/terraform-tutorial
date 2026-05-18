@@ -18,6 +18,7 @@
     { "path": "terraform-module-basic" },
     { "path": "terraform-module-call" },
     { "path": "terraform-refactor" },
+    { "path": "terraform-refactor-azure" },
     { "path": "terraform-cli-basics" },
     { "path": "terraform-cli-basics-azure" },
     { "path": "terraform-cli-init" },
