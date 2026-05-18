@@ -1,7 +1,7 @@
 services:
   miniblue:
     # 使用 fork 后的镜像（兼容 azurerm v4），版本通过 SHA tag 锁定
-    image: ghcr.io/lonegunmanb/miniblue:sha-adb155b
+    image: ghcr.io/lonegunmanb/miniblue:sha-11ef0e8
     ports:
       - "4566:4566"
       - "4567:4567"
