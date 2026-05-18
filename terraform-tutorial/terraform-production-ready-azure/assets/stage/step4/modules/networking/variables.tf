@@ -33,5 +33,5 @@ variable "private_subnet_cidrs" {
 
 variable "availability_zones" {
   type    = list(string)
-  default = ["a", "b"]
+  default = ["1", "2"]
 }

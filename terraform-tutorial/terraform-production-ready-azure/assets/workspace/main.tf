@@ -93,28 +93,28 @@ resource "azurerm_virtual_network" "main" {
 }
 
 resource "azurerm_subnet" "public_a" {
-  name                 = "${local.app_name}-${var.environment}-public-a"
+  name                 = "${local.app_name}-${var.environment}-public-1"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.0.1.0/24"]
 }
 
 resource "azurerm_subnet" "public_b" {
-  name                 = "${local.app_name}-${var.environment}-public-b"
+  name                 = "${local.app_name}-${var.environment}-public-2"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.0.2.0/24"]
 }
 
 resource "azurerm_subnet" "private_a" {
-  name                 = "${local.app_name}-${var.environment}-private-a"
+  name                 = "${local.app_name}-${var.environment}-private-1"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.0.11.0/24"]
 }
 
 resource "azurerm_subnet" "private_b" {
-  name                 = "${local.app_name}-${var.environment}-private-b"
+  name                 = "${local.app_name}-${var.environment}-private-2"
   resource_group_name  = azurerm_resource_group.main.name
   virtual_network_name = azurerm_virtual_network.main.name
   address_prefixes     = ["10.0.12.0/24"]
