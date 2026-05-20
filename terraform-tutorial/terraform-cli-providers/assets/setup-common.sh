@@ -16,7 +16,7 @@
 #   finish_setup
 # ─────────────────────────────────────────────────────────
 
-TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.14.8}"
+TERRAFORM_VERSION="${TERRAFORM_VERSION:-1.15.3}"
 TFLINT_VERSION="${TFLINT_VERSION:-v0.61.0}"
 TERRAGRUNT_VERSION="${TERRAGRUNT_VERSION:-0.77.5}"
 # Note: the miniblue container image tag is pinned in scripts/miniblue-image.mjs

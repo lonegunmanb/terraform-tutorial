@@ -318,4 +318,55 @@ module "downstream" {
 `depends_on` 会让 Terraform 生成更保守的执行计划——更多属性值变成 `(known after apply)`，可能导致不必要的资源替换。如果能通过引用表达式（如 `bucket = module.app.bucket_id`）表达依赖，就不需要 `depends_on`。只在 Terraform 确实无法自动推断依赖时才使用。
 :::
 
+---
+
+## 动态模块来源（Terraform 1.15+）
+
+在 Terraform 1.15 之前，`module` 块的 `source` 和 `version` 参数**只能是字面量字符串**——它们在 `terraform init` 阶段就要解析模块代码，而 `init` 阶段还没有任何变量值，所以不允许引用 `var.xxx` 或 `local.xxx`。
+
+Terraform 1.15 引入了新的 `const` 变量属性，允许在 `init` 阶段就确定值的变量参与到 `source` / `version` 表达式中，从而实现**动态模块来源**。
+
+### 声明 const 变量
+
+```hcl
+variable "folder" {
+  type  = string
+  const = true
+}
+
+variable "module_version" {
+  type  = string
+  const = true
+}
+```
+
+- `const = true` 表示该变量在 `terraform init` 阶段就必须确定值（通过 `tfvars`、环境变量或 CLI 参数传入）。
+- `const` 与 `sensitive`、`ephemeral` **互斥**——一个变量不能同时是常量与敏感/临时值。
+
+### 在 source / version 中使用
+
+```hcl
+module "zoo" {
+  source  = "./${var.folder}"
+}
+
+module "vpc" {
+  source  = "terraform-aws-modules/vpc/aws"
+  version = var.module_version
+}
+```
+
+- 仅 `const` 变量、字面量与基于它们的纯字符串表达式可以出现在 `source`、`version` 中。
+- 嵌套子模块如果也想引用 `var.xxx` 作为 `source`，**该 variable 同样必须声明 `const = true`**。
+- 如果在 `source` 中引用普通 `var` 或 `local`，Terraform 会在 `init` 阶段直接报错。
+
+::: tip 典型用途
+- 在 monorepo 中按环境切换模块路径：`source = "./envs/${var.env}"`
+- 在 CI/CD 中通过 `-var` 注入待测试模块的 git ref 或 registry 版本
+:::
+
+::: info 弃用变量与输出
+模块演进时如需下线某个 `variable` 或 `output`，可使用 Terraform 1.15 的 `deprecated` 属性向调用方发出警告诊断。详见 [Terraform 语法 → 弃用变量](syntax.md#弃用变量-deprecated-terraform-1-15) 与 [弃用输出](syntax.md#弃用输出-deprecated-terraform-1-15)。
+:::
+
 <KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-module-call" />

@@ -122,4 +122,32 @@ terraform destroy -auto-approve
 - 模块输出可以传给其他模块或资源，形成模块间的数据流
 - 根模块的 variable 可以通过 -var 或 .tfvars 文件覆盖
 
+## Terraform 1.15+：弃用变量与输出
+
+模块演进时常常需要下线旧的输入或输出。Terraform 1.15 为 variable 和 output 块新增了 deprecated 属性，配合 validate / plan 会向调用方发出警告诊断：
+
+```hcl
+# 子模块
+variable "bad" {
+  type       = string
+  default    = null
+  deprecated = "请改用 good 变量，bad 将在 v2.0 移除。"
+}
+
+output "old" {
+  value      = local.legacy_value
+  deprecated = "请改用 new 输出，old 将在 v2.0 移除。"
+}
+```
+
+触发警告的场景：
+
+- 调用方在 module 块中给已弃用的 variable 传值。
+- 调用方引用了已弃用的 output（如 module.mymod.old）。
+- 根模块的 deprecated variable 通过 CLI、tfvars、TF_VAR_* 环境变量被赋值。
+
+例外：本身就是 deprecated 的 output 内部再引用其他 deprecated 值，不会叠加警告——这让模块作者可以平滑地把弃用值一层层透传。
+
+注意：根模块的 output 不能声明 deprecated，Terraform 会直接报错。
+
 完成后继续下一步。

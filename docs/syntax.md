@@ -345,6 +345,38 @@ variable "database" {
   error_document = var.legacy ? "ERROR.HTM" : null
   ```
 
+### 显式类型转换 (convert，Terraform 1.15+)
+
+Terraform 大部分时候能从上下文自动推断类型，但在以下场景会出问题：
+
+- 条件表达式两端的推断类型不同（例如 `var.flag ? [] : ["a"]`，`[]` 是 tuple 而 `["a"]` 是 list of string）。
+- 需要构造**空集合字面量**：`[]` 是空 tuple、`{}` 是空 object，它们**都没有元素类型**，无法直接当作 `list(string)`、`map(number)` 使用。
+- 相等比较 `==` 不会做隐式类型转换，类型不一致会一直为 `false`。
+
+Terraform 1.15 引入了内置 `convert` 函数，可以**内联**地把表达式强制转换为目标类型：
+
+```hcl
+locals {
+  # 构造一个真正的空 list(string)，而不是空 tuple
+  empty_tags = convert([], list(string))
+
+  # 构造一个真正的空 map(number)
+  empty_quotas = convert({}, map(number))
+
+  # 修正条件表达式两端类型不一致
+  subnets = convert(
+    var.enable_private ? var.private_subnets : [],
+    list(string),
+  )
+}
+```
+
+`convert(value, type_constraint)` 的第二个参数是**类型约束表达式**（和 `variable` 的 `type` 写法完全一致），可以是 `string` / `number` / `bool` / `list(...)` / `set(...)` / `map(...)` / `object({...})` / `tuple([...])`。
+
+::: tip
+之前常见的 `tolist()` / `tomap()` / `toset()` / `tostring()` / `tonumber()` 仍然可用，但它们一次只能转一种集合，且不能表达 `list(object({...}))` 这类复合约束。`convert` 是更通用的替代方案。
+:::
+
 ### 🧪 动手实验
 
 <KillercodaEmbed src="https://killercoda.com/lonegunman-terraform-tutorial/course/terraform-tutorial/terraform-syntax-type" />
@@ -935,6 +967,44 @@ provider "http" {
 # }
 ```
 
+### 常量变量 (const，Terraform 1.15+)
+
+`module` 块的 `source` 和 `version` 默认只能写字面量字符串，因为它们在 `terraform init` 阶段就要被解析。Terraform 1.15 新增 `const = true` 属性，标记该变量在 `init` 阶段就必须确定值，从而**允许它出现在 `source` / `version` 表达式中**：
+
+```hcl
+variable "module_folder" {
+  type  = string
+  const = true
+}
+
+module "zoo" {
+  source = "./${var.module_folder}"
+}
+```
+
+- `const` 与 `sensitive`、`ephemeral` **互斥**——一个变量只能选其一。
+- 嵌套模块要在自己 `source` 中引用 `var.xxx`，对应 variable 同样必须 `const = true`。
+- 详细用法见 [Terraform 模块 → 动态模块来源](module.md#动态模块来源-terraform-1-15)。
+
+### 弃用变量 (deprecated，Terraform 1.15+)
+
+模块演进时，某个变量可能要逐步下线。Terraform 1.15 为 `variable` 新增了 `deprecated` 属性，**只要外部还在给这个变量赋值，`validate` / `plan` 就会发出警告诊断**：
+
+```hcl
+variable "bad" {
+  type       = string
+  default    = null
+  deprecated = "请改用 good 变量，bad 将在 v2.0 移除。"
+}
+```
+
+触发警告的情况：
+
+- 调用方在 `module` 块中给该 variable 传值。
+- 根模块的 deprecated variable 通过 CLI `-var`、`tfvars`、`TF_VAR_*` 环境变量、Terraform Cloud workspace variable 等任何方式被赋值。
+
+如果完全没人传值，则不会有警告——这给了下游一个观察期来清理用法。
+
 ### 对输入变量赋值
 
 有四种方式为变量赋值：
@@ -1084,6 +1154,22 @@ output "secret_id" {
 ::: warning
 根模块中**不可以**将 `output` 声明为 `ephemeral`。
 :::
+
+### 弃用输出 (deprecated，Terraform 1.15+)
+
+与 `variable` 对应，`output` 也支持 `deprecated`，用于通知调用方某个输出即将移除：
+
+```hcl
+# 子模块
+output "old" {
+  value      = local.legacy_value
+  deprecated = "请改用 new 输出，old 将在 v2.0 移除。"
+}
+```
+
+- 当调用方写 `module.mymod.old` 时，`terraform validate` / `plan` 会发出警告。
+- 在另一个本身已被 `deprecated` 的 output 中再引用 `module.mymod.old`，**不会再叠加警告**——这允许模块作者一层层地把弃用值传出去。
+- **根模块的 `output` 不能标记 `deprecated`**——根模块输出没有下一级调用者，Terraform 会直接报错。
 
 ### depends_on
 

@@ -181,4 +181,25 @@ terraform destroy -auto-approve
 - 新增或修改 source 后必须重新执行 terraform init
 - 社区模块（如 terraform-aws-modules/vpc/aws）封装了复杂的基础设施配置，大幅减少重复代码，并且一般情况下它们都是经过测试和实战验证的
 
+## Terraform 1.15+：动态模块来源
+
+在 Terraform 1.15 之前，source 和 version 只能写字面量字符串。1.15 引入了 const 变量属性：声明 const = true 的变量在 terraform init 阶段就必须确定值，从而允许它出现在 source / version 表达式里。
+
+```hcl
+variable "module_folder" {
+  type  = string
+  const = true
+}
+
+module "zoo" {
+  source = "./${var.module_folder}"
+}
+```
+
+注意事项：
+
+- const 与 sensitive、ephemeral 互斥，不能同时使用。
+- 嵌套模块若要在自己的 source 中引用 var.xxx，对应 variable 也必须声明 const = true。
+- 普通 var / local 仍然不能出现在 source 或 version 中——init 阶段无法解析。
+
 完成后继续下一步。
